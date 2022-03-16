@@ -33,6 +33,7 @@
 ;;; Code:
 (require 'project)
 (require 'f)
+(require 'json)
 
 
 ;; TODO: Only show the target names with
