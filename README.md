@@ -35,6 +35,11 @@ line parameters to your executable, call
 `cmake-integration-run-last-target-with-arguments` will run the
 executable using the last specified command line parameters.
 
+**Note**: You need to call `cmake-integration-cmake-reconfigure` or
+`cmake-integration-cmake-configure-with-preset` at least once, such
+that an "special empty file" is created inside the build folder to
+access CMake file API. Without this you will not get completions for
+the compile targets.
 
 # Configuring CMake
 

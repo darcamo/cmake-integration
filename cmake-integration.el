@@ -316,12 +316,22 @@ If TARGET-NAME is not provided use the last target (saved in a
     )
   )
 
+(defun check-if-build-folder-exists-and-throws-if-not ()
+  "Check that the build folder exists and throws an error if not."
+  (unless (file-exists-p (cmake-integration-get-build-folder))
+    (error "The build folder is missing. Please run either cmake-integration-cmake-reconfigure or
+cmake-integration-cmake-configure-with-preset to configure the project.")
+    )
+  )
 
     ;;;###autoload
 (defun cmake-integration-save-and-compile-no-completion (target-name)
   "Save the buffer and compile TARGET-NAME."
   (interactive "sTarget name: ")
   (save-buffer 0)
+
+  (check-if-build-folder-exists-and-throws-if-not)
+
   (setq cmake-integration-current-target-name target-name)
   (let ((compile-command (cmake-integration-get-compile-command target-name)))
     (compile compile-command)
@@ -350,7 +360,20 @@ completions."
                                       ))
                (setq chosen-target-name (completing-read "Target Name: " list-of-targets))
                (cmake-integration-save-and-compile-no-completion chosen-target-name))
-      ;; (message "Could not find list of targets")
+
+      ;; If the build folder is missing we should stop with an error
+      (check-if-build-folder-exists-and-throws-if-not)
+
+      ;; If json-filename is nil that means we could not find the
+      ;; CMake reply with the file API, which means the query file is
+      ;; missing. All we need to do is to configure using either
+      ;; cmake-integration-cmake-reconfigure or
+      ;; cmake-integration-cmake-configure-with-preset, which created
+      ;; the query file.
+      (display-warning 'cmake-integration "Could not find list of targets due to CMake file API file
+missing. Please run either cmake-integration-cmake-reconfigure or
+cmake-integration-cmake-configure-with-preset.")
+
       (command-execute 'cmake-integration-save-and-compile-no-completion)
       )
     )
