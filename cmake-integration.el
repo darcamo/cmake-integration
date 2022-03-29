@@ -188,16 +188,22 @@ If JSON-FILENAME is not provided, use the value obtained with
      ;; process configurations vector
      (mapcar (lambda (config-data)
                (let ((config-name (and (> (length configurations) 1)
-                                       (alist-get 'name config-data))))
-                 ;; add implicit 'all' target to the list
-                 (cons (list (cmake-integration--mktarget "all" config-name))
-                       ;; process targets vector, return an alist of (target .
-                       ;; target-info) elements
-                       (mapcar (lambda (target-info)
-                                 (let ((target-name (alist-get 'name target-info)))
-                                   (cons (cmake-integration--mktarget target-name config-name)
-                                         target-info)))
-                               (alist-get 'targets config-data)))))
+                                       (alist-get 'name config-data)))
+                     (has-install-rule (cl-some (lambda (dir) (alist-get 'hasInstallRule dir))
+                                                (alist-get 'directories config-data))))
+                 ;; add implicit 'all', 'clean' and optional 'install' targets
+                 ;; to the list
+                 (nconc `((,(cmake-integration--mktarget "all" config-name)))
+                        `((,(cmake-integration--mktarget "clean" config-name)))
+                        (when has-install-rule
+                          `((,(cmake-integration--mktarget "install" config-name))))
+                        ;; process targets vector, return an alist of (target .
+                        ;; target-info) elements
+                        (mapcar (lambda (target-info)
+                                  (let ((target-name (alist-get 'name target-info)))
+                                    (cons (cmake-integration--mktarget target-name config-name)
+                                          target-info)))
+                                (alist-get 'targets config-data)))))
              configurations))))
 
 
@@ -309,8 +315,8 @@ If TARGET-NAME is not provided use the last target (saved in a
                        nil nil 'equal)))
 
     (unless (cdr target-info)
-      (if (equal target-name "all")
-          (error "Target 'all' is not a valid executable target")
+      (if (member target-name '("all" "clean" "install"))
+          (error "Target '%s' is not a valid executable target" target-name)
         (error "Unknown target: '%s'" target-name)))
 
     (let* ((target-json-file (file-name-concat
