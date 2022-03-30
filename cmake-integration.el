@@ -308,6 +308,13 @@ Throws an error if the target is not an executable.
 If TARGET-NAME is not provided use the last target (saved in a
 'cmake-integration-current-target')."
 
+  ;; If both `target' and `cmake-integration-current-target' are nil,
+  ;; throw an error asking the UE to select a target first by calling
+  ;; `cmake-integration-save-and-compile'
+  (unless (or target cmake-integration-current-target)
+    (error "Please select a target first `cmake-integration-save-and-compile' first")
+    )
+
   ;; The `target-info' variable inside the 'let' has the data from the
   ;; codemodel json file for TARGET-NAME. This data is an alist and
   ;; includes a 'jsonFile' field, which has the name of another json
