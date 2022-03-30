@@ -260,6 +260,12 @@ choose one of them (with completion) and CMake is configured with
 the chosen preset."
   ;; TODO: Pass a predicate function to completing-read that remove any preset with "hidden" value of true
   (interactive)
+
+  ;; Since we are changing the configure preset, the last target (if
+  ;; any) might not be valid anymore. Thus, we unset the current
+  ;; target.
+  (setq cmake-integration-current-target nil)
+
   (let ((all-presets (cmake-integration-get-cmake-configure-presets))
         choice ;; this will be the preset "displayName" (if available) of the preset "name"
         )
