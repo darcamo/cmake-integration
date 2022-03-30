@@ -37,7 +37,7 @@
 
 
 ;; TODO: Only show the target names with
-;; cmake-integration-save-and-compile if there is more than one
+;; `cmake-integration-save-and-compile' if there is more than one
 ;; target.
 
 ;; TODO: Change this to a custom variable
@@ -52,8 +52,8 @@
   "Character used to separate target name from config name.
 
 In case of of multi-config generators, target names have the
-special form <target-name><sep><config-name> (e.g. all/Debug with '/' as
-configured separator).
+special form <target-name><sep><config-name> (e.g. 'all/Debug'
+with '/' as configured separator).
 
 Note: The selected separator shall be a character that it is not
 a valid component of a CMake target name (see
@@ -92,7 +92,7 @@ project."
             (file-name-concat project-root-folder cmake-integration-build-dir)
           ;; If we do not have cmake-integration-build-dir set (it is
           ;; nil) throw an error asking the user to select a preset
-          (error "Please call `cmake-integration-cmake-configure-with-preset` first and select a \"configure preset\", or set \"cmake-integration-build-dir\" to be the build folder")
+          (error "Please call `cmake-integration-cmake-configure-with-preset' first and select a \"configure preset\", or set `cmake-integration-build-dir' to be the build folder")
           )
         )
       )
@@ -171,33 +171,46 @@ and getting one of the configure presets in it."
 
 
 (defun cmake-integration-get-cmake-targets-from-codemodel-json-file (&optional json-filename)
-  "Get a list of tartget names from the json file with name JSON-FILENAME.
+  "Return an alist of (target-name . target-info) elements for targets found in JSON-FILENAME.
+
+JSON-FILENAME must be a CMake API codemodel file.
 
 If JSON-FILENAME is not provided, use the value obtained with
-'cmake-integration-get-codemodel-reply-json-filename'."
+'cmake-integration-get-codemodel-reply-json-filename'.
+
+In addition to the targets defined in JSON-FILENAME, the returned
+alist also contains elements for the implicit targets 'all' and
+'clean' plus optional 'install' targets. These special targets
+don't have the 'target-info' data."
 
   (let* ((json-filename (or json-filename
                             ;; If json-filename was not provided, get it from
                             ;; 'cmake-integration-get-codemodel-reply-json-filename'.
                             (cmake-integration-get-codemodel-reply-json-filename)))
          (configurations (alist-get 'configurations (json-read-file json-filename))))
-    ;; The result of the nested mapcars below is a list of list of alists.
+    ;; The result of the nested `mapcar's below is a list of list of alists.
     ;; What we need a list of alists so remove one level and combine the next
     ;; level lists (of alists) of into a single list (of alists).
     (apply #'nconc
      ;; process configurations vector
      (mapcar (lambda (config-data)
                (let ((config-name (and (> (length configurations) 1)
-                                       (alist-get 'name config-data))))
-                 ;; add implicit 'all' target to the list
-                 (cons (list (cmake-integration--mktarget "all" config-name))
-                       ;; process targets vector, return an alist of (target .
-                       ;; target-info) elements
-                       (mapcar (lambda (target-info)
-                                 (let ((target-name (alist-get 'name target-info)))
-                                   (cons (cmake-integration--mktarget target-name config-name)
-                                         target-info)))
-                               (alist-get 'targets config-data)))))
+                                       (alist-get 'name config-data)))
+                     (has-install-rule (cl-some (lambda (dir) (alist-get 'hasInstallRule dir))
+                                                (alist-get 'directories config-data))))
+                 ;; add implicit 'all', 'clean' and optional 'install' targets
+                 ;; to the list
+                 (nconc `((,(cmake-integration--mktarget "all" config-name)))
+                        `((,(cmake-integration--mktarget "clean" config-name)))
+                        (when has-install-rule
+                          `((,(cmake-integration--mktarget "install" config-name))))
+                        ;; process targets vector, return an alist of (target .
+                        ;; target-info) elements
+                        (mapcar (lambda (target-info)
+                                  (let ((target-name (alist-get 'name target-info)))
+                                    (cons (cmake-integration--mktarget target-name config-name)
+                                          target-info)))
+                                (alist-get 'targets config-data)))))
              configurations))))
 
 
@@ -309,8 +322,8 @@ If TARGET-NAME is not provided use the last target (saved in a
                        nil nil 'equal)))
 
     (unless (cdr target-info)
-      (if (equal target-name "all")
-          (error "Target 'all' is not a valid executable target")
+      (if (member target-name '("all" "clean" "install"))
+          (error "Target '%s' is not a valid executable target" target-name)
         (error "Unknown target: '%s'" target-name)))
 
     (let* ((target-json-file (file-name-concat
@@ -330,8 +343,8 @@ If TARGET-NAME is not provided use the last target (saved in a
 (defun check-if-build-folder-exists-and-throws-if-not ()
   "Check that the build folder exists and throws an error if not."
   (unless (file-exists-p (cmake-integration-get-build-folder))
-    (error "The build folder is missing. Please run either cmake-integration-cmake-reconfigure or
-cmake-integration-cmake-configure-with-preset to configure the project.")
+    (error "The build folder is missing. Please run either `cmake-integration-cmake-reconfigure' or
+`cmake-integration-cmake-configure-with-preset' to configure the project.")
     )
   )
 
@@ -364,22 +377,22 @@ completions."
   (check-if-build-folder-exists-and-throws-if-not)
 
   (if-let* ((json-filename (cmake-integration-get-codemodel-reply-json-filename))
-            ;; The list of targets include all targets found in the json file, as
-            ;; well as the "all" target
+            ;; The list of targets includes all targets found in the codemodel
+            ;; file, as well as the 'all', 'clean' and optional 'install' target
             (list-of-targets (cmake-integration-get-cmake-targets-from-codemodel-json-file json-filename))
             (chosen-target (completing-read "Target: " list-of-targets)))
       (cmake-integration-save-and-compile-no-completion chosen-target)
 
     (unless json-filename
-      ;; If json-filename is nil that means we could not find the
+      ;; If `json-filename' is nil that means we could not find the
       ;; CMake reply with the file API, which means the query file is
       ;; missing. All we need to do is to configure using either
-      ;; cmake-integration-cmake-reconfigure or
-      ;; cmake-integration-cmake-configure-with-preset, which created
+      ;; `cmake-integration-cmake-reconfigure' or
+      ;; `cmake-integration-cmake-configure-with-preset', which created
       ;; the query file.
       (display-warning 'cmake-integration "Could not find list of targets due to CMake file API file
-missing. Please run either cmake-integration-cmake-reconfigure or
-cmake-integration-cmake-configure-with-preset."))
+missing. Please run either `cmake-integration-cmake-reconfigure' or
+`cmake-integration-cmake-configure-with-preset'."))
 
     (command-execute 'cmake-integration-save-and-compile-no-completion)
     )
@@ -388,12 +401,10 @@ cmake-integration-cmake-configure-with-preset."))
 
 ;;;###autoload
 (defun cmake-integration-save-and-compile-last-target ( )
-  "Recompile the last target that was compiled."
+  "Recompile the last target that was compiled (or 'all')."
   (interactive)
-  (if cmake-integration-current-target
-      (cmake-integration-save-and-compile-no-completion cmake-integration-current-target)
-    (cmake-integration-save-and-compile-no-completion "all")
-    ))
+  (cmake-integration-save-and-compile-no-completion
+   (or cmake-integration-current-target "all")))
 
 
 ;;;###autoload
