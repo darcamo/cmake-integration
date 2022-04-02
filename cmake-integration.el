@@ -40,8 +40,7 @@
 ;; `cmake-integration-save-and-compile' if there is more than one
 ;; target.
 
-;; TODO: Change this to a custom variable
-(defvar cmake-integration-build-dir "build" "The build folder to use when no presets are used. If this is nil, then using presets is required")
+(defcustom cmake-integration-build-dir "build" "The build folder to use when no presets are used. If this is nil, then using presets is required." :type '(string))
 
 (defvar cmake-integration-current-target nil)
 (defvar cmake-integration-current-target-run-arguments "")
