@@ -297,7 +297,7 @@ the chosen preset."
 
   (if cmake-integration-last-configure-preset
       (cmake-integration--cmake-configure-with-preset cmake-integration-last-configure-preset)
-    (compile (format "cd %s && cmake %s" (cmake-integration-get-build-folder) (cmake-integration-get-project-root-folder)))
+    (compile (format "cd %s && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON %s" (cmake-integration-get-build-folder) (cmake-integration-get-project-root-folder)))
     )
   )
 
