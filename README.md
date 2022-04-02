@@ -47,6 +47,13 @@ By default, cmake-integration assumes the build folder to be "build". If your bu
 
 You might also use CMake configure presets instead. If you project is using CMake presets call the `cmake-integration-cmake-configure-with-preset` function. It will read the presets file to gather the names of all configure presets and ask you which one to use (with completions). It will then use the value of the "binaryDir" field of the chosen preset is the build folder (and ignore the value of the `cmake-integration-build-dir` variable). If the configure preset does not have a "binaryDir" field, but inherits from another preset, if will use the "binaryDir" field of the parent preset.
 
+## Current Limitation when using presets
+
+At the moment if you have a configure preset called "X" you also need
+to have a configure preset called "X". The reason for this is that
+when configuring, the list of preset names is read from the *configure
+presets*. When building, the same name is used as the *build preset*
+name.
 
 # Configuration
 
@@ -64,3 +71,16 @@ All you need is binding the relevant functions to desired keys. The code below i
               )
   )
 ```
+
+# Project Configuration
+
+Emacs standard project infrastructure is used in cmake-integration to
+get the project root folder when finding the correct build folder.
+There is nothing you need to do to configure this. However, the
+`project`built-in package only uses version control to find the
+project root. If you want to use a sub-folder in a repository as the
+project root, or if you are not using version control, you can extend
+the built-in project as described
+[here](https://www.manueluberti.eu/emacs/2020/11/14/extending-project/)
+in order to make Emacs recognize a folder containing an empty file
+with a pre-determined name.
