@@ -47,6 +47,14 @@
 
 (defvar cmake-integration-last-configure-preset nil)
 
+;; TODO: Use defcustom instead of defvar to define cmake-integration-run-working-directory
+;;
+;; Working directory when running a target This can be 'root, to run
+;; from the project root, 'build, to run from the build folder, 'bin,
+;; to run from the folder containing the executable, or a string with
+;; a custom folder (relative to the project root)
+(defvar cmake-integration-run-working-directory 'bin)
+
 (defconst cmake-integration--multi-config-separator "/"
   "Character used to separate target name from config name.
 
@@ -356,7 +364,7 @@ If TARGET-NAME is not provided use the last target (saved in a
   "Check that the build folder exists and throws an error if not."
   (unless (file-exists-p (cmake-integration-get-build-folder))
     (error "The build folder is missing. Please run either `cmake-integration-cmake-reconfigure' or
-`cmake-integration-cmake-configure-with-preset' to configure the project.")
+`cmake-integration-cmake-configure-with-preset' to configure the project")
     )
   )
 
@@ -419,27 +427,65 @@ missing. Please run either `cmake-integration-cmake-reconfigure' or
    (or cmake-integration-current-target "all")))
 
 
+(defun cmake-integration--get-run-command-project-root-cwd (executable-filename)
+  "Get the correct run command for running EXECUTABLE-FILENAME from the project root folder."
+  (format "cd %s && %s %s"
+          (cmake-integration-get-project-root-folder)
+          (file-name-concat (cmake-integration-get-build-folder) executable-filename)
+          cmake-integration-current-target-run-arguments
+          )
+  )
+
+
+(defun cmake-integration--get-run-command-build-folder-cwd (executable-filename)
+  "Get the correct run command for running EXECUTABLE-FILENAME from the build folder."
+  (format "cd %s && %s %s"
+          (cmake-integration-get-build-folder)
+          executable-filename
+          cmake-integration-current-target-run-arguments
+          )
+  )
+
+
+(defun cmake-integration--get-run-command-bin-folder-cwd (executable-filename)
+  "Get the correct run command for running EXECUTABLE-FILENAME from the folder containing the executable file."
+  (format "cd %s && ./%s %s"
+          (file-name-concat (cmake-integration-get-build-folder) (file-name-directory executable-filename))
+          (file-name-nondirectory executable-filename)
+          cmake-integration-current-target-run-arguments
+          )
+  )
+
+
+(defun cmake-integration--get-run-command-custom-cwd (executable-filename project-subfolder)
+  "Get the correct run command for running EXECUTABLE-FILENAME from a PROJECT-SUBFOLDER."
+  (format "cd %s && %s %s"
+          (file-name-concat (cmake-integration-get-project-root-folder) project-subfolder)
+          (file-name-concat (cmake-integration-get-build-folder) executable-filename)
+          cmake-integration-current-target-run-arguments
+          )
+  )
+
+
+(defun cmake-integration--get-run-command (executable-filename)
+  "Get the correct run command for running EXECUTABLE-FILENAME respecting the value of the `cmake-integration-run-working-directory' variable."
+  (pcase cmake-integration-run-working-directory
+    ('root (cmake-integration--get-run-command-project-root-cwd executable-filename))
+    ('build (cmake-integration--get-run-command-build-folder-cwd executable-filename))
+    ('bin (cmake-integration--get-run-command-bin-folder-cwd executable-filename))
+    (_ (cmake-integration--get-run-command-custom-cwd executable-filename cmake-integration-run-working-directory))
+    )
+  )
+
+
 ;;;###autoload
 (defun cmake-integration-run-last-target ()
   "Run the last compiled target."
   (interactive)
   (check-if-build-folder-exists-and-throws-if-not)
 
-  (let (run-command)
-    ;; We have a configure preset
-    (let* ((executable-filename (cmake-integration-get-target-executable-filename))
-           (target-bin-folder (file-name-directory executable-filename))
-           (target-executable-name (file-name-nondirectory executable-filename)))
-
-      (setq run-command (format "cd %s && ./%s %s"
-                                (file-name-concat (cmake-integration-get-build-folder) target-bin-folder )
-                                target-executable-name
-                                cmake-integration-current-target-run-arguments))
-      )
-
-    ;; Run the target
-    (compile run-command)
-    )
+  ;; Run the target
+  (compile (cmake-integration--get-run-command (cmake-integration-get-target-executable-filename)))
   )
 
 
@@ -453,13 +499,13 @@ missing. Please run either `cmake-integration-cmake-reconfigure' or
 
 
 (defun cmake-integration-get-parent-preset-name (preset)
-  "Get the name in the 'inherits' field of the preset PRESET."
+  "Get the name in the `inherits' field of the preset PRESET."
   (alist-get 'inherits preset)
   )
 
 
 (defun cmake-integration-get-parent-preset (preset)
-  "docstring"
+  "Get the parent preset of PRESET."
   (alist-get
    (cmake-integration-get-parent-preset-name preset)
    (cmake-integration-get-cmake-configure-presets)
@@ -468,7 +514,7 @@ missing. Please run either `cmake-integration-cmake-reconfigure' or
 
 
 (defun cmake-integration-get-binaryDir (preset)
-  "Get the binaryDir field of a preset PRESET.
+  "Get the `binaryDir' field of a preset PRESET.
 
 If not available, get the binaryDir or a parent preset."
   (when preset
