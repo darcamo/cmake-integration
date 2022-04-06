@@ -47,13 +47,22 @@
 
 (defvar cmake-integration-last-configure-preset nil)
 
-;; TODO: Use defcustom instead of defvar to define cmake-integration-run-working-directory
-;;
 ;; Working directory when running a target This can be 'root, to run
 ;; from the project root, 'build, to run from the build folder, 'bin,
 ;; to run from the folder containing the executable, or a string with
 ;; a custom folder (relative to the project root)
-(defvar cmake-integration-run-working-directory 'bin)
+(defcustom cmake-integration-run-working-directory 'bin
+  "Working directory when running the executable.
+
+Possible values are the symbols 'bin (to run from the folder
+containing the executable), 'build (to run from the build folder)
+and 'root (to run from the project root), as well as any string.
+In the case of a string, it should match an existing subfolder of
+the project root." :type '(choice symbol string)
+
+:safe 'cmake-integration--run-working-directory-p
+:local t
+)
 
 (defconst cmake-integration--multi-config-separator "/"
   "Character used to separate target name from config name.
@@ -65,6 +74,26 @@ with '/' as configured separator).
 Note: The selected separator shall be a character that it is not
 a valid component of a CMake target name (see
 https://cmake.org/cmake/help/latest/policy/CMP0037.html).")
+
+
+;; BUG: This function seems to work correctly, but when used as the
+;; ":safe" predicate in the defcustom Emacs still asks for confirming
+;; if the variable is safe for the symbol values
+(defun cmake-integration--run-working-directory-p (val)
+  "Symbol VAL is a valid value for the `cmake-integration-run-working-directory' variable."
+
+  (if (stringp val)
+      ;; Return t if VAL is a valid subfolder of the project root
+      (file-exists-p (file-name-concat (cmake-integration-get-project-root-folder) val))
+    ;; Return t if VAL is one of the accepted symbols
+    (pcase val
+      ('bin t)
+      ('build t)
+      ('root t)
+      (_ nil)
+      )
+    )
+  )
 
 
 (defun cmake-integration--mktarget (target-name &optional config-name)
@@ -124,7 +153,6 @@ project."
   )
 
 
-;; TODO: Check the "artifacts" in the target json file to get the executable path
 (defun cmake-integration-get-compile-command (target)
   "Get the command to compile target TARGET."
   (pcase-let ((`(,target-name ,config-name)
