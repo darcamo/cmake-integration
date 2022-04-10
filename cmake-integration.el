@@ -6,6 +6,7 @@
 ;; Package-Requires: ((emacs "28.1") f s json)
 ;; Homepage: homepage
 ;; Keywords: keywords
+;; URL: https://github.com/darcamo/cmake-integration/
 
 
 ;; This file is not part of GNU Emacs
@@ -26,21 +27,26 @@
 
 ;;; Commentary:
 
-;; Provide functions to configure cmake projects, compile and run a
-;; given target. Completions are provided with targets obtained from
-;; cmake.
+;; Provide functions to configure cmake projects, and to compile and
+;; run a given target. Completions are provided with targets obtained
+;; from cmake. It also support cmake presets.
 
 ;;; Code:
 (require 'project)
 (require 'f)
+(require 's)
 (require 'json)
+(require 'cl-extra)
 
 
 ;; TODO: Only show the target names with
 ;; `cmake-integration-save-and-compile' if there is more than one
 ;; target.
 
-(defcustom cmake-integration-build-dir "build" "The build folder to use when no presets are used. If this is nil, then using presets is required." :type '(string))
+(defcustom cmake-integration-build-dir "build"
+  "The build folder to use when no presets are used.
+
+If this is nil, then using presets is required." :type '(string) :group 'cmake-integration)
 
 (defvar cmake-integration-current-target nil)
 (defvar cmake-integration-current-target-run-arguments "")
@@ -59,7 +65,7 @@ containing the executable), 'build (to run from the build folder)
 and 'root (to run from the project root), as well as any string.
 In the case of a string, it should match an existing subfolder of
 the project root." :type '(choice symbol string)
-
+:group 'cmake-integration
 :safe 'cmake-integration--run-working-directory-p
 :local t
 )
@@ -80,7 +86,10 @@ https://cmake.org/cmake/help/latest/policy/CMP0037.html).")
 ;; ":safe" predicate in the defcustom Emacs still asks for confirming
 ;; if the variable is safe for the symbol values
 (defun cmake-integration--run-working-directory-p (val)
-  "Symbol VAL is a valid value for the `cmake-integration-run-working-directory' variable."
+  "Check if VAL is safe as a local variable.
+
+Function to verify is VAL is save as a value for the
+`cmake-integration-run-working-directory' variable"
 
   (if (stringp val)
       ;; Return t if VAL is a valid subfolder of the project root
@@ -206,7 +215,10 @@ and getting one of the configure presets in it."
 
 
 (defun cmake-integration-get-cmake-targets-from-codemodel-json-file (&optional json-filename)
-  "Return an alist of (target-name . target-info) elements for targets found in JSON-FILENAME.
+  "Return the targets found in JSON-FILENAME.
+
+Return an alist of (target-name . target-info) elements for
+targets found in JSON-FILENAME.
 
 JSON-FILENAME must be a CMake API codemodel file.
 
@@ -250,7 +262,10 @@ don't have the 'target-info' data."
 
 
 (defun cmake-integration-get-cmake-configure-presets ()
-  "Get the configure presets in both 'CMakePresets.json' and 'CMakeUserPresets.json' files."
+  "Get the configure presets.
+
+Get the configure presets in both 'CMakePresets.json' and
+'CMakeUserPresets.json' files."
   (let ((cmake-system-presets-filename (file-name-concat (cmake-integration-get-project-root-folder) "CMakePresets.json"))
         (cmake-user-presets-filename (file-name-concat (cmake-integration-get-project-root-folder) "CMakeUserPresets.json"))
         )
@@ -456,7 +471,7 @@ missing. Please run either `cmake-integration-cmake-reconfigure' or
 
 
 (defun cmake-integration--get-run-command-project-root-cwd (executable-filename)
-  "Get the correct run command for running EXECUTABLE-FILENAME from the project root folder."
+  "Get the run command for EXECUTABLE-FILENAME from the project root folder."
   (format "cd %s && %s %s"
           (cmake-integration-get-project-root-folder)
           (file-name-concat (cmake-integration-get-build-folder) executable-filename)
@@ -466,7 +481,7 @@ missing. Please run either `cmake-integration-cmake-reconfigure' or
 
 
 (defun cmake-integration--get-run-command-build-folder-cwd (executable-filename)
-  "Get the correct run command for running EXECUTABLE-FILENAME from the build folder."
+  "Get the run command for EXECUTABLE-FILENAME from the build folder."
   (format "cd %s && %s %s"
           (cmake-integration-get-build-folder)
           executable-filename
@@ -476,7 +491,9 @@ missing. Please run either `cmake-integration-cmake-reconfigure' or
 
 
 (defun cmake-integration--get-run-command-bin-folder-cwd (executable-filename)
-  "Get the correct run command for running EXECUTABLE-FILENAME from the folder containing the executable file."
+  "Get the run command for EXECUTABLE-FILENAME from the binary folder.
+
+The binary folder is the folder containing the executable."
   (format "cd %s && ./%s %s"
           (file-name-concat (cmake-integration-get-build-folder) (file-name-directory executable-filename))
           (file-name-nondirectory executable-filename)
@@ -486,7 +503,7 @@ missing. Please run either `cmake-integration-cmake-reconfigure' or
 
 
 (defun cmake-integration--get-run-command-custom-cwd (executable-filename project-subfolder)
-  "Get the correct run command for running EXECUTABLE-FILENAME from a PROJECT-SUBFOLDER."
+  "Get the correct run command EXECUTABLE-FILENAME from a PROJECT-SUBFOLDER."
   (format "cd %s && %s %s"
           (file-name-concat (cmake-integration-get-project-root-folder) project-subfolder)
           (file-name-concat (cmake-integration-get-build-folder) executable-filename)
@@ -496,7 +513,11 @@ missing. Please run either `cmake-integration-cmake-reconfigure' or
 
 
 (defun cmake-integration--get-run-command (executable-filename)
-  "Get the correct run command for running EXECUTABLE-FILENAME respecting the value of the `cmake-integration-run-working-directory' variable."
+  "Get the correct run command for EXECUTABLE-FILENAME.
+
+Get the correct run command for EXECUTABLE-FILENAME respecting
+the value of the `cmake-integration-run-working-directory'
+variable."
   (pcase cmake-integration-run-working-directory
     ('root (cmake-integration--get-run-command-project-root-cwd executable-filename))
     ('build (cmake-integration--get-run-command-build-folder-cwd executable-filename))
