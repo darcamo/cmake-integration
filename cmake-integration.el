@@ -48,6 +48,9 @@
 
 If this is nil, then using presets is required." :type '(string) :group 'cmake-integration)
 
+;; Column where annotation during completion should start
+(defvar cmake-integration-annotation-column 30)
+
 (defvar cmake-integration-current-target nil)
 (defvar cmake-integration-current-target-run-arguments "")
 
@@ -275,9 +278,6 @@ Get the configure presets in both 'CMakePresets.json' and
     ;; will allow us to use the returned alist as the COLLECTION
     ;; argument of completing-read and to also retrieve information of
     ;; the chosen preset.
-    ;;
-    ;; TODO: Use "displayName" field (if available) as the preset key
-    ;;
     (mapcar (lambda (preset) (cons (alist-get 'name preset) preset))
             ;; We will read both the system and the user preset files to find configure presets there
             (append
@@ -300,6 +300,35 @@ Get the configure presets in both 'CMakePresets.json' and
   )
 
 
+(defun cmake-integration--get-annotation-initial-spaces (annotated-string)
+  "Get a string of spaces that should be added after ANNOTATED-STRING.
+
+The number of spaces is enough such that when added after
+ANNOTATED-STRING the annotation after that starts in the column
+indicated by `cmake-integration-annotation-column'."
+  (make-string
+   (max 1
+        (- cmake-integration-annotation-column (length annotated-string)))
+   ;; 32 is the space character
+   32))
+
+
+(defun cmake-integration--configure-annotation-function (preset)
+  "Annotation function that takes a PRESET and return an annotation for it.
+
+This is used in `cmake-integration-cmake-configure-with-preset'
+when completing a preset name to generate an annotation for that
+preset, which is shown during the completions if you are using
+the marginalia package, or in Emacs standard completion buffer."
+
+  (if (equal preset "No Preset")
+      (concat (cmake-integration--get-annotation-initial-spaces "No Preset") "Don't use any preset. The build folder will be the value of `cmake-integration-build-dir'.")
+    ;; Note that `minibuffer-completion-table' has the list of
+    ;; completions currently in use, from which we know PRESET is one
+    ;; of them
+    (concat (cmake-integration--get-annotation-initial-spaces preset) (alist-get 'displayName (alist-get preset minibuffer-completion-table nil nil 'equal)))))
+
+
 ;;;###autoload
 (defun cmake-integration-cmake-configure-with-preset ()
   "Configure CMake using one of the availeble presets.
@@ -316,14 +345,15 @@ the chosen preset."
   ;; target.
   (setq cmake-integration-current-target nil)
 
-  (let ((all-presets (cmake-integration-get-cmake-configure-presets))
-        choice ;; this will be the preset "displayName" (if available) of the preset "name"
-        )
+  (let ((all-presets
+         ;; Add a "No Preset" option to all-presets to allow a user to
+         ;; remove the preset and use default build folder
+         (append (cmake-integration-get-cmake-configure-presets) '("No Preset")))
+        choice)
 
-    ;; Add a "No Preset" option to all-presets to allow a user to
-    ;; remove the preset and use default build folder
-    (setq all-presets (append all-presets '("No Preset")))
-    (setq choice (completing-read "Build preset: " all-presets nil t))
+    (let ((completion-extra-properties '(:annotation-function cmake-integration--configure-annotation-function )))
+      (setq choice (completing-read "Build preset: " all-presets nil t))
+      )
 
     ;; If "No Preset" was selected, then we are not using any preset
     ;; and thus cmake-integration-last-configure-preset should be nil
@@ -335,9 +365,7 @@ the chosen preset."
     ;; Configure the project -> This will do the right thing in both
     ;; cases when 'cmake-integration-last-configure-preset' is nil and when it
     ;; has a specific preset
-    (cmake-integration-cmake-reconfigure)
-    )
-  )
+    (cmake-integration-cmake-reconfigure)))
 
 
 ;;;###autoload
@@ -443,6 +471,8 @@ completions."
             ;; The list of targets includes all targets found in the codemodel
             ;; file, as well as the 'all', 'clean' and optional 'install' target
             (list-of-targets (cmake-integration-get-cmake-targets-from-codemodel-json-file json-filename))
+            ;; TODO: Annotate each target during completion with the target 'type' (executable, library, meta target)
+            ;;       See how it was done to add annotations to preset names
             (chosen-target (completing-read "Target: " list-of-targets)))
       (cmake-integration-save-and-compile-no-completion chosen-target)
 
