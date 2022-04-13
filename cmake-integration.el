@@ -506,6 +506,7 @@ The binary folder is the folder containing the executable."
 
 (defun cmake-integration--get-run-command-custom-cwd (executable-filename project-subfolder)
   "Get the correct run command EXECUTABLE-FILENAME from a PROJECT-SUBFOLDER."
+  (cl-assert (stringp project-subfolder))
   (format "cd %s && %s %s"
           (file-name-concat (cmake-integration-get-project-root-folder) project-subfolder)
           (file-name-concat (cmake-integration-get-build-folder) executable-filename)
