@@ -65,10 +65,10 @@ containing the executable), 'build (to run from the build folder)
 and 'root (to run from the project root), as well as any string.
 In the case of a string, it should match an existing subfolder of
 the project root." :type '(choice symbol string)
-:group 'cmake-integration
-:safe 'cmake-integration--run-working-directory-p
-:local t
-)
+  :group 'cmake-integration
+  :safe 'cmake-integration--run-working-directory-p
+  :local t
+  )
 
 (defconst cmake-integration--multi-config-separator "/"
   "Character used to separate target name from config name.
@@ -239,26 +239,26 @@ don't have the 'target-info' data."
     ;; What we need a list of alists so remove one level and combine the next
     ;; level lists (of alists) of into a single list (of alists).
     (apply #'nconc
-     ;; process configurations vector
-     (mapcar (lambda (config-data)
-               (let ((config-name (and (> (length configurations) 1)
-                                       (alist-get 'name config-data)))
-                     (has-install-rule (cl-some (lambda (dir) (alist-get 'hasInstallRule dir))
-                                                (alist-get 'directories config-data))))
-                 ;; add implicit 'all', 'clean' and optional 'install' targets
-                 ;; to the list
-                 (nconc `((,(cmake-integration--mktarget "all" config-name)))
-                        `((,(cmake-integration--mktarget "clean" config-name)))
-                        (when has-install-rule
-                          `((,(cmake-integration--mktarget "install" config-name))))
-                        ;; process targets vector, return an alist of (target .
-                        ;; target-info) elements
-                        (mapcar (lambda (target-info)
-                                  (let ((target-name (alist-get 'name target-info)))
-                                    (cons (cmake-integration--mktarget target-name config-name)
-                                          target-info)))
-                                (alist-get 'targets config-data)))))
-             configurations))))
+           ;; process configurations vector
+           (mapcar (lambda (config-data)
+                     (let ((config-name (and (> (length configurations) 1)
+                                             (alist-get 'name config-data)))
+                           (has-install-rule (cl-some (lambda (dir) (alist-get 'hasInstallRule dir))
+                                                      (alist-get 'directories config-data))))
+                       ;; add implicit 'all', 'clean' and optional 'install' targets
+                       ;; to the list
+                       (nconc `((,(cmake-integration--mktarget "all" config-name)))
+                              `((,(cmake-integration--mktarget "clean" config-name)))
+                              (when has-install-rule
+                                `((,(cmake-integration--mktarget "install" config-name))))
+                              ;; process targets vector, return an alist of (target .
+                              ;; target-info) elements
+                              (mapcar (lambda (target-info)
+                                        (let ((target-name (alist-get 'name target-info)))
+                                          (cons (cmake-integration--mktarget target-name config-name)
+                                                target-info)))
+                                      (alist-get 'targets config-data)))))
+                   configurations))))
 
 
 (defun cmake-integration-get-cmake-configure-presets ()
@@ -394,14 +394,14 @@ If TARGET-NAME is not provided use the last target (saved in a
                               (alist-get 'jsonFile target-info)))
            (target-data (json-read-file target-json-file)))
 
-    (unless (equal (alist-get 'type target-data) "EXECUTABLE")
-      (error "Target '%s' is not an executable" target-name))
+      (unless (equal (alist-get 'type target-data) "EXECUTABLE")
+        (error "Target '%s' is not an executable" target-name))
 
-    ;; Note that target-artifacts is a vector, but with a single
-    ;; element in our case
-    (let ((target-artifacts (alist-get 'artifacts target-data)))
-      ;; We assume the vector has just one element
-      (alist-get 'path (elt target-artifacts 0))))))
+      ;; Note that target-artifacts is a vector, but with a single
+      ;; element in our case
+      (let ((target-artifacts (alist-get 'artifacts target-data)))
+        ;; We assume the vector has just one element
+        (alist-get 'path (elt target-artifacts 0))))))
 
 (defun check-if-build-folder-exists-and-throws-if-not ()
   "Check that the build folder exists and throws an error if not."
