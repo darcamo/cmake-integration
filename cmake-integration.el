@@ -117,8 +117,7 @@ Function to verify is VAL is save as a value for the
 
 (defun cmake-integration-get-project-root-folder ()
   "Get the current project root using Emacs built-in project."
-  (project-root (project-current))
-  )
+  (project-root (project-current)))
 
 
 (defun cmake-integration-get-build-folder ()
@@ -140,29 +139,22 @@ project."
             (file-name-concat project-root-folder cmake-integration-build-dir)
           ;; If we do not have cmake-integration-build-dir set (it is
           ;; nil) throw an error asking the user to select a preset
-          (error "Please call `cmake-integration-cmake-configure-with-preset' first and select a \"configure preset\", or set `cmake-integration-build-dir' to be the build folder")
-          )
-        )
-      )
-    ))
+          (error "Please call `cmake-integration-cmake-configure-with-preset' first and select a \"configure preset\", or set `cmake-integration-build-dir' to be the build folder"))))))
 
 
 (defun cmake-integration-get-query-folder ()
   "Get the query folder for our codemodel-v2 file with CMake's file API."
-  (file-name-concat (cmake-integration-get-build-folder) ".cmake/api/v1/query/client-emacs")
-  )
+  (file-name-concat (cmake-integration-get-build-folder) ".cmake/api/v1/query/client-emacs"))
 
 
 (defun cmake-integration-get-reply-folder ()
   "Get the reply folder for our codemodel-v2 file with CMake's file API."
-  (file-name-concat (cmake-integration-get-build-folder) ".cmake/api/v1/reply/")
-  )
+  (file-name-concat (cmake-integration-get-build-folder) ".cmake/api/v1/reply/"))
 
 
 (defun cmake-integration-get-path-of-codemodel-query-file ()
   "Get the full path of the codemodel-query-file."
-  (file-name-concat (cmake-integration-get-query-folder) "codemodel-v2")
-  )
+  (file-name-concat (cmake-integration-get-query-folder) "codemodel-v2"))
 
 
 (defun cmake-integration-get-compile-command (target)
@@ -185,8 +177,7 @@ project."
 
 This file is created by CMake's File API."
 
-  (elt (f-glob "codemodel-v2*json" (cmake-integration-get-reply-folder)) 0)
-  )
+  (elt (f-glob "codemodel-v2*json" (cmake-integration-get-reply-folder)) 0))
 
 
 (defun cmake-integration--get-preset-name (preset)
@@ -194,14 +185,12 @@ This file is created by CMake's File API."
 
 PRESET is an alist obtained from reading the cmake presets file
 and getting one of the configure presets in it."
-  (when preset (alist-get 'name preset))
-  )
+  (when preset (alist-get 'name preset)))
 
 
 (defun cmake-integration-get-last-configure-preset-name ()
   "Get the 'name' field of the last preset used for configure."
-  (cmake-integration--get-preset-name cmake-integration-last-configure-preset)
-  )
+  (cmake-integration--get-preset-name cmake-integration-last-configure-preset))
 
 
 (defun cmake-integration-create-empty-codemodel-file ()
@@ -212,9 +201,7 @@ and getting one of the configure presets in it."
     (unless (file-exists-p (cmake-integration-get-query-folder))
       (shell-command (concat "mkdir -p " (cmake-integration-get-query-folder))))
     ;; Create the codemodel file
-    (shell-command (concat "touch " (cmake-integration-get-path-of-codemodel-query-file)))
-    )
-  )
+    (shell-command (concat "touch " (cmake-integration-get-path-of-codemodel-query-file)))))
 
 
 (defun cmake-integration-get-cmake-targets-from-codemodel-json-file (&optional json-filename)
@@ -287,17 +274,14 @@ Get the configure presets in both 'CMakePresets.json' and
 
              ;; Presets names in CMakeUserPresets.json
              (when (file-exists-p cmake-user-presets-filename)
-               (alist-get 'configurePresets (json-read-file cmake-user-presets-filename)))
-             )))
-  )
+               (alist-get 'configurePresets (json-read-file cmake-user-presets-filename)))))))
 
 
 (defun cmake-integration--cmake-configure-with-preset (preset)
   "Configure CMake using the preset PRESET."
   (compile (format "cd %s && cmake . --preset %s"
                    (cmake-integration-get-project-root-folder)
-                   (cmake-integration--get-preset-name preset)))
-  )
+                   (cmake-integration--get-preset-name preset))))
 
 
 (defun cmake-integration--get-annotation-initial-spaces (annotated-string)
@@ -376,9 +360,7 @@ the chosen preset."
 
   (if cmake-integration-last-configure-preset
       (cmake-integration--cmake-configure-with-preset cmake-integration-last-configure-preset)
-    (compile (format "cd %s && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON %s" (cmake-integration-get-build-folder) (cmake-integration-get-project-root-folder)))
-    )
-  )
+    (compile (format "cd %s && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON %s" (cmake-integration-get-build-folder) (cmake-integration-get-project-root-folder)))))
 
 
 (defun cmake-integration-get-target-executable-filename (&optional target)
@@ -431,15 +413,15 @@ If TARGET-NAME is not provided use the last target (saved in a
         ;; We assume the vector has just one element
         (alist-get 'path (elt target-artifacts 0))))))
 
+
 (defun check-if-build-folder-exists-and-throws-if-not ()
   "Check that the build folder exists and throws an error if not."
   (unless (file-exists-p (cmake-integration-get-build-folder))
     (error "The build folder is missing. Please run either `cmake-integration-cmake-reconfigure' or
-`cmake-integration-cmake-configure-with-preset' to configure the project")
-    )
-  )
+`cmake-integration-cmake-configure-with-preset' to configure the project")))
 
-    ;;;###autoload
+
+;;;###autoload
 (defun cmake-integration-save-and-compile-no-completion (target)
   "Save the buffer and compile TARGET."
   (interactive "sTarget: ")
@@ -449,9 +431,7 @@ If TARGET-NAME is not provided use the last target (saved in a
 
   (setq cmake-integration-current-target target)
   (let ((compile-command (cmake-integration-get-compile-command target)))
-    (compile compile-command)
-    )
-  )
+    (compile compile-command)))
 
 
 ;;;###autoload
@@ -487,13 +467,11 @@ completions."
 missing. Please run either `cmake-integration-cmake-reconfigure' or
 `cmake-integration-cmake-configure-with-preset'."))
 
-    (command-execute 'cmake-integration-save-and-compile-no-completion)
-    )
-  )
+    (command-execute 'cmake-integration-save-and-compile-no-completion)))
 
 
 ;;;###autoload
-(defun cmake-integration-save-and-compile-last-target ( )
+(defun cmake-integration-save-and-compile-last-target ()
   "Recompile the last target that was compiled (or 'all')."
   (interactive)
   (cmake-integration-save-and-compile-no-completion
@@ -505,9 +483,7 @@ missing. Please run either `cmake-integration-cmake-reconfigure' or
   (format "cd %s && %s %s"
           (cmake-integration-get-project-root-folder)
           (file-name-concat (cmake-integration-get-build-folder) executable-filename)
-          cmake-integration-current-target-run-arguments
-          )
-  )
+          cmake-integration-current-target-run-arguments))
 
 
 (defun cmake-integration--get-run-command-build-folder-cwd (executable-filename)
@@ -515,9 +491,7 @@ missing. Please run either `cmake-integration-cmake-reconfigure' or
   (format "cd %s && %s %s"
           (cmake-integration-get-build-folder)
           executable-filename
-          cmake-integration-current-target-run-arguments
-          )
-  )
+          cmake-integration-current-target-run-arguments))
 
 
 (defun cmake-integration--get-run-command-bin-folder-cwd (executable-filename)
@@ -527,9 +501,7 @@ The binary folder is the folder containing the executable."
   (format "cd %s && ./%s %s"
           (file-name-concat (cmake-integration-get-build-folder) (file-name-directory executable-filename))
           (file-name-nondirectory executable-filename)
-          cmake-integration-current-target-run-arguments
-          )
-  )
+          cmake-integration-current-target-run-arguments))
 
 
 (defun cmake-integration--get-run-command-custom-cwd (executable-filename project-subfolder)
@@ -537,9 +509,7 @@ The binary folder is the folder containing the executable."
   (format "cd %s && %s %s"
           (file-name-concat (cmake-integration-get-project-root-folder) project-subfolder)
           (file-name-concat (cmake-integration-get-build-folder) executable-filename)
-          cmake-integration-current-target-run-arguments
-          )
-  )
+          cmake-integration-current-target-run-arguments))
 
 
 (defun cmake-integration--get-run-command (executable-filename)
@@ -552,9 +522,7 @@ variable."
     ('root (cmake-integration--get-run-command-project-root-cwd executable-filename))
     ('build (cmake-integration--get-run-command-build-folder-cwd executable-filename))
     ('bin (cmake-integration--get-run-command-bin-folder-cwd executable-filename))
-    (_ (cmake-integration--get-run-command-custom-cwd executable-filename cmake-integration-run-working-directory))
-    )
-  )
+    (_ (cmake-integration--get-run-command-custom-cwd executable-filename cmake-integration-run-working-directory))))
 
 
 ;;;###autoload
@@ -564,8 +532,7 @@ variable."
   (check-if-build-folder-exists-and-throws-if-not)
 
   ;; Run the target
-  (compile (cmake-integration--get-run-command (cmake-integration-get-target-executable-filename)))
-  )
+  (compile (cmake-integration--get-run-command (cmake-integration-get-target-executable-filename))))
 
 
 ;;;###autoload
@@ -573,14 +540,12 @@ variable."
   "Run the last compiled target passing RUN-ARGUMENTS as arguments."
   (interactive "sArguments: ")
   (setq cmake-integration-current-target-run-arguments run-arguments)
-  (cmake-integration-run-last-target)
-  )
+  (cmake-integration-run-last-target))
 
 
 (defun cmake-integration-get-parent-preset-name (preset)
   "Get the name in the `inherits' field of the preset PRESET."
-  (alist-get 'inherits preset)
-  )
+  (alist-get 'inherits preset))
 
 
 (defun cmake-integration-get-parent-preset (preset)
@@ -588,8 +553,7 @@ variable."
   (alist-get
    (cmake-integration-get-parent-preset-name preset)
    (cmake-integration-get-cmake-configure-presets)
-   nil nil 'equal)
-  )
+   nil nil 'equal))
 
 
 (defun cmake-integration-get-binaryDir (preset)
@@ -602,9 +566,8 @@ If not available, get the binaryDir or a parent preset."
       (unless binary-dir
         (setq binary-dir (cmake-integration-get-binaryDir (cmake-integration-get-parent-preset preset)))
         )
-      binary-dir
-      ))
-  )
+      binary-dir)))
+
 
 (provide 'cmake-integration)
 
