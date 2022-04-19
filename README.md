@@ -21,7 +21,7 @@ At the moment the package is available in [GitHub](https://github.com/darcamo/cm
 
 Just bind `cmake-integration-save-and-compile` to a key to get
 completions for a target name to compile. Once this function is
-called, it will save the chosen target. Call
+called, it will save and the chosen target. Call
 `cmake-integration-save-and-compile-last-target` to recompile the last
 target.
 
@@ -84,3 +84,34 @@ the built-in project as described
 [here](https://www.manueluberti.eu/emacs/2020/11/14/extending-project/)
 in order to make Emacs recognize a folder containing an empty file
 with a pre-determined name.
+
+# Screenshots
+
+**Disclaimer**: using
+[doom-material-dark](https://github.com/doomemacs/themes) theme, as
+well as the [vertico](https://github.com/minad/vertico) and
+[marginalia](https://github.com/minad/marginalia) packages for
+completion.
+
+
+When you run `cmake-integration-cmake-configure-with-preset` you get
+completions to choose the desired configure preset, also including a
+"No Preset" option. The preset `displayName`, if any, is shown as an
+annotation. As an example, if you have a "default" and a
+"ninjamulticonfig" presets, you can get something similar to the image
+below during completion.
+
+![Selecting a configure preset](images/selecting-configuration.png)
+
+Likewise, when you call `cmake-integration-save-and-compile` you get
+completions when choosing a target name, which can give you something
+like
+
+![Selecting a target name](images/selecting-a-target.png)
+
+or like (when using Ninja Multi-Config generator).
+
+![Selecting a target name](images/selecting-a-target-multi-config.png)
+
+Note that targets "all" and "clean" are always included, and the
+target type (executable or library) is indicated as an annotation.
