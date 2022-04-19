@@ -39,10 +39,6 @@
 (require 'cl-extra)
 
 
-;; TODO: Only show the target names with
-;; `cmake-integration-save-and-compile' if there is more than one
-;; target.
-
 (defcustom cmake-integration-build-dir "build"
   "The build folder to use when no presets are used.
 
@@ -231,11 +227,14 @@ don't have the 'target-info' data."
     (apply #'nconc
            ;; process configurations vector
            (mapcar (lambda (config-data)
+                     ;; config-name is non-nil only when using ninja
+                     ;; multi-config generator, where we have more
+                     ;; than one configuration
                      (let ((config-name (and (> (length configurations) 1)
                                              (alist-get 'name config-data)))
                            (has-install-rule (cl-some (lambda (dir) (alist-get 'hasInstallRule dir))
                                                       (alist-get 'directories config-data))))
-                       ;; add implicit 'all', 'clean' and optional 'install' targets
+                       ;; Add implicit 'all', 'clean' and optional 'install' targets
                        ;; to the list
                        (nconc `((,(cmake-integration--mktarget "all" config-name)))
                               `((,(cmake-integration--mktarget "clean" config-name)))
@@ -249,6 +248,33 @@ don't have the 'target-info' data."
                                                 target-info)))
                                       (alist-get 'targets config-data)))))
                    configurations))))
+
+
+(defun cmake-integration-get-cmake-targets-from-codemodel-json-file-2 (&optional json-filename)
+  "Return the targets found in JSON-FILENAME.
+
+This function is the same as
+cmake-integration-get-cmake-targets-from-codemodel-json-file,
+with the exception that it adds the type of each target to a
+`type' field in the target. The main use for this information is
+during completion of target names, where this type information is
+shown as an annotation."
+  ;; Start with the list of targets returned by cmake-integration-get-cmake-targets-from-codemodel-json-file, then loop over each target to add the type information, skipping the "all", "clean" and "install" targets.
+  (let ((list-of-targets (cmake-integration-get-cmake-targets-from-codemodel-json-file json-filename)))
+    (dolist (target list-of-targets)
+      (let ((target-name (car (split-string (car target) cmake-integration--multi-config-separator)))
+            target-info)
+        (unless (or (equal target-name "all") (equal target-name "clean") (equal target-name "install"))
+          (let* ((json-file (alist-get 'jsonFile (cdr target)))
+                 (json-full-filename (file-name-concat (cmake-integration-get-reply-folder) json-file))
+                 (target-json-data (json-read-file json-full-filename))
+                 )
+
+            ;; Set the value from the json data to `type' field of the target-info
+            (setf (alist-get 'type (cdr target)) (alist-get 'type target-json-data))
+            ))))
+    list-of-targets
+    ))
 
 
 (defun cmake-integration-get-cmake-configure-presets ()
@@ -434,6 +460,37 @@ If TARGET-NAME is not provided use the last target (saved in a
     (compile compile-command)))
 
 
+(defun cmake-integration--get-target-type-from-name (target-name all-targets)
+  "Get the type of the target with name TARGET-NAME from ALL-TARGETS.
+ALL-TARGETS is an alist like the one returned by
+`cmake-integration-get-cmake-targets-from-codemodel-json-file'."
+  (let ((target (alist-get target-name all-targets nil nil 'equal)))
+    ;; (cmake-integration--get-target-type target)
+    (alist-get 'type target)
+    ))
+
+
+(defun cmake-integration--target-annotation-function (target-name)
+  "Annotation function that takes a TARGET-NAME and return an annotation for it.
+
+This is used in `cmake-integration--get-target-using-completions'
+when completing a target name to generate an annotation for that
+target, which is shown during the completions if you are using
+the marginalia package, or in Emacs standard completion buffer."
+  (pcase (car (split-string target-name cmake-integration--multi-config-separator))
+    ("clean" (concat (cmake-integration--get-annotation-initial-spaces target-name) "Clean all compiled targets"))
+    ("all" (concat (cmake-integration--get-annotation-initial-spaces target-name) "Compile all targets"))
+    (_ (concat (cmake-integration--get-annotation-initial-spaces target-name) (cmake-integration--get-target-type-from-name target-name minibuffer-completion-table)))
+    ))
+
+
+
+(defun cmake-integration--get-target-using-completions (list-of-targets)
+  "Ask the user to choose one of the targets in LIST-OF-TARGETS using completions."
+  (let ((completion-extra-properties '(:annotation-function cmake-integration--target-annotation-function)))
+    (completing-read "Target: " list-of-targets nil t)))
+
+
 ;;;###autoload
 (defun cmake-integration-save-and-compile ()
   "Ask for a target name and compile it.
@@ -450,10 +507,8 @@ completions."
   (if-let* ((json-filename (cmake-integration-get-codemodel-reply-json-filename))
             ;; The list of targets includes all targets found in the codemodel
             ;; file, as well as the 'all', 'clean' and optional 'install' target
-            (list-of-targets (cmake-integration-get-cmake-targets-from-codemodel-json-file json-filename))
-            ;; TODO: Annotate each target during completion with the target 'type' (executable, library, meta target)
-            ;;       See how it was done to add annotations to preset names
-            (chosen-target (completing-read "Target: " list-of-targets)))
+            (list-of-targets (cmake-integration-get-cmake-targets-from-codemodel-json-file-2 json-filename))
+            (chosen-target (cmake-integration--get-target-using-completions list-of-targets)))
       (cmake-integration-save-and-compile-no-completion chosen-target)
 
     (unless json-filename
