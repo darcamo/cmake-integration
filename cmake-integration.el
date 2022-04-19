@@ -49,6 +49,14 @@ If this is nil, then using presets is required." :type '(string) :group 'cmake-i
   "Column where annotations should start during completion." :type '(integer) :group 'cmake-integration
   )
 
+(defcustom cmake-integration-include-subproject-targets-during-completion t
+  "If t, include subproject targets when presenting target names for completion.
+
+When t (default) all targets are included during completion of
+target names. If nil, then only targets from the main cmake
+project are included (targets with projectIndex equal to zero)."
+  :type '(boolean) :group 'cmake-integration)
+
 (defvar cmake-integration-current-target nil)
 (defvar cmake-integration-current-target-run-arguments "")
 
@@ -530,9 +538,12 @@ completions."
   (if-let* ((json-filename (cmake-integration-get-codemodel-reply-json-filename))
             ;; The list of targets includes all targets found in the codemodel
             ;; file, as well as the 'all', 'clean' and optional 'install' target
-            (list-of-targets (cmake-integration-get-cmake-targets-from-codemodel-json-file-2
-                              json-filename
-                              'cmake-integration--target-is-in-projectIndex-0))
+            (list-of-targets (if cmake-integration-include-subproject-targets-during-completion
+                                 (cmake-integration-get-cmake-targets-from-codemodel-json-file-2
+                                  json-filename)
+                               (cmake-integration-get-cmake-targets-from-codemodel-json-file-2
+                                json-filename
+                                'cmake-integration--target-is-in-projectIndex-0)))
             (chosen-target (cmake-integration--get-target-using-completions list-of-targets)))
       (cmake-integration-save-and-compile-no-completion chosen-target)
 
