@@ -45,7 +45,9 @@
 If this is nil, then using presets is required." :type '(string) :group 'cmake-integration)
 
 ;; Column where annotation during completion should start
-(defvar cmake-integration-annotation-column 30)
+(defcustom cmake-integration-annotation-column 30
+  "Column where annotations should start during completion." :type '(integer) :group 'cmake-integration
+  )
 
 (defvar cmake-integration-current-target nil)
 (defvar cmake-integration-current-target-run-arguments "")
