@@ -202,8 +202,23 @@ and getting one of the configure presets in it."
     (shell-command (concat "touch " (cmake-integration-get-path-of-codemodel-query-file)))))
 
 
-(defun cmake-integration-get-cmake-targets-from-codemodel-json-file (&optional json-filename)
-  "Return the targets found in JSON-FILENAME.
+(defun cmake-integration--target-is-in-projectIndex-0 (target)
+  "Return 't' if the projectIndex field of TARGET is 0."
+  (eq (alist-get 'projectIndex target) 0)
+  )
+
+
+;; TODO: Add an optional predicate that can be called for each target
+;; to determine if it should be included in the completion options.
+;; TODO: write some common predicate functions for this
+;; Some useful predicates:
+;; - type is executable target
+;; - target name starts with some string
+;; - target type is not utility or library
+;; - target build folder includes some string (can be used to find targets which are submodules)
+;; - target's projectIndex is 0 (its not a submodule)
+(defun cmake-integration-get-cmake-targets-from-codemodel-json-file (&optional json-filename predicate)
+  "Return the targets found in JSON-FILENAME that respect PREDICATE.
 
 Return an alist of (target-name . target-info) elements for
 targets found in JSON-FILENAME.
@@ -248,12 +263,19 @@ don't have the 'target-info' data."
                                         (let ((target-name (alist-get 'name target-info)))
                                           (cons (cmake-integration--mktarget target-name config-name)
                                                 target-info)))
-                                      (alist-get 'targets config-data)))))
+                                      ;; Sequence of targets from the json file. If predicate was
+                                      ;; provided, get only the targets that match predicate.
+                                      ;; Otherwise, get all targets.
+                                      (if predicate
+                                          (seq-filter predicate (alist-get 'targets config-data))
+                                        (alist-get 'targets config-data)
+                                        )))))
+                   ;; Sequence mapped in the mapcar
                    configurations))))
 
 
-(defun cmake-integration-get-cmake-targets-from-codemodel-json-file-2 (&optional json-filename)
-  "Return the targets found in JSON-FILENAME.
+(defun cmake-integration-get-cmake-targets-from-codemodel-json-file-2 (&optional json-filename predicate)
+  "Return the targets found in JSON-FILENAME that respect PREDICATE.
 
 This function is the same as
 cmake-integration-get-cmake-targets-from-codemodel-json-file,
@@ -262,17 +284,16 @@ with the exception that it adds the type of each target to a
 during completion of target names, where this type information is
 shown as an annotation."
   ;; Start with the list of targets returned by cmake-integration-get-cmake-targets-from-codemodel-json-file, then loop over each target to add the type information, skipping the "all", "clean" and "install" targets.
-  (let ((list-of-targets (cmake-integration-get-cmake-targets-from-codemodel-json-file json-filename)))
+  (let ((list-of-targets (cmake-integration-get-cmake-targets-from-codemodel-json-file json-filename predicate)))
     (dolist (target list-of-targets)
-      (let ((target-name (car (split-string (car target) cmake-integration--multi-config-separator)))
-            target-info)
+      (let ((target-name (car (split-string (car target) cmake-integration--multi-config-separator))))
         (unless (or (equal target-name "all") (equal target-name "clean") (equal target-name "install"))
           (let* ((json-file (alist-get 'jsonFile (cdr target)))
                  (json-full-filename (file-name-concat (cmake-integration-get-reply-folder) json-file))
                  (target-json-data (json-read-file json-full-filename))
                  )
 
-            ;; Set the value from the json data to `type' field of the target-info
+            ;; Set the value from the json data to `type' field
             (setf (alist-get 'type (cdr target)) (alist-get 'type target-json-data))
             ))))
     list-of-targets
@@ -509,7 +530,9 @@ completions."
   (if-let* ((json-filename (cmake-integration-get-codemodel-reply-json-filename))
             ;; The list of targets includes all targets found in the codemodel
             ;; file, as well as the 'all', 'clean' and optional 'install' target
-            (list-of-targets (cmake-integration-get-cmake-targets-from-codemodel-json-file-2 json-filename))
+            (list-of-targets (cmake-integration-get-cmake-targets-from-codemodel-json-file-2
+                              json-filename
+                              'cmake-integration--target-is-in-projectIndex-0))
             (chosen-target (cmake-integration--get-target-using-completions list-of-targets)))
       (cmake-integration-save-and-compile-no-completion chosen-target)
 
