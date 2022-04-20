@@ -85,6 +85,16 @@ the built-in project as described
 in order to make Emacs recognize a folder containing an empty file
 with a pre-determined name.
 
+# Calling gdb with a target
+
+Integration with debugging is currently limited to calling gdb with
+the full path of the last target as well as any command line arguments
+set for the last target. Just call the
+`cmake-integration-debug-last-target` function. This means that the
+working directory is always the directory where the executable file is
+and the `cmake-integration-run-working-directory` variable is ignored
+(has the same effect of being set to `bin`.
+
 # Screenshots
 
 **Disclaimer**: using

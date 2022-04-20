@@ -627,6 +627,20 @@ variable."
   (compile (cmake-integration--get-run-command (cmake-integration-get-target-executable-filename))))
 
 
+;; TODO: Use the "--cd=DIR" option with gdb to change the working
+;; directory according with the value of
+;; cmake-integration-run-working-directory. Also, add tests for it.
+;;
+;;;###autoload
+(defun cmake-integration-debug-last-target ()
+  "Run the last compiled target."
+  (interactive)
+  (check-if-build-folder-exists-and-throws-if-not)
+
+  ;; Run the target
+  (gdb (format "gdb -i=mi --args %s %s" (file-name-concat (cmake-integration-get-build-folder) (cmake-integration-get-target-executable-filename)) cmake-integration-current-target-run-arguments )))
+
+
 ;;;###autoload
 (defun cmake-integration-run-last-target-with-arguments (run-arguments)
   "Run the last compiled target passing RUN-ARGUMENTS as arguments."
