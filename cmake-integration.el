@@ -76,8 +76,7 @@ In the case of a string, it should match an existing subfolder of
 the project root." :type '(choice symbol string)
   :group 'cmake-integration
   :safe 'cmake-integration--run-working-directory-p
-  :local t
-  )
+  :local t)
 
 (defconst cmake-integration--multi-config-separator "/"
   "Character used to separate target name from config name.
@@ -89,6 +88,8 @@ with '/' as configured separator).
 Note: The selected separator shall be a character that it is not
 a valid component of a CMake target name (see
 https://cmake.org/cmake/help/latest/policy/CMP0037.html).")
+
+(defcustom cmake-integration-conan-arguments "--build missing" "Extra arguments to pass to conan." :type '(string) :group 'cmake-integration)
 
 
 ;; BUG: This function seems to work correctly, but when used as the
@@ -334,11 +335,11 @@ Get the configure presets in both 'CMakePresets.json' and
                (alist-get 'configurePresets (json-read-file cmake-user-presets-filename)))))))
 
 
-(defun cmake-integration--cmake-configure-with-preset (preset)
-  "Configure CMake using the preset PRESET."
-  (compile (format "cd %s && cmake . --preset %s"
-                   (cmake-integration-get-project-root-folder)
-                   (cmake-integration--get-preset-name preset))))
+(defun cmake-integration--get-cmake-configure-with-preset-command (preset)
+  "Get the command to configure with CMake using the preset PRESET."
+  (format "cd %s && cmake . --preset %s"
+                                 (cmake-integration-get-project-root-folder)
+                                 (cmake-integration--get-preset-name preset)))
 
 
 (defun cmake-integration--get-annotation-initial-spaces (annotated-string)
@@ -411,13 +412,25 @@ the chosen preset."
 
 ;;;###autoload
 (defun cmake-integration-cmake-reconfigure ()
-  "Call cmake again to re-configure the project."
+  "Call cmake again to re-configure the project.
+
+Note: If no preset is used then
+`-DCMAKE_EXPORT_COMPILE_COMMANDS=ON' is passed to cmake."
   (interactive)
+
   (cmake-integration-create-empty-codemodel-file)
 
-  (if cmake-integration-last-configure-preset
-      (cmake-integration--cmake-configure-with-preset cmake-integration-last-configure-preset)
-    (compile (format "cd %s && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON %s" (cmake-integration-get-build-folder) (cmake-integration-get-project-root-folder)))))
+  (let ((cmake-command (if cmake-integration-last-configure-preset
+                           (cmake-integration--get-cmake-configure-with-preset-command
+                            cmake-integration-last-configure-preset)
+                         (format "cd %s && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON %s"
+                                 (cmake-integration-get-build-folder)
+                                 (cmake-integration-get-project-root-folder))))
+        (conan-command (if current-prefix-arg
+                           (format "%s && " (cmake-integration-get-conan-run-command))
+                         "")))
+    ;; Call conan (if a prefix argument was passed) and then cmake to configure
+    (compile (format "%s%s" conan-command cmake-command))))
 
 
 (defun cmake-integration-get-target-executable-filename (&optional target)
@@ -675,6 +688,26 @@ If not available, get the binaryDir or a parent preset."
       binary-dir)))
 
 
+;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+;; xxxxxxxxxxxxxxx Functions for conan integration xxxxxxxxxxxxxxxxxxx
+;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+(defun cmake-integration-get-conan-run-command ()
+  "Get the command to run `conan install' for the current build folder."
+  ;; TODO: Add a custom variable that maps cmake presets (including no
+  ;; preset) to conan profiles
+  (format "cd %s && conan install %s %s"
+          (cmake-integration-get-build-folder)
+          (cmake-integration-get-project-root-folder)
+          cmake-integration-conan-arguments))
+
+;;;###autoload
+(defun cmake-integration-run-conan ()
+  "Run conan install in the current build folder."
+  (interactive)
+  (compile (cmake-integration-get-conan-run-command)))
+
+
+;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 (provide 'cmake-integration)
 
 ;;; cmake-integration.el ends here

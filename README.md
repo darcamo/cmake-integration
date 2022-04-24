@@ -125,3 +125,15 @@ or like (when using Ninja Multi-Config generator).
 
 Note that targets "all" and "clean" are always included, and the
 target type (executable or library) is indicated as an annotation.
+
+
+# Integration with the conan package manager
+
+When calling either `cmake-integration-cmake-configure-with-preset` or
+`cmake-integration-cmake-reconfigure`, if a prefix argument is passed,
+then the `conan install` command will be called from the build folder
+before calling cmake to configure the project.
+
+Alternatively, the `cmake-integration-run-conan` command can be
+called at any time to run just conan. In that case it runs from the
+last used build folder.
