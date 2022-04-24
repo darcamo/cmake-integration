@@ -137,3 +137,17 @@ before calling cmake to configure the project.
 Alternatively, the `cmake-integration-run-conan` command can be
 called at any time to run just conan. In that case it runs from the
 last used build folder.
+
+## Passing parameters to conan
+
+To pass parameters to conan set the
+`cmake-integration-conan-arguments` variable. It's default value is
+`--build missing`. However, avoid setting a conan profile using
+`cmake-integration-conan-arguments` and use the
+`cmake-integration-conan-profile` instead
+
+## Setting a conan profile
+
+The `cmake-integration-conan-profile` variable can be set to a string
+with a profile name to pass to conan. Alternatively, it can be set to
+an alist mapping cmake profile names with conan profile names.

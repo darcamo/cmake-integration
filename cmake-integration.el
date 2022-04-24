@@ -39,15 +39,16 @@
 (require 'cl-extra)
 
 
+(defgroup cmake-integration nil "Easily call cmake configure and run compiled targets." :group 'tools :prefix "cmake-integration-")
+
+
 (defcustom cmake-integration-build-dir "build"
   "The build folder to use when no presets are used.
 
 If this is nil, then using presets is required." :type '(string) :group 'cmake-integration)
 
-;; Column where annotation during completion should start
 (defcustom cmake-integration-annotation-column 30
-  "Column where annotations should start during completion." :type '(integer) :group 'cmake-integration
-  )
+  "Column where annotations should start during completion." :type '(integer) :group 'cmake-integration)
 
 (defcustom cmake-integration-include-subproject-targets-during-completion t
   "If t, include subproject targets when presenting target names for completion.
@@ -57,17 +58,8 @@ target names. If nil, then only targets from the main cmake
 project are included (targets with projectIndex equal to zero)."
   :type '(boolean) :group 'cmake-integration)
 
-(defvar cmake-integration-current-target nil)
-(defvar cmake-integration-current-target-run-arguments "")
-
-(defvar cmake-integration-last-configure-preset nil)
-
-;; Working directory when running a target This can be 'root, to run
-;; from the project root, 'build, to run from the build folder, 'bin,
-;; to run from the folder containing the executable, or a string with
-;; a custom folder (relative to the project root)
 (defcustom cmake-integration-run-working-directory 'bin
-  "Working directory when running the executable.
+  "Working directory when running a target executable.
 
 Possible values are the symbols 'bin (to run from the folder
 containing the executable), 'build (to run from the build folder)
@@ -77,6 +69,15 @@ the project root." :type '(choice symbol string)
   :group 'cmake-integration
   :safe 'cmake-integration--run-working-directory-p
   :local t)
+
+(defcustom cmake-integration-conan-arguments "--build missing" "Extra arguments to pass to conan." :type '(string) :group 'cmake-integration)
+
+(defcustom cmake-integration-conan-profile nil "Conan profile to use, or an alist mapping cmake profiles to conan profiles." :type '(choice (const :tag "Don't use any Conan profile" nil) (string :tag "Use a single Conan profile") (alist :tag "Map CMake profile to Conan profile" :key-type (string :tag "Cmake profile")
+                                                                                                                                                          :value-type (string :tag "Conan profile"))) :group 'cmake-integration)
+
+(defvar cmake-integration-current-target nil)
+(defvar cmake-integration-current-target-run-arguments "")
+(defvar cmake-integration-last-configure-preset nil)
 
 (defconst cmake-integration--multi-config-separator "/"
   "Character used to separate target name from config name.
@@ -88,8 +89,6 @@ with '/' as configured separator).
 Note: The selected separator shall be a character that it is not
 a valid component of a CMake target name (see
 https://cmake.org/cmake/help/latest/policy/CMP0037.html).")
-
-(defcustom cmake-integration-conan-arguments "--build missing" "Extra arguments to pass to conan." :type '(string) :group 'cmake-integration)
 
 
 ;; BUG: This function seems to work correctly, but when used as the
@@ -691,14 +690,47 @@ If not available, get the binaryDir or a parent preset."
 ;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ;; xxxxxxxxxxxxxxx Functions for conan integration xxxxxxxxxxxxxxxxxxx
 ;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-(defun cmake-integration-get-conan-run-command ()
-  "Get the command to run `conan install' for the current build folder."
-  ;; TODO: Add a custom variable that maps cmake presets (including no
-  ;; preset) to conan profiles
-  (format "cd %s && conan install %s %s"
+
+;; TODO: Add a custom variable that maps cmake presets (including no
+;; preset) to conan profiles
+(defun cmake-integration--get-conan-run-command (&optional profile)
+  "Get the command to run `conan install' using PROFILE.
+
+The command is run from the build folder of the current cmake
+configuration."
+  (if profile
+      (format "%s --profile %s" (cmake-integration--get-conan-run-command) profile)
+    (format "cd %s && conan install %s %s"
           (cmake-integration-get-build-folder)
           (cmake-integration-get-project-root-folder)
-          cmake-integration-conan-arguments))
+          cmake-integration-conan-arguments)))
+
+
+(defun cmake-integration-get-conan-run-command ()
+  "Get the command to run `conan install'.
+
+The command is run from the build folder of the current cmake
+configuration and the profile passed to conan is taken from the
+cmake-integration-conan-profile variable."
+  (if cmake-integration-conan-profile
+      ;; If cmake-integration-conan-profile is set, it can be either a string with a single profile, or an alist mapping cmake profile names to conan profile names
+      (if (stringp cmake-integration-conan-profile)
+          (cmake-integration--get-conan-run-command cmake-integration-conan-profile)
+        ;; TODO: implement the case where
+        ;; cmake-integration-conan-profile is an alist mapping cmake
+        ;; profile names to conan profile names
+
+        ;; Map cmake profile name to conan profile name
+        (let* ((cmake-profile-name (alist-get 'name cmake-integration-last-configure-preset))
+               (conan-profile-name (alist-get cmake-profile-name cmake-integration-conan-profile nil nil 'equal)))
+          ;; Note that if we have no conan profile name in the alist
+          ;; for the current cmake profile nane, then
+          ;; `conan-profile-name' is nil and no profile will be used
+          (cmake-integration--get-conan-run-command conan-profile-name)))
+
+    ;; If cmake-integration-conan-profile is not set we get the conan command without using a profile
+    (cmake-integration--get-conan-run-command nil)))
+
 
 ;;;###autoload
 (defun cmake-integration-run-conan ()
