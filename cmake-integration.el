@@ -210,7 +210,7 @@ and getting one of the configure presets in it."
     (shell-command (concat "touch " (cmake-integration-get-path-of-codemodel-query-file)))))
 
 
-(defun cmake-integration--target-is-in-projectIndex-0 (target)
+(defun cmake-integration--target-is-in-projectIndex0-p (target)
   "Return 't' if the projectIndex field of TARGET is 0."
   (eq (alist-get 'projectIndex target) 0)
   )
@@ -555,7 +555,7 @@ completions."
                                   json-filename)
                                (cmake-integration-get-cmake-targets-from-codemodel-json-file-2
                                 json-filename
-                                'cmake-integration--target-is-in-projectIndex-0)))
+                                'cmake-integration--target-is-in-projectIndex0-p)))
             (chosen-target (cmake-integration--get-target-using-completions list-of-targets)))
       (cmake-integration-save-and-compile-no-completion chosen-target)
 
