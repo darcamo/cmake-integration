@@ -58,6 +58,10 @@ target names. If nil, then only targets from the main cmake
 project are included (targets with projectIndex equal to zero)."
   :type '(boolean) :group 'cmake-integration)
 
+(defcustom cmake-integration-hide-utility-targets-during-completion nil
+  "If t, then utility targets are not included during completion."
+  :type '(boolean) :group 'cmake-integration)
+
 (defcustom cmake-integration-run-working-directory 'bin
   "Working directory when running a target executable.
 
@@ -70,9 +74,12 @@ the project root." :type '(choice symbol string)
   :safe 'cmake-integration--run-working-directory-p
   :local t)
 
+
+;; TODO: Detect if conan is used with the "CMakeToolchain" generator
+;; and pass the "--toolchain" option to CMake if necessary
 (defcustom cmake-integration-conan-arguments "--build missing" "Extra arguments to pass to conan." :type '(string) :group 'cmake-integration)
 
-(defcustom cmake-integration-conan-profile nil "Conan profile to use, or an alist mapping cmake profiles to conan profiles." :type '(choice (const :tag "Don't use any Conan profile" nil) (string :tag "Use a single Conan profile") (alist :tag "Map CMake profile to Conan profile" :key-type (string :tag "Cmake profile")
+(defcustom cmake-integration-conan-profile nil "Conan profile to use, or an alist mapping cmake profiles to conan profiles." :type '(choice (const :tag "Don't use any Conan profile" nil) (string :tag "Use a single Conan profile") (alist :tag "Map a CMake profile into a Conan profile" :key-type (string :tag "Cmake profile")
                                                                                                                                                           :value-type (string :tag "Conan profile"))) :group 'cmake-integration)
 
 (defvar cmake-integration-current-target nil)
@@ -216,15 +223,12 @@ and getting one of the configure presets in it."
   )
 
 
-;; TODO: Add an optional predicate that can be called for each target
-;; to determine if it should be included in the completion options.
-;; TODO: write some common predicate functions for this
-;; Some useful predicates:
-;; - type is executable target
-;; - target name starts with some string
-;; - target type is not utility or library
-;; - target build folder includes some string (can be used to find targets which are submodules)
-;; - target's projectIndex is 0 (its not a submodule)
+(defun cmake-integration--target-is-not-utility-p (target)
+  "Return 't' if TARGET type is not 'UTILITY'."
+  (not (equal (alist-get 'type target) "UTILITY"))
+  )
+
+
 (defun cmake-integration-get-cmake-targets-from-codemodel-json-file (&optional json-filename predicate)
   "Return the targets found in JSON-FILENAME that respect PREDICATE.
 
@@ -534,6 +538,28 @@ the marginalia package, or in Emacs standard completion buffer."
     (completing-read "Target: " list-of-targets nil t)))
 
 
+(defun cmake-integration--get-all-targets (json-filename)
+  "Get all targets for completion.
+
+Get the name of all targste for completion, respecting the value
+of the `cmake-integration-hide-utility-targets-during-completion'
+and
+`cmake-integration-include-subproject-targets-during-completion'
+variables."
+  (let ((list-of-targets (if cmake-integration-include-subproject-targets-during-completion
+                             (cmake-integration-get-cmake-targets-from-codemodel-json-file-2
+                              json-filename)
+                           (cmake-integration-get-cmake-targets-from-codemodel-json-file-2
+                            json-filename
+                            'cmake-integration--target-is-in-projectIndex0-p))))
+
+    (if cmake-integration-hide-utility-targets-during-completion
+        (seq-filter 'cmake-integration--target-is-not-utility-p list-of-targets)
+      list-of-targets
+      )
+    ))
+
+
 ;;;###autoload
 (defun cmake-integration-save-and-compile ()
   "Ask for a target name and compile it.
@@ -548,14 +574,9 @@ completions."
   (check-if-build-folder-exists-and-throws-if-not)
 
   (if-let* ((json-filename (cmake-integration-get-codemodel-reply-json-filename))
-            ;; The list of targets includes all targets found in the codemodel
-            ;; file, as well as the 'all', 'clean' and optional 'install' target
-            (list-of-targets (if cmake-integration-include-subproject-targets-during-completion
-                                 (cmake-integration-get-cmake-targets-from-codemodel-json-file-2
-                                  json-filename)
-                               (cmake-integration-get-cmake-targets-from-codemodel-json-file-2
-                                json-filename
-                                'cmake-integration--target-is-in-projectIndex0-p)))
+            ;; The list of targets also includes the convenience
+            ;; targets 'all', 'clean' and optional 'install' target
+            (list-of-targets (cmake-integration--get-all-targets json-filename))
             (chosen-target (cmake-integration--get-target-using-completions list-of-targets)))
       (cmake-integration-save-and-compile-no-completion chosen-target)
 
@@ -690,9 +711,6 @@ If not available, get the binaryDir or a parent preset."
 ;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ;; xxxxxxxxxxxxxxx Functions for conan integration xxxxxxxxxxxxxxxxxxx
 ;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
-;; TODO: Add a custom variable that maps cmake presets (including no
-;; preset) to conan profiles
 (defun cmake-integration--get-conan-run-command (&optional profile)
   "Get the command to run `conan install' using PROFILE.
 
@@ -716,10 +734,6 @@ cmake-integration-conan-profile variable."
       ;; If cmake-integration-conan-profile is set, it can be either a string with a single profile, or an alist mapping cmake profile names to conan profile names
       (if (stringp cmake-integration-conan-profile)
           (cmake-integration--get-conan-run-command cmake-integration-conan-profile)
-        ;; TODO: implement the case where
-        ;; cmake-integration-conan-profile is an alist mapping cmake
-        ;; profile names to conan profile names
-
         ;; Map cmake profile name to conan profile name
         (let* ((cmake-profile-name (alist-get 'name cmake-integration-last-configure-preset))
                (conan-profile-name (alist-get cmake-profile-name cmake-integration-conan-profile nil nil 'equal)))
