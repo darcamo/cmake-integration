@@ -1,0 +1,9 @@
+[requires]
+catch2/2.13.8
+
+[generators]
+CMakeDeps
+CMakeToolchain
+
+[options]
+catch2:with_main=True

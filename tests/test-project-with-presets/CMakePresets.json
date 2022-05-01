@@ -1,0 +1,40 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 21,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "default",
+            "displayName": "Build using Ninja generator",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-with-ninja/",
+            "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": true,
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "ninjamulticonfig",
+            "displayName": "Build using Ninja Multi-Config generator",
+            "generator": "Ninja Multi-Config",
+            "binaryDir": "${sourceDir}/build-with-ninja-multiconfig/",
+            "inherits": "default"
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "default",
+            "displayName": "Default build preset",
+            "configurePreset": "default"
+        },
+        {
+            "name": "ninjamulticonfig",
+            "displayName": "Build preset using ninja multi-config",
+            "configurePreset": "ninjamulticonfig",
+            "configuration": "Release"
+        }
+    ]
+}
