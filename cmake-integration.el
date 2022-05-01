@@ -660,10 +660,24 @@ variable."
   (compile (cmake-integration--get-run-command (cmake-integration-get-target-executable-filename))))
 
 
-;; TODO: Use the "--cd=DIR" option with gdb to change the working
-;; directory according with the value of
-;; cmake-integration-run-working-directory. Also, add tests for it.
-;;
+(defun cmake-integration--get-debug-command (executable-filename)
+  "Get the correct debug command for EXECUTABLE-FILENAME.
+
+Get the correct debug command for EXECUTABLE-FILENAME respecting
+the value of the `cmake-integration-run-working-directory'
+variable."
+  (let ((cwd (pcase cmake-integration-run-working-directory
+               ('root (cmake-integration-get-project-root-folder))
+               ('build (cmake-integration-get-build-folder))
+               ('bin (file-name-concat (cmake-integration-get-build-folder) (file-name-directory executable-filename)))
+               (_ (file-name-concat (cmake-integration-get-project-root-folder) cmake-integration-run-working-directory)))))
+    (format "gdb -i=mi --cd=%s --args %s %s"
+            cwd
+            (file-name-concat (cmake-integration-get-build-folder) executable-filename)
+            cmake-integration-current-target-run-arguments)
+    ))
+
+
 ;;;###autoload
 (defun cmake-integration-debug-last-target ()
   "Run the last compiled target."
@@ -671,7 +685,7 @@ variable."
   (check-if-build-folder-exists-and-throws-if-not)
 
   ;; Run the target
-  (gdb (format "gdb -i=mi --args %s %s" (file-name-concat (cmake-integration-get-build-folder) (cmake-integration-get-target-executable-filename)) cmake-integration-current-target-run-arguments )))
+  (gdb (cmake-integration--get-debug-command (cmake-integration-get-target-executable-filename))))
 
 
 ;;;###autoload

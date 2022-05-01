@@ -87,13 +87,11 @@ with a pre-determined name.
 
 # Calling gdb with a target
 
-Integration with debugging is currently limited to calling gdb with
-the full path of the last target as well as any command line arguments
-set for the last target. Just call the
-`cmake-integration-debug-last-target` function. This means that the
-working directory is always the directory where the executable file is
-and the `cmake-integration-run-working-directory` variable is ignored
-(has the same effect of being set to `bin`.
+You can debug a given executable target in gdb by calling
+`cmake-integration-debug-last-target`. The current command line
+arguments (if any) is passed to the executable in the debugger, and
+the working directory is also set according with the value of the
+`cmake-integration-run-working-directory` variable.
 
 # Screenshots
 
