@@ -79,8 +79,16 @@ the project root." :type '(choice symbol string)
 ;; and pass the "--toolchain" option to CMake if necessary
 (defcustom cmake-integration-conan-arguments "--build missing" "Extra arguments to pass to conan." :type '(string) :group 'cmake-integration)
 
-(defcustom cmake-integration-conan-profile nil "Conan profile to use, or an alist mapping cmake profiles to conan profiles." :type '(choice (const :tag "Don't use any Conan profile" nil) (string :tag "Use a single Conan profile") (alist :tag "Map a CMake profile into a Conan profile" :key-type (string :tag "Cmake profile")
-                                                                                                                                                          :value-type (string :tag "Conan profile"))) :group 'cmake-integration)
+;; TODO: Investigate if it is possible to get completions for the conan and cmake profiles in the custom interface
+(defcustom cmake-integration-conan-profile nil
+  "Conan profile to use, or an alist mapping cmake profiles to conan profiles."
+  :type '(choice
+          (const :tag "Don't use any Conan profile" nil)
+          (string :tag "Use a single Conan profile")
+          (alist :tag "Map a CMake profile into a Conan profile"
+                 :key-type (string :tag "Cmake profile")
+                 :value-type (string :tag "Conan profile")))
+  :group 'cmake-integration)
 
 (defvar cmake-integration-current-target nil)
 (defvar cmake-integration-current-target-run-arguments "")
