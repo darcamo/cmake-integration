@@ -1,15 +1,14 @@
 # cmake-integration
 
 
-Integrates Emacs with CMake such that one can easily choose a target to compile and run.
+Integrates Emacs with CMake such that one can easily choose a target to compile, run and debug (with gdb). Integration with the [conan](https://conan.io/) package manager is also available.
 
 
-In the simplest case, one can use Emacs' native `compile` command to compile a project. However, you still need to manually type the command to use in order to compile your code.
-
-If you're using Emacs' native project functionality (or the projectile package) there is also a function to "compile a project". But all that it helps is running the compile command from the project root folder and you still have to type the compile command.
+The main motivation for this package is to make my own workflow when programming in C++ in Emacs smoother. The aim is to integrate cmake, gdb and conan in a way that feels natural and that leverage the information that cmake can provide about the project.
 
 
-For C++ code using CMake, this package provide the compile command for you by querying CMake using its [file API](https://cmake.org/cmake/help/latest/manual/cmake-file-api.7.html). That is, with a simply keybinding Emacs can query (with completion) you for the target name to compile and just do the right thing.
+
+For C++ code using CMake, this package provide the compile command for you by querying CMake using its [file API](https://cmake.org/cmake/help/latest/manual/cmake-file-api.7.html). That is, with a simply keybinding Emacs can ask you (with completions) for the target name to compile (or debug) and just do the right thing. Likewise, a simple keybinding can be set to call cmake to configure the project (possible calling conan first).
 
 
 # Installation
@@ -45,7 +44,7 @@ the compile targets.
 
 By default, cmake-integration assumes the build folder to be "build". If your build folder is different, change the value of the `cmake-integration-build-dir` variable accordingly.
 
-You might also use CMake configure presets instead. If you project is using CMake presets call the `cmake-integration-cmake-configure-with-preset` function. It will read the presets file to gather the names of all configure presets and ask you which one to use (with completions). It will then use the value of the "binaryDir" field of the chosen preset is the build folder (and ignore the value of the `cmake-integration-build-dir` variable). If the configure preset does not have a "binaryDir" field, but inherits from another preset, if will use the "binaryDir" field of the parent preset. Note that if the configure preset has a "displayName" it will be shown during completion as annotation.
+You might also use CMake configure presets instead. If your project is using CMake presets call the `cmake-integration-cmake-configure-with-preset` function. It will read the presets file to gather the names of all configure presets and ask you which one to use (with completions). It will then use the value of the "binaryDir" field of the chosen preset is the build folder (and ignore the value of the `cmake-integration-build-dir` variable). If the configure preset does not have a "binaryDir" field, but inherits from another preset, if will use the "binaryDir" field of the parent preset. Note that if the configure preset has a "displayName" it will be shown during completion as annotation.
 
 ## Current Limitation when using presets
 
