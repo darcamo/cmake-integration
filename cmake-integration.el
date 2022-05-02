@@ -56,11 +56,15 @@ If this is nil, then using presets is required." :type '(string) :group 'cmake-i
 When t (default) all targets are included during completion of
 target names. If nil, then only targets from the main cmake
 project are included (targets with projectIndex equal to zero)."
-  :type '(boolean) :group 'cmake-integration)
+  :type 'boolean :safe #'booleanp :group 'cmake-integration)
 
 (defcustom cmake-integration-hide-utility-targets-during-completion nil
   "If t, then utility targets are not included during completion."
-  :type '(boolean) :group 'cmake-integration)
+  :type 'boolean :safe #'booleanp :group 'cmake-integration)
+
+(defcustom cmake-integration-hide-library-targets-during-completion nil
+  "If t, then library targets are not included during completion."
+  :type 'boolean :safe #'booleanp :group 'cmake-integration)
 
 (defcustom cmake-integration-run-working-directory 'bin
   "Working directory when running a target executable.
@@ -241,6 +245,14 @@ and getting one of the configure presets in it."
   "Return 't' if TARGET type is not 'UTILITY'."
   (not (equal (alist-get 'type target) "UTILITY"))
   )
+
+
+(defun cmake-integration--target-is-not-library-p (target)
+  "Return 't' if TARGET type is not 'UTILITY'."
+  (let ((type (alist-get 'type target)))
+    (when type
+      (not (equal (car (cdr (split-string type "_"))) "LIBRARY"))
+      )))
 
 
 (defun cmake-integration-get-cmake-targets-from-codemodel-json-file (&optional json-filename predicate)
@@ -560,11 +572,8 @@ the marginalia package, or in Emacs standard completion buffer."
 (defun cmake-integration--get-all-targets (json-filename)
   "Get all targets for completion.
 
-Get the name of all targste for completion, respecting the value
-of the `cmake-integration-hide-utility-targets-during-completion'
-and
-`cmake-integration-include-subproject-targets-during-completion'
-variables."
+Get the name of all targets for completion, respecting the value
+of the `*-targets-during-completion' variables."
   (let ((list-of-targets (if cmake-integration-include-subproject-targets-during-completion
                              (cmake-integration-get-cmake-targets-from-codemodel-json-file-2
                               json-filename)
@@ -572,11 +581,24 @@ variables."
                             json-filename
                             'cmake-integration--target-is-in-projectIndex0-p))))
 
-    (if cmake-integration-hide-utility-targets-during-completion
-        (seq-filter 'cmake-integration--target-is-not-utility-p list-of-targets)
-      list-of-targets
-      )
-    ))
+
+    (cond ((and cmake-integration-hide-utility-targets-during-completion
+                cmake-integration-hide-library-targets-during-completion)
+           ;; Do not include utility and library targets
+           (seq-filter '(lambda (target) (and
+                                     (cmake-integration--target-is-not-utility-p target)
+                                     (cmake-integration--target-is-not-library-p target)))
+                       list-of-targets)
+           )
+
+          (cmake-integration-hide-utility-targets-during-completion
+           ;; Do not include utility targets
+           (seq-filter 'cmake-integration--target-is-not-utility-p list-of-targets))
+          (cmake-integration-hide-library-targets-during-completion
+           ;; Do not include library targets
+           (seq-filter 'cmake-integration--target-is-not-library-p list-of-targets)
+           )
+          (t list-of-targets))))
 
 
 ;;;###autoload
