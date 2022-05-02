@@ -71,12 +71,10 @@ and 'root (to run from the project root), as well as any string.
 In the case of a string, it should match an existing subfolder of
 the project root." :type '(choice symbol string)
   :group 'cmake-integration
-  :safe 'cmake-integration--run-working-directory-p
+  :safe #'cmake-integration--run-working-directory-p
   :local t)
 
 
-;; TODO: Detect if conan is used with the "CMakeToolchain" generator
-;; and pass the "--toolchain" option to CMake if necessary
 (defcustom cmake-integration-conan-arguments "--build missing" "Extra arguments to pass to conan." :type '(string) :group 'cmake-integration)
 
 ;; TODO: Investigate if it is possible to get completions for the conan and cmake profiles in the custom interface
@@ -89,6 +87,14 @@ the project root." :type '(choice symbol string)
                  :key-type (string :tag "Cmake profile")
                  :value-type (string :tag "Conan profile")))
   :group 'cmake-integration)
+
+
+(defcustom cmake-integration-include-conan-toolchain-file nil
+  "If t, pass '--toolchain conan_toolchain.cmake' to cmake.
+
+If you are using the 'CMakeToolchain' generator, set this to true
+in a directory local variable in your project."
+  :type 'boolean :safe #'booleanp :group 'cmake-integration)
 
 (defvar cmake-integration-current-target nil)
 (defvar cmake-integration-current-target-run-arguments "")
@@ -437,11 +443,16 @@ Note: If no preset is used then
                          (format "cd %s && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON %s"
                                  (cmake-integration-get-build-folder)
                                  (cmake-integration-get-project-root-folder))))
+        ;; If a prefix argument was passed we will call conan before cmake
         (conan-command (if current-prefix-arg
                            (format "%s && " (cmake-integration-get-conan-run-command))
                          "")))
-    ;; Call conan (if a prefix argument was passed) and then cmake to configure
-    (compile (format "%s%s" conan-command cmake-command))))
+
+    (if cmake-integration-include-conan-toolchain-file
+        (compile (format "%s%s --toolchain conan_toolchain.cmake" conan-command cmake-command))
+      (compile (format "%s%s" conan-command cmake-command))
+        )
+    ))
 
 
 (defun cmake-integration-get-target-executable-filename (&optional target)
