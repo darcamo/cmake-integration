@@ -39,6 +39,12 @@
 (require 'cl-extra)
 
 
+;; TODO: move my "-open-doxygen-generated-index" and
+
+;; TODO: After changing the configure preset, create a symbolic link
+;; for the compile_commands.json file to the project root.
+
+
 (defgroup cmake-integration nil "Easily call cmake configure and run compiled targets." :group 'tools :prefix "cmake-integration-")
 
 
@@ -46,6 +52,14 @@
   "The build folder to use when no presets are used.
 
 If this is nil, then using presets is required." :type '(string) :group 'cmake-integration)
+
+;; TODO: Set all possible choices of generators for a better
+;; customization interface (but still allow a free string as a
+;; generator)
+(defcustom cmake-integration-generator nil
+  "The generator to pass to cmake when no presets are used.
+
+If this is nil, then the generator is not explicitly set." :type '(string) :group 'cmake-integration)
 
 (defcustom cmake-integration-annotation-column 30
   "Column where annotations should start during completion." :type '(integer) :group 'cmake-integration)
@@ -170,7 +184,7 @@ project."
             (file-name-concat project-root-folder cmake-integration-build-dir)
           ;; If we do not have cmake-integration-build-dir set (it is
           ;; nil) throw an error asking the user to select a preset
-          (error "Please call `cmake-integration-cmake-configure-with-preset' first and select a \"configure preset\", or set `cmake-integration-build-dir' to be the build folder"))))))
+          (error "Please call `cmake-integration-select-configure-preset' first and select a \"configure preset\", or set `cmake-integration-build-dir' to be the build folder"))))))
 
 
 (defun cmake-integration-get-query-folder ()
@@ -371,6 +385,21 @@ Get the configure presets in both 'CMakePresets.json' and
                                  (cmake-integration--get-preset-name preset)))
 
 
+(defun cmake-integration--get-cmake-configure-without-preset-command ()
+  "Get the command to configure with CMake when presets are not used."
+  (if cmake-integration-generator
+      ;; case with generator set
+      (format "cd %s && cmake -G \"%s\" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON %s"
+              (cmake-integration-get-build-folder)
+              cmake-integration-generator
+              (cmake-integration-get-project-root-folder))
+
+    ;; case without generator set
+    (format "cd %s && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON %s"
+            (cmake-integration-get-build-folder)
+            (cmake-integration-get-project-root-folder))))
+
+
 (defun cmake-integration--get-annotation-initial-spaces (annotated-string)
   "Get a string of spaces that should be added after ANNOTATED-STRING.
 
@@ -387,13 +416,21 @@ indicated by `cmake-integration-annotation-column'."
 (defun cmake-integration--configure-annotation-function (preset)
   "Annotation function that takes a PRESET and return an annotation for it.
 
-This is used in `cmake-integration-cmake-configure-with-preset'
+This is used in `cmake-integration-select-configure-preset'
 when completing a preset name to generate an annotation for that
 preset, which is shown during the completions if you are using
 the marginalia package, or in Emacs standard completion buffer."
 
   (if (equal preset "No Preset")
-      (concat (cmake-integration--get-annotation-initial-spaces "No Preset") "Don't use any preset. The build folder will be the value of `cmake-integration-build-dir'.")
+      (concat (cmake-integration--get-annotation-initial-spaces "No Preset")
+              "Don't use any preset."
+              (cond
+               ((and cmake-integration-build-dir cmake-integration-generator)
+                (format "The build folder is '%s' and the generator is '%s'."
+                        cmake-integration-build-dir
+                        cmake-integration-generator))
+               (t (format "The build folder is '%s'."
+                          cmake-integration-build-dir))))
     ;; Note that `minibuffer-completion-table' has the list of
     ;; completions currently in use, from which we know PRESET is one
     ;; of them
@@ -401,13 +438,12 @@ the marginalia package, or in Emacs standard completion buffer."
 
 
 ;;;###autoload
-(defun cmake-integration-cmake-configure-with-preset ()
-  "Configure CMake using one of the availeble presets.
+(defun cmake-integration-select-configure-preset ()
+  "Select a configure preset for CMake.
 
 A list of preset names if obtained from 'CMakePresets.json' and
 'CMakeUserPresets.json', if they exist. Then the user is asked to
-choose one of them (with completion) and CMake is configured with
-the chosen preset."
+choose one of them (with completion)."
   ;; TODO: Pass a predicate function to completing-read that remove any preset with "hidden" value of true
   (interactive)
 
@@ -433,10 +469,24 @@ the chosen preset."
       (setq cmake-integration-last-configure-preset (alist-get choice all-presets nil nil 'equal))
       )
 
-    ;; Configure the project -> This will do the right thing in both
+    ))
+
+
+;;;###autoload
+(defun cmake-integration-cmake-configure-with-preset ()
+    "Configure CMake using one of the availeble presets.
+
+A list of preset names if obtained from 'CMakePresets.json' and
+'CMakeUserPresets.json', if they exist. Then the user is asked to
+choose one of them (with completion) and CMake is configured with
+the chosen preset."
+  (interactive)
+  (cmake-integration-select-configure-preset)
+  ;; Configure the project -> This will do the right thing in both
     ;; cases when 'cmake-integration-last-configure-preset' is nil and when it
     ;; has a specific preset
-    (cmake-integration-cmake-reconfigure)))
+    (cmake-integration-cmake-reconfigure)
+  )
 
 
 ;;;###autoload
@@ -452,9 +502,7 @@ Note: If no preset is used then
   (let ((cmake-command (if cmake-integration-last-configure-preset
                            (cmake-integration--get-cmake-configure-with-preset-command
                             cmake-integration-last-configure-preset)
-                         (format "cd %s && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON %s"
-                                 (cmake-integration-get-build-folder)
-                                 (cmake-integration-get-project-root-folder))))
+                         (cmake-integration--get-cmake-configure-without-preset-command)))
         ;; If a prefix argument was passed we will call conan before cmake
         (conan-command (if current-prefix-arg
                            (format "%s && " (cmake-integration-get-conan-run-command))
@@ -465,6 +513,16 @@ Note: If no preset is used then
       (compile (format "%s%s" conan-command cmake-command))
         )
     ))
+
+
+(defun cmake-integration-delete-build-folder ()
+  "Delete the current build folder.
+
+It's useful in case you changed the generator, since CMake would
+complain in that case."
+  (interactive)
+  (delete-directory (cmake-integration-get-build-folder) t)
+  )
 
 
 (defun cmake-integration-get-target-executable-filename (&optional target)
@@ -804,7 +862,6 @@ cmake-integration-conan-profile variable."
 ;;;###autoload
 (defun cmake-integration-run-conan ()
   "Run conan install in the current build folder."
-  (interactive)
   (compile (cmake-integration-get-conan-run-command)))
 
 
