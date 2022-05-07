@@ -39,8 +39,6 @@
 (require 'cl-extra)
 
 
-;; TODO: move my "-open-doxygen-generated-index" and
-
 ;; TODO: After changing the configure preset, create a symbolic link
 ;; for the compile_commands.json file to the project root.
 
@@ -113,6 +111,14 @@ the project root." :type '(choice symbol string)
 If you are using the 'CMakeToolchain' generator, set this to true
 in a directory local variable in your project."
   :type 'boolean :safe #'booleanp :group 'cmake-integration)
+
+
+(defcustom cmake-integration-docs-folder "${sourceDir}/docs"
+  "Folder containing the Doxyfile.
+
+If \"${sourceDir}/\" is in `cmake-integration-docs-folder' it
+will be replaced by the project root." :type 'string :group 'cmake-integration)
+
 
 (defvar cmake-integration-current-target nil)
 (defvar cmake-integration-current-target-run-arguments "")
@@ -864,6 +870,32 @@ cmake-integration-conan-profile variable."
   "Run conan install in the current build folder."
   (compile (cmake-integration-get-conan-run-command)))
 
+
+;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+;; xxxxxxxxxxxxxxx Doxygen xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+(defun cmake-integration--get-docs-folder ()
+  "Get the folder with the Doxyfile."
+  (s-replace "${sourceDir}/" (cmake-integration-get-project-root-folder) cmake-integration-docs-folder)
+  )
+
+(defun cmake-integration-generate-project-documentation ( )
+  "Generate the documentation in a cmake based project using Doxygen.
+
+This assume that there is a 'doc' folder in the project root,
+from where the doxygen command will be run."
+  (interactive)
+  (let ((doxygen-command (format "cd %s && doxygen" (cmake-integration--get-docs-folder))))
+    (compile doxygen-command)
+    )
+  )
+
+
+(defun cmake-integration-view-project-documentation ()
+  "Open generated doxygen documentation."
+  (interactive)
+  (browse-url (file-name-concat (expand-file-name (cmake-integration--get-docs-folder)) "html/index.html"))
+  )
 
 ;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 (provide 'cmake-integration)
