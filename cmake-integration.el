@@ -39,10 +39,6 @@
 (require 'cl-extra)
 
 
-;; TODO: After changing the configure preset, create a symbolic link
-;; for the compile_commands.json file to the project root.
-
-
 (defgroup cmake-integration nil "Easily call cmake configure and run compiled targets." :group 'tools :prefix "cmake-integration-")
 
 
@@ -89,6 +85,13 @@ the project root." :type '(choice symbol string)
   :group 'cmake-integration
   :safe #'cmake-integration--run-working-directory-p
   :local t)
+
+
+(defcustom cmake-integration-create-compile-commands-link t
+  "If t, make a link of `compile_commands.json' to the project root.
+
+This helps lsp and clangd correctly parsing the project files."
+  :type 'boolean :safe #'booleanp :group 'cmake-integration)
 
 
 (defcustom cmake-integration-conan-arguments "--build missing" "Extra arguments to pass to conan." :type '(string) :group 'cmake-integration)
@@ -517,8 +520,14 @@ Note: If no preset is used then
     (if cmake-integration-include-conan-toolchain-file
         (compile (format "%s%s --toolchain conan_toolchain.cmake" conan-command cmake-command))
       (compile (format "%s%s" conan-command cmake-command))
-        )
-    ))
+      )
+    )
+
+  ;; Make a link of the compile_commands.json file to the project root
+  (let ((compile-commands-file (file-name-concat (cmake-integration-get-build-folder) "compile_commands.json")))
+    (when (and cmake-integration-create-compile-commands-link
+               (file-exists-p compile-commands-file))
+      (make-symbolic-link (file-relative-name compile-commands-file (cmake-integration-get-project-root-folder))  (cmake-integration-get-project-root-folder) t))))
 
 
 (defun cmake-integration-delete-build-folder ()
