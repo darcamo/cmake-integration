@@ -845,7 +845,7 @@ If not available, get the binaryDir or a parent preset."
 The command is run from the build folder of the current cmake
 configuration."
   (if profile
-      (format "%s --profile %s" (cmake-integration--get-conan-run-command) profile)
+      (format "%s --profile:b %s" (cmake-integration--get-conan-run-command) profile)
     (format "cd %s && conan install %s %s"
           (cmake-integration-get-build-folder)
           (cmake-integration-get-project-root-folder)

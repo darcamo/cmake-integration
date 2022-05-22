@@ -148,3 +148,8 @@ To pass parameters to conan set the
 The `cmake-integration-conan-profile` variable can be set to a string
 with a profile name to pass to conan. Alternatively, it can be set to
 an alist mapping cmake profile names with conan profile names.
+
+Note: When using the new toolchains from conan it is advised to also
+set the conan file. One easy way to do this is to create a directory
+variable to set `cmake-integration-conan-profile` with the desired
+conan profile name.
