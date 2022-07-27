@@ -185,7 +185,7 @@ project."
     (when project-root-folder
       (if cmake-integration-last-configure-preset
           ;; We have a configure preset -> let's use build folder pointed by it
-          (s-replace "${sourceDir}/" (cmake-integration-get-project-root-folder) (cmake-integration-get-binaryDir cmake-integration-last-configure-preset))
+          (s-replace-all `(("${sourceDir}/" . ,(cmake-integration-get-project-root-folder)) ("${presetName}". ,(alist-get 'name cmake-integration-last-configure-preset))) (cmake-integration-get-binaryDir cmake-integration-last-configure-preset))
 
         ;; We don't have a configure preset
         (if cmake-integration-build-dir
