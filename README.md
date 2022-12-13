@@ -152,4 +152,4 @@ an alist mapping cmake profile names with conan profile names.
 Note: When using the new toolchains from conan it is advised to also
 set the conan file. One easy way to do this is to create a directory
 variable to set `cmake-integration-conan-profile` with the desired
-conan profile name.
+conan profile name as a project.
