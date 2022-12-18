@@ -1,3 +1,4 @@
 build
 build-with-ninja-multiconfig
 .cache
+compile_commands.json

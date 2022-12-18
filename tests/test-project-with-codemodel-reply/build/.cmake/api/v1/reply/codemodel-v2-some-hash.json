@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "targets" :
+			[
+				{
+					"jsonFile" : "target-main-some-hash.json",
+					"name" : "main",
+					"projectIndex" : 0
+				}
+			]
+        }
+    ]
+}

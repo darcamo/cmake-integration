@@ -258,6 +258,8 @@ and getting one of the configure presets in it."
     (shell-command (concat "touch " (cmake-integration-get-path-of-codemodel-query-file)))))
 
 
+;; See CMake file API documentation for what projectIndex is
+;; https://cmake.org/cmake/help/latest/manual/cmake-file-api.7.html
 (defun cmake-integration--target-is-in-projectIndex0-p (target)
   "Return 't' if the projectIndex field of TARGET is 0."
   (eq (alist-get 'projectIndex target) 0)

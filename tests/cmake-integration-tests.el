@@ -52,9 +52,21 @@ test code from inside a 'test project'."
 ;; xxxxxxxxxxxxxxx Define the tests xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
+
+
+;; test-cmake-integration--mktarget
+(ert-deftest test-cmake-integration--mktarget ()
+  (should (equal (cmake-integration--mktarget "target" "config") "target/config"))
+  (let ((cmake-integration--multi-config-separator "|"))
+    (should (equal (cmake-integration--mktarget "target" "config") "target|config"))))
+
+
+
+
+
 ;; NOTE: For this test to pass a folder with a `.project' file must be recognized as a project.
 ;; See https://www.reddit.com/r/emacs/comments/k3og7d/extending_projectel/
-(ert-deftest test-getting-project-root-no-presets ()
+(ert-deftest test-cmake-integration-get-project-root-folder ()
   "Test getting the project root when no presets are used."
   (test-fixture-setup
    "./test-project/subfolder" ;; project root is the parent "test-project" folder
@@ -63,7 +75,7 @@ test code from inside a 'test project'."
                            "..")))))
 
 
-(ert-deftest test-getting-build-folder-without-presets ()
+(ert-deftest test-cmake-integration-get-build-folder-without-presets ()
   (test-fixture-setup
    "./test-project" ;; project root is the parent "test-project" folder
    (lambda ()
@@ -76,7 +88,7 @@ test code from inside a 'test project'."
        ))))
 
 
-(ert-deftest test-getting-build-folder-with-presets ()
+(ert-deftest test-cmake-integration-get-build-folder-with-presets ()
   (test-fixture-setup
    "./test-project-with-presets" ;; project root is the parent "test-project" folder
    (lambda ()
@@ -106,6 +118,16 @@ test code from inside a 'test project'."
   (test-fixture-setup
    "./test-project"
    (lambda () (should (filepath-equal-p (cmake-integration-get-path-of-codemodel-query-file) "./build/.cmake/api/v1/query/client-emacs/codemodel-v2")))))
+
+
+(ert-deftest test-cmake-integration-get-codemodel-reply-json-filename ()
+  (test-fixture-setup
+   "./test-project-with-codemodel-reply"
+   (lambda ()
+     (should (filepath-equal-p
+              (cmake-integration-get-codemodel-reply-json-filename)
+              (format "%s%s" (cmake-integration-get-reply-folder)
+                      "codemodel-v2-some-hash.json"))))))
 
 
 (ert-deftest test-cmake-integration--get-run-command--root-folder ()
@@ -209,28 +231,40 @@ test code from inside a 'test project'."
                               cmake-integration-current-target-run-arguments)))))))
 
 
-
-
-;;; TODO
+;;; TODO: add more cases to the test (install target, ninja multi-config, etc)
 (ert-deftest test-cmake-integration-get-cmake-targets-from-codemodel-json-file ()
-  ;; (test-fixture-setup
-  ;;  "./test-project-with-presets"
-  ;;  (lambda ()
-  ;;    (let ((targets (cmake-integration-get-cmake-targets-from-codemodel-json-file)))
-
-  ;;      )
-
-  ;;    )
-  ;;  )
-  )
+  ;; Simplest case possible: there is only one executable target called "main"
+  (test-fixture-setup
+   "./test-project-with-codemodel-reply"
+   (lambda ()
+     (should (equal (cmake-integration-get-cmake-targets-from-codemodel-json-file)
+                    '(("all") ("clean") ("main" (jsonFile . "target-main-some-hash.json") (name . "main") (projectIndex . 0))))))))
 
 
-
-
-;; TODO: Test with and without using presets
 (ert-deftest test-cmake-integration-get-compile-command ()
-  )
+  (test-fixture-setup
+   "./test-project"
+   (lambda ()
+     (let ((project-dir (format "~/%s" (file-relative-name "./" "~/"))))
+       (should (equal (cmake-integration-get-compile-command "the_target")
+                      (format "cd %s && cmake --build %s --target the_target" project-dir cmake-integration-build-dir))))))
 
+  ;; Without setting a preset
+  (test-fixture-setup
+   "./test-project-with-presets"
+   (lambda ()
+     (let ((project-dir (format "~/%s" (file-relative-name "./" "~/"))))
+       (should (equal (cmake-integration-get-compile-command "the_target")
+                      (format "cd %s && cmake --build %s --target the_target" project-dir cmake-integration-build-dir))))))
+
+
+  (test-fixture-setup
+   "./test-project-with-presets"
+   (lambda ()
+     (let ((project-dir (format "~/%s" (file-relative-name "./" "~/")))
+           (cmake-integration-last-configure-preset '("default" (name . "default"))))
+       (should (equal (cmake-integration-get-compile-command "the_target")
+                      (format "cd %s && cmake --build --preset default --target the_target" project-dir)))))))
 
 
 (ert-deftest test-cmake-integration-get-conan-run-command ()
