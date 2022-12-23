@@ -315,24 +315,21 @@ don't have the 'target-info' data."
                            (has-install-rule (cl-some (lambda (dir) (alist-get 'hasInstallRule dir))
                                                       (alist-get 'directories config-data))))
                        ;; Add implicit 'all', 'clean' and optional 'install' targets
-                       ;; to the list
-                       (nconc `((,(cmake-integration--mktarget "all" config-name)))
-                              `((,(cmake-integration--mktarget "clean" config-name)))
-                              (when has-install-rule
-                                `((,(cmake-integration--mktarget "install" config-name))))
-                              ;; process targets vector, return an alist of (target .
-                              ;; target-info) elements
-                              (mapcar (lambda (target-info)
-                                        (let ((target-name (alist-get 'name target-info)))
-                                          (cons (cmake-integration--mktarget target-name config-name)
-                                                target-info)))
-                                      ;; Sequence of targets from the json file. If predicate was
-                                      ;; provided, get only the targets that match predicate.
-                                      ;; Otherwise, get all targets.
-                                      (if predicate
-                                          (seq-filter predicate (alist-get 'targets config-data))
-                                        (alist-get 'targets config-data)
-                                        )))))
+                       (cmake-integration--add-all-clean-install-targets
+                        (mapcar (lambda (target-info)
+                                  (let ((target-name (alist-get 'name target-info)))
+                                    (cons (cmake-integration--mktarget target-name config-name)
+                                          target-info)))
+                                ;; Sequence of targets from the json file. If predicate was
+                                ;; provided, get only the targets that match predicate.
+                                ;; Otherwise, get all targets.
+                                (if predicate
+                                    (seq-filter predicate (alist-get 'targets config-data))
+                                  (alist-get 'targets config-data)
+                                  ))
+                        config-name
+                        has-install-rule
+                        )))
                    ;; Sequence mapped in the mapcar
                    configurations))))
 
@@ -361,6 +358,17 @@ shown as an annotation."
             ))))
     list-of-targets
     ))
+
+
+(defun cmake-integration--add-all-clean-install-targets (targets config-name has-install-rule)
+  "Return TARGETS with extra 'all', 'clean' and 'install' for CONFIG-NAME.
+
+The 'install' target is only included if HAS-INSTALL-RULE is true."
+  (nconc `((,(cmake-integration--mktarget "all" config-name)))
+         `((,(cmake-integration--mktarget "clean" config-name)))
+         (when has-install-rule
+           `((,(cmake-integration--mktarget "install" config-name))))
+         targets))
 
 
 (defun cmake-integration-get-cmake-configure-presets ()
@@ -645,7 +653,7 @@ the marginalia package, or in Emacs standard completion buffer."
 
 
 (defun cmake-integration--get-all-targets (json-filename)
-  "Get all targets for completion.
+  "Get all targets for completion specified in JSON-FILENAME.
 
 Get the name of all targets for completion, respecting the value
 of the `*-targets-during-completion' variables."
@@ -656,24 +664,27 @@ of the `*-targets-during-completion' variables."
                             json-filename
                             'cmake-integration--target-is-in-projectIndex0-p))))
 
+    ;; Filter the list of targets
+    (cond
+     ;; Do not include utility and library targets
+     ((and cmake-integration-hide-utility-targets-during-completion
+           cmake-integration-hide-library-targets-during-completion)
+      (seq-filter '(lambda (target) (and
+                                (cmake-integration--target-is-not-utility-p target)
+                                (cmake-integration--target-is-not-library-p target)))
+                  list-of-targets))
 
-    (cond ((and cmake-integration-hide-utility-targets-during-completion
-                cmake-integration-hide-library-targets-during-completion)
-           ;; Do not include utility and library targets
-           (seq-filter '(lambda (target) (and
-                                     (cmake-integration--target-is-not-utility-p target)
-                                     (cmake-integration--target-is-not-library-p target)))
-                       list-of-targets)
-           )
+     ;; Do not include only utility targets
+     (cmake-integration-hide-utility-targets-during-completion
+      ;; Do not include utility targets
+      (seq-filter 'cmake-integration--target-is-not-utility-p list-of-targets))
 
-          (cmake-integration-hide-utility-targets-during-completion
-           ;; Do not include utility targets
-           (seq-filter 'cmake-integration--target-is-not-utility-p list-of-targets))
-          (cmake-integration-hide-library-targets-during-completion
-           ;; Do not include library targets
-           (seq-filter 'cmake-integration--target-is-not-library-p list-of-targets)
-           )
-          (t list-of-targets))))
+     ; Do not include only library targets
+     (cmake-integration-hide-library-targets-during-completion
+      (seq-filter 'cmake-integration--target-is-not-library-p list-of-targets))
+
+     ;; Include all targets
+     (t list-of-targets))))
 
 
 ;;;###autoload
