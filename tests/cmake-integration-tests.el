@@ -44,7 +44,8 @@ file/folder to exist."
 This is used in the tests definitions to make sure we run the
 test code from inside a 'test project'."
   (unwind-protect
-      (let ((default-directory (expand-file-name subfolder)))
+      (let ((default-directory (expand-file-name subfolder))
+            (cmake-integration-last-configure-preset nil))
         (funcall body))))
 
 
@@ -128,6 +129,33 @@ test code from inside a 'test project'."
               (cmake-integration-get-codemodel-reply-json-filename)
               (format "%s%s" (cmake-integration-get-reply-folder)
                       "codemodel-v2-some-hash.json"))))))
+
+
+(ert-deftest test-cmake-integration--get-working-directory ()
+  (test-fixture-setup
+   "./test-project-with-presets"
+   (lambda ()
+     (let ((cmake-integration-current-target "bin/main")
+           (cmake-integration-last-configure-preset '((name . "default")
+                                                      (binaryDir . "${sourceDir}/build-with-ninja/"))))
+       (let ((cmake-integration-run-working-directory 'root))
+         (should (equal (cmake-integration--get-working-directory cmake-integration-current-target)
+                        (format "~/%s" (file-relative-name "./" "~/"))))
+         )
+
+       (let ((cmake-integration-run-working-directory 'build))
+         (should (equal (cmake-integration--get-working-directory cmake-integration-current-target)
+                        (format "~/%s" (file-relative-name "./build-with-ninja/" "~/"))))
+         )
+
+       (let ((cmake-integration-run-working-directory 'bin))
+         (should (equal (cmake-integration--get-working-directory cmake-integration-current-target)
+                        (format "~/%s" (file-relative-name "./build-with-ninja/bin/" "~/"))))
+         )
+
+       (let ((cmake-integration-run-working-directory "some/subfolder/"))
+         (should (equal (cmake-integration--get-working-directory cmake-integration-current-target)
+                        (format "~/%s" (file-relative-name "./some/subfolder/" "~/")))))))))
 
 
 (ert-deftest test-cmake-integration--get-run-command--root-folder ()

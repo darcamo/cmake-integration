@@ -729,10 +729,20 @@ missing. Please run either `cmake-integration-cmake-reconfigure' or
    (or cmake-integration-current-target "all")))
 
 
+(defun cmake-integration--get-working-directory (executable-filename)
+  "Get the working directory for to run EXECUTABLE-FILENAME."
+  (pcase cmake-integration-run-working-directory
+    ('root (cmake-integration-get-project-root-folder))
+    ('build (cmake-integration-get-build-folder))
+    ('bin (file-name-concat (cmake-integration-get-build-folder) (file-name-directory executable-filename)))
+    (_ (file-name-concat (cmake-integration-get-project-root-folder) cmake-integration-run-working-directory)))
+  )
+
+
 (defun cmake-integration--get-run-command-project-root-cwd (executable-filename)
   "Get the run command for EXECUTABLE-FILENAME from the project root folder."
   (format "cd %s && %s %s"
-          (cmake-integration-get-project-root-folder)
+          (cmake-integration--get-working-directory executable-filename)
           (file-name-concat (cmake-integration-get-build-folder) executable-filename)
           cmake-integration-current-target-run-arguments))
 
@@ -740,7 +750,7 @@ missing. Please run either `cmake-integration-cmake-reconfigure' or
 (defun cmake-integration--get-run-command-build-folder-cwd (executable-filename)
   "Get the run command for EXECUTABLE-FILENAME from the build folder."
   (format "cd %s && %s %s"
-          (cmake-integration-get-build-folder)
+          (cmake-integration--get-working-directory executable-filename)
           executable-filename
           cmake-integration-current-target-run-arguments))
 
@@ -750,7 +760,7 @@ missing. Please run either `cmake-integration-cmake-reconfigure' or
 
 The binary folder is the folder containing the executable."
   (format "cd %s && ./%s %s"
-          (file-name-concat (cmake-integration-get-build-folder) (file-name-directory executable-filename))
+          (cmake-integration--get-working-directory executable-filename)
           (file-name-nondirectory executable-filename)
           cmake-integration-current-target-run-arguments))
 
@@ -759,7 +769,7 @@ The binary folder is the folder containing the executable."
   "Get the correct run command EXECUTABLE-FILENAME from a PROJECT-SUBFOLDER."
   (cl-assert (stringp project-subfolder))
   (format "cd %s && %s %s"
-          (file-name-concat (cmake-integration-get-project-root-folder) project-subfolder)
+          (cmake-integration--get-working-directory executable-filename)
           (file-name-concat (cmake-integration-get-build-folder) executable-filename)
           cmake-integration-current-target-run-arguments))
 
@@ -793,11 +803,7 @@ variable."
 Get the correct debug command for EXECUTABLE-FILENAME respecting
 the value of the `cmake-integration-run-working-directory'
 variable."
-  (let ((cwd (pcase cmake-integration-run-working-directory
-               ('root (cmake-integration-get-project-root-folder))
-               ('build (cmake-integration-get-build-folder))
-               ('bin (file-name-concat (cmake-integration-get-build-folder) (file-name-directory executable-filename)))
-               (_ (file-name-concat (cmake-integration-get-project-root-folder) cmake-integration-run-working-directory)))))
+  (let ((cwd (cmake-integration--get-working-directory executable-filename)))
     (format "gdb -i=mi --cd=%s --args %s %s"
             cwd
             (file-name-concat (cmake-integration-get-build-folder) executable-filename)
