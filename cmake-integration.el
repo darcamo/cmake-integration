@@ -1,11 +1,11 @@
-;;; cmake-integration.el --- Integrates with CMake to easily configure, compile and run -*- lexical-binding: t -*-
+;;; cmake-integration.el --- Easily configure cmake projects and run/debug targets -*- lexical-binding: t -*-
 
 ;; Author: Darlan Cavalcante Moreira
 ;; Maintainer: Darlan Cavalcante Moreira
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "28.1") f s json)
-;; Homepage: homepage
-;; Keywords: keywords
+;; Homepage: https://github.com/darcamo/cmake-integration
+;; Keywords: c c++ cmake languages tools
 ;; URL: https://github.com/darcamo/cmake-integration/
 
 
