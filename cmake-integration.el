@@ -3,7 +3,7 @@
 ;; Author: Darlan Cavalcante Moreira
 ;; Maintainer: Darlan Cavalcante Moreira
 ;; Version: 0.1
-;; Package-Requires: ((emacs "28.1") f s json)
+;; Package-Requires: ((emacs "28.1") f s json dap-mode)
 ;; Homepage: https://github.com/darcamo/cmake-integration
 ;; Keywords: c c++ cmake languages tools
 ;; URL: https://github.com/darcamo/cmake-integration/
@@ -37,6 +37,7 @@
 (require 's)
 (require 'json)
 (require 'cl-extra)
+(require 'dap-mode)
 
 
 (defgroup cmake-integration nil "Easily call cmake configure and run compiled targets." :group 'tools :prefix "cmake-integration-")
@@ -91,6 +92,13 @@ the project root." :type '(choice symbol string)
   "If t, make a link of `compile_commands.json' to the project root.
 
 This helps lsp and clangd correctly parsing the project files."
+  :type 'boolean :safe #'booleanp :group 'cmake-integration)
+
+
+(defcustom cmake-integration-use-dap-for-debug nil
+  "If t, use dap-mode with cpptools for debug.
+
+If nil, use standard gdb graphical interface (see Emacs manual)."
   :type 'boolean :safe #'booleanp :group 'cmake-integration)
 
 
@@ -739,11 +747,16 @@ missing. Please run either `cmake-integration-cmake-reconfigure' or
   )
 
 
+(defun cmake-integration-get-target-executable-full-path (executable-filename)
+  "Get the full path of EXECUTABLE-FILENAME."
+  (file-name-concat (cmake-integration-get-build-folder) executable-filename))
+
+
 (defun cmake-integration--get-run-command-project-root-cwd (executable-filename)
   "Get the run command for EXECUTABLE-FILENAME from the project root folder."
   (format "cd %s && %s %s"
           (cmake-integration--get-working-directory executable-filename)
-          (file-name-concat (cmake-integration-get-build-folder) executable-filename)
+          (cmake-integration-get-target-executable-full-path executable-filename)
           cmake-integration-current-target-run-arguments))
 
 
@@ -770,7 +783,7 @@ The binary folder is the folder containing the executable."
   (cl-assert (stringp project-subfolder))
   (format "cd %s && %s %s"
           (cmake-integration--get-working-directory executable-filename)
-          (file-name-concat (cmake-integration-get-build-folder) executable-filename)
+          (cmake-integration-get-target-executable-full-path executable-filename)
           cmake-integration-current-target-run-arguments))
 
 
@@ -802,13 +815,34 @@ variable."
 
 Get the correct debug command for EXECUTABLE-FILENAME respecting
 the value of the `cmake-integration-run-working-directory'
-variable."
+variable. This should be passed to gdb command in Emacs."
   (let ((cwd (cmake-integration--get-working-directory executable-filename)))
-    (format "gdb -i=mi --cd=%s --args %s %s"
-            cwd
-            (file-name-concat (cmake-integration-get-build-folder) executable-filename)
-            cmake-integration-current-target-run-arguments)
-    ))
+    (format
+     "gdb -i=mi --cd=%s --args %s %s"
+     cwd
+     (cmake-integration-get-target-executable-full-path executable-filename)
+     cmake-integration-current-target-run-arguments)))
+
+
+(defun cmake-integration--launch-gdb-with-last-target ()
+  "Launch gdb inside Emacs to debug the last target."
+  (gdb (cmake-integration--get-debug-command (cmake-integration-get-target-executable-filename))))
+
+
+(defun cmake-integration--launch-dap-debug-cpptools-last-target ()
+  "Launch dap-debug using cpptools to debug the last target."
+  (let ((executable-filename (cmake-integration-get-target-executable-filename)))
+
+    (let ((program-path (expand-file-name (cmake-integration-get-target-executable-full-path executable-filename)))
+          (cwd (expand-file-name (cmake-integration--get-working-directory executable-filename))))
+
+      (dap-debug (list :type "cppdbg"
+                       :request "launch"
+                       :name "cmake-integration-target"
+                       :MIMode "gdb"
+                       :program program-path
+                       :arguments cmake-integration-current-target-run-arguments
+                       :cwd cwd)))))
 
 
 ;;;###autoload
@@ -817,8 +851,10 @@ variable."
   (interactive)
   (check-if-build-folder-exists-and-throws-if-not)
 
-  ;; Run the target
-  (gdb (cmake-integration--get-debug-command (cmake-integration-get-target-executable-filename))))
+  (if cmake-integration-use-dap-for-debug
+      (cmake-integration--launch-dap-debug-cpptools-last-target)
+    ;; Run the target
+    (cmake-integration--launch-gdb-with-last-target)))
 
 
 ;;;###autoload

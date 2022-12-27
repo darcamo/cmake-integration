@@ -158,6 +158,22 @@ test code from inside a 'test project'."
                         (format "~/%s" (file-relative-name "./some/subfolder/" "~/")))))))))
 
 
+(ert-deftest test-cmake-integration-get-target-executable-full-path ()
+  (test-fixture-setup
+   "./test-project-with-presets"
+   (lambda ()
+     (let ((cmake-integration-current-target "bin/main"))
+       (should (equal
+                (cmake-integration-get-target-executable-full-path cmake-integration-current-target)
+                (file-name-concat (cmake-integration-get-build-folder) cmake-integration-current-target))))
+
+     (let ((cmake-integration-current-target "main"))
+       (should (equal
+                (cmake-integration-get-target-executable-full-path cmake-integration-current-target)
+                (file-name-concat (cmake-integration-get-build-folder) cmake-integration-current-target)))))))
+
+
+
 (ert-deftest test-cmake-integration--get-run-command--root-folder ()
   (test-fixture-setup
    "./test-project"
