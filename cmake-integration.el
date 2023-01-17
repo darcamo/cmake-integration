@@ -1,7 +1,6 @@
 ;;; cmake-integration.el --- Easily configure cmake projects and run/debug targets -*- lexical-binding: t -*-
 
-;; Author: Darlan Cavalcante Moreira
-;; Maintainer: Darlan Cavalcante Moreira
+;; Author: Darlan Cavalcante Moreira <darcamo@gmail.com>
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "28.1") f s json)
 ;; Homepage: https://github.com/darcamo/cmake-integration
