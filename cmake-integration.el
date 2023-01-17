@@ -113,6 +113,7 @@ If nil, use standard gdb graphical interface (see Emacs manual)."
           (alist :tag "Map a CMake profile into a Conan profile"
                  :key-type (string :tag "Cmake profile")
                  :value-type (string :tag "Conan profile")))
+  :safe #'listp
   :group 'cmake-integration)
 
 
