@@ -3,7 +3,7 @@
 ;; Author: Darlan Cavalcante Moreira
 ;; Maintainer: Darlan Cavalcante Moreira
 ;; Version: 0.1
-;; Package-Requires: ((emacs "28.1") f s json dap-mode)
+;; Package-Requires: ((emacs "28.1") f s json)
 ;; Homepage: https://github.com/darcamo/cmake-integration
 ;; Keywords: c c++ cmake languages tools
 ;; URL: https://github.com/darcamo/cmake-integration/
@@ -37,7 +37,7 @@
 (require 's)
 (require 'json)
 (require 'cl-extra)
-(require 'dap-mode)
+
 
 
 (defgroup cmake-integration nil "Easily call cmake configure and run compiled targets." :group 'tools :prefix "cmake-integration-")
@@ -829,8 +829,11 @@ variable. This should be passed to gdb command in Emacs."
   (gdb (cmake-integration--get-debug-command (cmake-integration-get-target-executable-filename))))
 
 
+(declare-function dap-debug "dap-mode")
+
 (defun cmake-integration--launch-dap-debug-cpptools-last-target ()
   "Launch dap-debug using cpptools to debug the last target."
+  (require 'dap-mode)
   (let ((executable-filename (cmake-integration-get-target-executable-filename)))
 
     (let ((program-path (expand-file-name (cmake-integration-get-target-executable-full-path executable-filename)))
