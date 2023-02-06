@@ -77,9 +77,9 @@ project are included (targets with projectIndex equal to zero)."
 (defcustom cmake-integration-run-working-directory 'bin
   "Working directory when running a target executable.
 
-Possible values are the symbols 'bin (to run from the folder
-containing the executable), 'build (to run from the build folder)
-and 'root (to run from the project root), as well as any string.
+Possible values are the symbols `bin' (to run from the folder
+containing the executable), `build' (to run from the build folder)
+and `root' (to run from the project root), as well as any string.
 In the case of a string, it should match an existing subfolder of
 the project root." :type '(choice symbol string)
   :group 'cmake-integration
@@ -139,8 +139,8 @@ will be replaced by the project root." :type 'string :group 'cmake-integration)
   "Character used to separate target name from config name.
 
 In case of of multi-config generators, target names have the
-special form <target-name><sep><config-name> (e.g. 'all/Debug'
-with '/' as configured separator).
+special form <target-name><sep><config-name> (e.g. `all/Debug'
+with `/' as configured separator).
 
 Note: The selected separator shall be a character that it is not
 a valid component of a CMake target name (see
@@ -186,8 +186,8 @@ Function to verify is VAL is save as a value for the
   "Get the project build folder.
 
 This is just the project folder concatenated with
-'cmake-integration-build-dir' (when presets are not used) or with
-the binaryDir field of the preset. It returns 'nil' if not in a
+`cmake-integration-build-dir' (when presets are not used) or with
+the binaryDir field of the preset. It returns nil if not in a
 project."
   (let ((project-root-folder (cmake-integration-get-project-root-folder)))
     (when project-root-folder
@@ -251,7 +251,7 @@ and getting one of the configure presets in it."
 
 
 (defun cmake-integration-get-last-configure-preset-name ()
-  "Get the 'name' field of the last preset used for configure."
+  "Get the `name' field of the last preset used for configure."
   (cmake-integration--get-preset-name cmake-integration-last-configure-preset))
 
 
@@ -269,19 +269,19 @@ and getting one of the configure presets in it."
 ;; See CMake file API documentation for what projectIndex is
 ;; https://cmake.org/cmake/help/latest/manual/cmake-file-api.7.html
 (defun cmake-integration--target-is-in-projectIndex0-p (target)
-  "Return 't' if the projectIndex field of TARGET is 0."
+  "Return t if the projectIndex field of TARGET is 0."
   (eq (alist-get 'projectIndex target) 0)
   )
 
 
 (defun cmake-integration--target-is-not-utility-p (target)
-  "Return 't' if TARGET type is not 'UTILITY'."
+  "Return t if TARGET type is not `UTILITY'."
   (not (equal (alist-get 'type target) "UTILITY"))
   )
 
 
 (defun cmake-integration--target-is-not-library-p (target)
-  "Return 't' if TARGET type is not 'UTILITY'."
+  "Return t if TARGET type is not `UTILITY'."
   (let ((type (alist-get 'type target)))
     (when type
       (not (equal (car (cdr (split-string type "_"))) "LIBRARY"))
@@ -297,12 +297,12 @@ targets found in JSON-FILENAME.
 JSON-FILENAME must be a CMake API codemodel file.
 
 If JSON-FILENAME is not provided, use the value obtained with
-'cmake-integration-get-codemodel-reply-json-filename'.
+`cmake-integration-get-codemodel-reply-json-filename'.
 
 In addition to the targets defined in JSON-FILENAME, the returned
-alist also contains elements for the implicit targets 'all' and
-'clean' plus optional 'install' targets. These special targets
-don't have the 'target-info' data."
+alist also contains elements for the implicit targets `all' and
+`clean' plus optional `install' targets. These special targets
+don't have the `target-info' data."
 
   (let* ((json-filename (or json-filename
                             ;; If json-filename was not provided, get it from
@@ -369,9 +369,9 @@ shown as an annotation."
 
 
 (defun cmake-integration--add-all-clean-install-targets (targets config-name has-install-rule)
-  "Return TARGETS with extra 'all', 'clean' and 'install' for CONFIG-NAME.
+  "Return TARGETS with extra `all', `clean' and `install' for CONFIG-NAME.
 
-The 'install' target is only included if HAS-INSTALL-RULE is true."
+The `install' target is only included if HAS-INSTALL-RULE is true."
   (nconc `((,(cmake-integration--mktarget "all" config-name)))
          `((,(cmake-integration--mktarget "clean" config-name)))
          (when has-install-rule
@@ -567,7 +567,7 @@ something like just <target-name>, or bin/<target-name>.
 Throws an error if the target is not an executable.
 
 If TARGET-NAME is not provided use the last target (saved in a
-'cmake-integration-current-target')."
+`cmake-integration-current-target')."
 
   ;; If both `target' and `cmake-integration-current-target' are nil,
   ;; throw an error asking the UE to select a target first by calling
@@ -576,12 +576,12 @@ If TARGET-NAME is not provided use the last target (saved in a
     (error "Please select a target first `cmake-integration-save-and-compile' first")
     )
 
-  ;; The `target-info' variable inside the 'let' has the data from the
+  ;; The `target-info' variable inside the `let' has the data from the
   ;; codemodel json file for TARGET-NAME. This data is an alist and
-  ;; includes a 'jsonFile' field, which has the name of another json
+  ;; includes a `jsonFile' field, which has the name of another json
   ;; file with more data about the target. We read this json file and
   ;; save the data in the `target-data' variable. From there we can
-  ;; get the executable name from its 'artifacts' field.
+  ;; get the executable name from its `artifacts' field.
   (let* ((target (or target cmake-integration-current-target))
          (target-name (car (split-string target cmake-integration--multi-config-separator)))
          (target-info (alist-get
@@ -731,7 +731,7 @@ missing. Please run either `cmake-integration-cmake-reconfigure' or
 
 ;;;###autoload
 (defun cmake-integration-save-and-compile-last-target ()
-  "Recompile the last target that was compiled (or 'all')."
+  "Recompile the last target that was compiled (or `all')."
   (interactive)
   (cmake-integration-save-and-compile-no-completion
    (or cmake-integration-current-target "all")))
@@ -949,7 +949,7 @@ cmake-integration-conan-profile variable."
 (defun cmake-integration-generate-project-documentation ( )
   "Generate the documentation in a cmake based project using Doxygen.
 
-This assume that there is a 'doc' folder in the project root,
+This assume that there is a `doc' folder in the project root,
 from where the doxygen command will be run."
   (interactive)
   (let ((doxygen-command (format "cd %s && doxygen" (cmake-integration--get-docs-folder))))
