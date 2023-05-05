@@ -95,7 +95,7 @@ This helps lsp and clangd correctly parsing the project files."
 
 
 (defcustom cmake-integration-use-dap-for-debug nil
-  "If t, use dap-mode with cpptools for debug.
+  "If t, use `dap-mode' with cpptools for debug.
 
 If nil, use standard gdb graphical interface (see Emacs manual)."
   :type 'boolean :safe #'booleanp :group 'cmake-integration)
@@ -346,7 +346,7 @@ don't have the `target-info' data."
   "Return the targets found in JSON-FILENAME that respect PREDICATE.
 
 This function is the same as
-cmake-integration-get-cmake-targets-from-codemodel-json-file,
+`cmake-integration-get-cmake-targets-from-codemodel-json-file',
 with the exception that it adds the type of each target to a
 `type' field in the target. The main use for this information is
 during completion of target names, where this type information is
@@ -379,30 +379,63 @@ The `install' target is only included if HAS-INSTALL-RULE is true."
          targets))
 
 
+(defun cmake-integration--get-cmake-include-filenames (json-filename)
+  "Return a list of include preset filenames in the JSON-FILENAME.
+
+A CMake presets file can include other presets files. This
+function will return the absolute paths of these included
+presets."
+  (when (file-exists-p json-filename)
+    (let ((parent-folder (f-parent json-filename)))
+      (mapcar (lambda (filename)
+                (if (f-absolute-p filename)
+                    filename
+                  (f-join parent-folder filename)))
+              (alist-get 'include (json-read-file json-filename))))))
+
+
+(defun cmake-integration--get-cmake-configure-presets-from-filename (json-filename)
+  "Get the configure presets from the JSON-FILENAME.
+
+Return nil if the file does not exist."
+  (when (file-exists-p json-filename)
+    ;; Append a vector to nil transforms it into a list
+    (append
+     (alist-get 'configurePresets (json-read-file json-filename))
+     nil)))
+
+
+(defun cmake-integration--get-cmake-configure-presets-from-filename-2 (json-filename)
+  "Get the configure presets from the JSON-FILENAME also considering included presets."
+  (when (file-exists-p json-filename)
+    ;; The mapcar will turn the list of presets (each preset is an
+    ;; alist) into an alist where the key is the preset name. This
+    ;; will allow us to use the returned alist as the COLLECTION
+    ;; argument of completing-read and to also retrieve information of
+    ;; the chosen preset.
+    (mapcar
+     (lambda (preset) (cons (alist-get 'name preset) preset))
+     
+     (vconcat
+      (-mapcat
+       (lambda (elem) (cmake-integration--get-cmake-configure-presets-from-filename elem) )
+
+       (append
+        (cmake-integration--get-cmake-include-filenames json-filename)
+        (list json-filename)
+        ))))))
+
+
 (defun cmake-integration-get-cmake-configure-presets ()
   "Get the configure presets.
 
 Get the configure presets in both 'CMakePresets.json' and
 'CMakeUserPresets.json' files."
   (let ((cmake-system-presets-filename (file-name-concat (cmake-integration-get-project-root-folder) "CMakePresets.json"))
-        (cmake-user-presets-filename (file-name-concat (cmake-integration-get-project-root-folder) "CMakeUserPresets.json"))
-        )
+        (cmake-user-presets-filename (file-name-concat (cmake-integration-get-project-root-folder) "CMakeUserPresets.json")))
 
-    ;; The mapcar will turn the list of presets (each preset is an
-    ;; alist) into an alist where the key is the preset name. This
-    ;; will allow us to use the returned alist as the COLLECTION
-    ;; argument of completing-read and to also retrieve information of
-    ;; the chosen preset.
-    (mapcar (lambda (preset) (cons (alist-get 'name preset) preset))
-            ;; We will read both the system and the user preset files to find configure presets there
-            (append
-             ;; Presets names in the CMakePresets.json file
-             (when (file-exists-p cmake-system-presets-filename)
-               (alist-get 'configurePresets (json-read-file cmake-system-presets-filename)))
-
-             ;; Presets names in CMakeUserPresets.json
-             (when (file-exists-p cmake-user-presets-filename)
-               (alist-get 'configurePresets (json-read-file cmake-user-presets-filename)))))))
+    (append (cmake-integration--get-cmake-configure-presets-from-filename-2 cmake-system-presets-filename)
+            (cmake-integration--get-cmake-configure-presets-from-filename-2 cmake-user-presets-filename))))
 
 
 (defun cmake-integration--get-cmake-configure-with-preset-command (preset)
@@ -832,7 +865,7 @@ variable. This should be passed to gdb command in Emacs."
 (declare-function dap-debug "dap-mode")
 
 (defun cmake-integration--launch-dap-debug-cpptools-last-target ()
-  "Launch dap-debug using cpptools to debug the last target."
+  "Launch `dap-debug' using cpptools to debug the last target."
   (require 'dap-mode)
   (let ((executable-filename (cmake-integration-get-target-executable-filename)))
 

@@ -1,0 +1,27 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 21,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "EvenMorePresets-1",
+            "displayName": "Build using Ninja generator",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-with-ninja-extra-subfolder/",
+            "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": true,
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "EvenMorePresets-2",
+            "displayName": "Build using Ninja Multi-Config generator",
+            "generator": "Ninja Multi-Config",
+            "binaryDir": "${sourceDir}/build-with-ninja-multiconfig-extra-subfolder/",
+            "inherits": "default"
+        }
+    ]
+}

@@ -285,6 +285,43 @@ test code from inside a 'test project'."
                     '(("all") ("clean") ("main" (jsonFile . "target-main-some-hash.json") (name . "main") (projectIndex . 0))))))))
 
 
+(ert-deftest test-cmake-integration-get-cmake-configure-presets ()
+  ;; Without any presets file
+  (test-fixture-setup
+   "./test-project"
+   (lambda ()
+     (let ((presets (cmake-integration-get-cmake-configure-presets)))
+       (should (equal presets nil)))))
+
+  ;; With a presets file
+  (test-fixture-setup
+   "./test-project-with-presets"
+   (lambda ()
+     (let ((presets-names (mapcar
+                           '(lambda (elem) (cmake-integration--get-preset-name (cdr elem)) )
+                           (cmake-integration-get-cmake-configure-presets)))
+           (expected-preset-names '("default" "ninjamulticonfig"))
+
+
+           )
+       (should (equal presets-names expected-preset-names)))))
+
+  (test-fixture-setup
+   "./test-project-with-presets-with-includes"
+   (lambda ()
+     (let ((presets-names (mapcar
+                           '(lambda (elem) (cmake-integration--get-preset-name (cdr elem)) )
+                           (cmake-integration-get-cmake-configure-presets)))
+           (expected-preset-names '("MorePresets-1"
+                                    "MorePresets-2"
+                                    "MorePresets-3"
+                                    "EvenMorePresets-1"
+                                    "EvenMorePresets-2"
+                                    "CMakePresets-1"
+                                    "CMakePresets-2")))
+       (should (equal presets-names expected-preset-names))))))
+
+
 (ert-deftest test-cmake-integration-get-compile-command ()
   (test-fixture-setup
    "./test-project"
