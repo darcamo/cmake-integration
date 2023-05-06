@@ -5,12 +5,9 @@
         "minor": 21,
         "patch": 0
     },
-    "include": [
-        "subfolder2/MorePresets-Extra.json"
-    ],
     "configurePresets": [
         {
-            "name": "MorePresets-1",
+            "name": "MorePresets-Extra-1",
             "displayName": "Build using Ninja generator",
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/build-with-ninja-extra/",
@@ -20,14 +17,14 @@
             }
         },
         {
-            "name": "MorePresets-2",
+            "name": "MorePresets-Extra-2",
             "displayName": "Build using Ninja Multi-Config generator",
             "generator": "Ninja Multi-Config",
             "binaryDir": "${sourceDir}/build-with-ninja-multiconfig-extra/",
             "inherits": "default"
         },
         {
-            "name": "MorePresets-3",
+            "name": "MorePresets-Extra-3",
             "displayName": "Build using Ninja Multi-Config generator",
             "generator": "Ninja Multi-Config",
             "binaryDir": "${sourceDir}/build-with-ninja-multiconfig-extra/",

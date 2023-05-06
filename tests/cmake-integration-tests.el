@@ -285,6 +285,31 @@ test code from inside a 'test project'."
                     '(("all") ("clean") ("main" (jsonFile . "target-main-some-hash.json") (name . "main") (projectIndex . 0))))))))
 
 
+(ert-deftest test-cmake-integration--change-to-absolute-filename ()
+  (let ((absolute-filename "/somefolder/subfolder/filename1.txt")
+        (relative-filename "subfolder/filename2.txt")
+        (parent-folder "/somefolder"))
+    (should (equal (cmake-integration--change-to-absolute-filename absolute-filename parent-folder)
+                   absolute-filename))
+    (should (equal (cmake-integration--change-to-absolute-filename relative-filename parent-folder)
+                   (f-join parent-folder relative-filename)))))
+
+
+(ert-deftest test-cmake-integration--get-cmake-include-filenames ()
+  (test-fixture-setup
+   "./test-project-with-presets"
+   (lambda ()
+     (let ((filenames (cmake-integration--get-cmake-include-filenames "CMakePresets.json")))
+       (should (equal filenames '("CMakePresets.json"))))))
+
+  (test-fixture-setup
+   "./test-project-with-presets-with-includes"
+   (lambda ()
+     (let ((filenames (cmake-integration--get-cmake-include-filenames "CMakePresets.json")))
+       (should (equal filenames '("subfolder2/MorePresets-Extra.json""MorePresets.json" "subfolder/EvenMorePresets.json" "CMakePresets.json")))))))
+
+
+
 (ert-deftest test-cmake-integration-get-cmake-configure-presets ()
   ;; Without any presets file
   (test-fixture-setup
@@ -312,7 +337,10 @@ test code from inside a 'test project'."
      (let ((presets-names (mapcar
                            '(lambda (elem) (cmake-integration--get-preset-name (cdr elem)) )
                            (cmake-integration-get-cmake-configure-presets)))
-           (expected-preset-names '("MorePresets-1"
+           (expected-preset-names '("MorePresets-Extra-1"
+                                    "MorePresets-Extra-2"
+                                    "MorePresets-Extra-3"
+                                    "MorePresets-1"
                                     "MorePresets-2"
                                     "MorePresets-3"
                                     "EvenMorePresets-1"
