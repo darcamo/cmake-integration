@@ -713,13 +713,19 @@ the marginalia package, or in Emacs standard completion buffer."
   "Get all targets for completion specified in JSON-FILENAME.
 
 Get the name of all targets for completion, respecting the value
-of the `*-targets-during-completion' variables."
-  (let ((list-of-targets (if cmake-integration-include-subproject-targets-during-completion
-                             (cmake-integration-get-cmake-targets-from-codemodel-json-file-2
-                              json-filename)
-                           (cmake-integration-get-cmake-targets-from-codemodel-json-file-2
-                            json-filename
-                            'cmake-integration--target-is-in-projectIndex0-p))))
+of the `*-targets-during-completion' variables.
+
+If a prefix argument is provided, then the value of
+`cmake-integration-include-subproject-targets-during-completion'
+will be ignored.
+"
+  (let* ((include-subprojects (or current-prefix-arg cmake-integration-include-subproject-targets-during-completion))
+         (list-of-targets (if include-subprojects
+                              (cmake-integration-get-cmake-targets-from-codemodel-json-file-2
+                               json-filename)
+                            (cmake-integration-get-cmake-targets-from-codemodel-json-file-2
+                             json-filename
+                             'cmake-integration--target-is-in-projectIndex0-p))))
 
     ;; Filter the list of targets
     (cond
