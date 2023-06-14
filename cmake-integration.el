@@ -964,7 +964,7 @@ configuration."
 
 The command is run from the build folder of the current cmake
 configuration and the profile passed to conan is taken from the
-cmake-integration-conan-profile variable."
+`cmake-integration-conan-profile' variable."
   (if cmake-integration-conan-profile
       ;; If cmake-integration-conan-profile is set, it can be either a string with a single profile, or an alist mapping cmake profile names to conan profile names
       (if (stringp cmake-integration-conan-profile)
