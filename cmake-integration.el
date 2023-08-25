@@ -456,7 +456,7 @@ Get the configure presets in both 'CMakePresets.json' and
 
 (defun cmake-integration--get-cmake-configure-with-preset-command (preset)
   "Get the command to configure with CMake using the preset PRESET."
-  (format "cd %s && cmake . --preset %s"
+  (format "cd %s && cmake . -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --preset %s"
                                  (cmake-integration-get-project-root-folder)
                                  (cmake-integration--get-preset-name preset)))
 
