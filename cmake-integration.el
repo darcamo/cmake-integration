@@ -806,10 +806,16 @@ missing. Please run either `cmake-integration-cmake-reconfigure' or
   "Get the full path of EXECUTABLE-FILENAME."
   (file-name-concat (cmake-integration-get-build-folder) executable-filename))
 
+(defun cmake-integration--change-drive-letter-for-windows (path)
+  "Get the command to switch to the drive letter of a path for windows"
+  (if (and (eq system-type 'windows-nt) (string-match "^[A-Za-z]:" path))
+      (concat (substring path 0 2) " && ")
+      ""))
 
 (defun cmake-integration--get-run-command-project-root-cwd (executable-filename)
   "Get the run command for EXECUTABLE-FILENAME from the project root folder."
-  (format "cd %s && %s %s"
+  (format "%scd \"%s\" && \"%s\" %s"
+          (cmake-integration--change-drive-letter-for-windows (cmake-integration--get-working-directory executable-filename))
           (cmake-integration--get-working-directory executable-filename)
           (cmake-integration-get-target-executable-full-path executable-filename)
           cmake-integration-current-target-run-arguments))
@@ -817,7 +823,8 @@ missing. Please run either `cmake-integration-cmake-reconfigure' or
 
 (defun cmake-integration--get-run-command-build-folder-cwd (executable-filename)
   "Get the run command for EXECUTABLE-FILENAME from the build folder."
-  (format "cd %s && %s %s"
+  (format "%scd %s && %s %s"
+          (cmake-integration--change-drive-letter-for-windows (cmake-integration--get-working-directory executable-filename))
           (cmake-integration--get-working-directory executable-filename)
           executable-filename
           cmake-integration-current-target-run-arguments))
@@ -827,7 +834,8 @@ missing. Please run either `cmake-integration-cmake-reconfigure' or
   "Get the run command for EXECUTABLE-FILENAME from the binary folder.
 
 The binary folder is the folder containing the executable."
-  (format "cd %s && ./%s %s"
+  (format "%scd \"%s\" && \"./%s\" %s"
+          (cmake-integration--change-drive-letter-for-windows (cmake-integration--get-working-directory executable-filename))
           (cmake-integration--get-working-directory executable-filename)
           (file-name-nondirectory executable-filename)
           cmake-integration-current-target-run-arguments))
@@ -836,7 +844,8 @@ The binary folder is the folder containing the executable."
 (defun cmake-integration--get-run-command-custom-cwd (executable-filename project-subfolder)
   "Get the correct run command EXECUTABLE-FILENAME from a PROJECT-SUBFOLDER."
   (cl-assert (stringp project-subfolder))
-  (format "cd %s && %s %s"
+  (format "%scd \"%s\" && \"%s\" %s"
+          (cmake-integration--change-drive-letter-for-windows (cmake-integration--get-working-directory executable-filename))
           (cmake-integration--get-working-directory executable-filename)
           (cmake-integration-get-target-executable-full-path executable-filename)
           cmake-integration-current-target-run-arguments))
