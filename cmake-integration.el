@@ -101,6 +101,13 @@ If nil, use standard gdb graphical interface (see Emacs manual)."
   :type 'boolean :safe #'booleanp :group 'cmake-integration)
 
 
+(defcustom cmake-integration-custom-debug-function nil
+  "Custom Debugging Function: This user-defined function is
+invoked when the debugging should start and should accept two
+arguments: the executable path and the working directory."
+  :type 'function :group 'cmake-integration)
+
+
 (defcustom cmake-integration-conan-arguments "--build missing" "Extra arguments to pass to conan." :type '(string) :group 'cmake-integration)
 
 ;; TODO: Investigate if it is possible to get completions for the conan and cmake profiles in the custom interface
@@ -918,10 +925,15 @@ variable. This should be passed to gdb command in Emacs."
   (interactive)
   (check-if-build-folder-exists-and-throws-if-not)
 
-  (if cmake-integration-use-dap-for-debug
+  (if (and (boundp 'cmake-integration-custom-debug-function) (functionp cmake-integration-custom-debug-function))
+    (let ((executable-filename (cmake-integration-get-target-executable-filename)))
+      (let ((program-path (expand-file-name (cmake-integration-get-target-executable-full-path executable-filename)))
+            (cwd (expand-file-name (cmake-integration--get-working-directory executable-filename))))
+        (funcall cmake-integration-custom-debug-function program-path cwd)))
+    (if cmake-integration-use-dap-for-debug
       (cmake-integration--launch-dap-debug-cpptools-last-target)
-    ;; Run the target
-    (cmake-integration--launch-gdb-with-last-target)))
+      ;; Run the target
+      (cmake-integration--launch-gdb-with-last-target))))
 
 
 ;;;###autoload
