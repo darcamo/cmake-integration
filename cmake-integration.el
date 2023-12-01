@@ -669,7 +669,9 @@ If TARGET-NAME is not provided use the last target (saved in a
 (defun cmake-integration-save-and-compile-no-completion (target)
   "Save the buffer and compile TARGET."
   (interactive "sTarget: ")
-  (save-buffer 0)
+  (if (buffer-file-name)
+      (save-buffer 0)
+    )
 
   (check-if-build-folder-exists-and-throws-if-not)
 
