@@ -250,6 +250,14 @@ and getting one of the configure presets in it."
   (when preset (alist-get 'name preset)))
 
 
+(defun cmake-integration--is-preset-visible (preset)
+  "Returns `t' if the preset PRESET if not hidden.
+
+PRESET is an alist obtained from reading the cmake presets file
+and getting one of the configure presets in it."
+  (when preset (not (alist-get 'hidden preset))))
+
+
 (defun cmake-integration-get-last-configure-preset-name ()
   "Get the `name' field of the last preset used for configure."
   (cmake-integration--get-preset-name cmake-integration-last-configure-preset))
@@ -433,13 +441,14 @@ Return nil if the file does not exist."
     ;; will allow us to use the returned alist as the COLLECTION
     ;; argument of completing-read and to also retrieve information of
     ;; the chosen preset.
-    (mapcar
-     (lambda (preset) (cons (alist-get 'name preset) preset))
+    (seq-filter 'cmake-integration--is-preset-visible
+                (mapcar
+                 (lambda (preset) (cons (alist-get 'name preset) preset))
 
-     (vconcat
-      (-mapcat
-       (lambda (elem) (cmake-integration--get-cmake-configure-presets-from-filename elem) )
-       (cmake-integration--get-cmake-include-filenames json-filename))))))
+                 (vconcat
+                  (-mapcat
+                   (lambda (elem) (cmake-integration--get-cmake-configure-presets-from-filename elem) )
+                   (cmake-integration--get-cmake-include-filenames json-filename)))))))
 
 
 (defun cmake-integration-get-cmake-configure-presets ()
