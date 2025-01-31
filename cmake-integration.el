@@ -185,23 +185,28 @@ Function to verify is VAL is save as a value for the
 (defun cmake-integration-get-build-folder ()
   "Get the project build folder.
 
-This is just the project folder concatenated with
-`cmake-integration-build-dir' (when presets are not used) or with
-the binaryDir field of the preset. It returns nil if not in a
-project."
-  (let ((project-root-folder (cmake-integration-get-project-root-folder)))
-    (when project-root-folder
-      (if cmake-integration-last-configure-preset
-          ;; We have a configure preset -> let's use build folder pointed by it
-          (s-replace-all `(("${sourceDir}/" . ,(cmake-integration-get-project-root-folder)) ("${presetName}". ,(alist-get 'name cmake-integration-last-configure-preset))) (cmake-integration-get-binaryDir cmake-integration-last-configure-preset))
+Returns the build folder path based on either the configure preset or
+the manually specified `cmake-integration-build-dir'. Throws an error if
+no valid build folder can be determined."
+  (let ((project-root-folder (cmake-integration-get-project-root-folder))
+        (preset cmake-integration-last-configure-preset)
+        (build-dir cmake-integration-build-dir))
+    (unless project-root-folder
+      (error "Not in a project"))
 
-        ;; We don't have a configure preset
-        (if cmake-integration-build-dir
-            ;; If cmake-integration-build-dir is set, we can use it as the project
-            (file-name-concat project-root-folder cmake-integration-build-dir)
-          ;; If we do not have cmake-integration-build-dir set (it is
-          ;; nil) throw an error asking the user to select a preset
-          (error "Please call `cmake-integration-select-configure-preset' first and select a \"configure preset\", or set `cmake-integration-build-dir' to be the build folder"))))))
+    (if preset
+        ;; Use the build folder from the configure preset
+        (let* ((source-dir-replacement (cons "${sourceDir}/" project-root-folder))
+               (preset-name-replacement (cons "${presetName}" (alist-get 'name preset)))
+               (replacements (list source-dir-replacement preset-name-replacement)))
+          (s-replace-all replacements (cmake-integration-get-binaryDir preset)))
+
+      ;; Use manually set build directory or throw an error
+      (if build-dir
+          (file-name-concat project-root-folder build-dir)
+        (error "Build folder is not set.
+Call `cmake-integration-select-configure-preset' to select a configure preset,
+or set `cmake-integration-build-dir' manually")))))
 
 
 (defun cmake-integration-get-query-folder ()
@@ -251,7 +256,7 @@ and getting one of the configure presets in it."
 
 
 (defun cmake-integration--is-preset-visible (preset)
-  "Returns `t' if the preset PRESET if not hidden.
+  "Returns t if the preset PRESET if not hidden.
 
 PRESET is an alist obtained from reading the cmake presets file
 and getting one of the configure presets in it."
@@ -726,8 +731,7 @@ of the `*-targets-during-completion' variables.
 
 If a prefix argument is provided, then the value of
 `cmake-integration-include-subproject-targets-during-completion'
-will be ignored.
-"
+will be ignored."
   (let* ((include-subprojects (or current-prefix-arg cmake-integration-include-subproject-targets-during-completion))
          (list-of-targets (if include-subprojects
                               (cmake-integration-get-cmake-targets-from-codemodel-json-file-2
