@@ -7,21 +7,38 @@
     },
     "configurePresets": [
         {
-            "name": "default",
-            "displayName": "Build using Ninja generator",
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build-with-ninja/",
+            "name": "Ninja",
+            "hidden": true,
+            "generator": "Ninja"
+        },
+        {
+            "name": "Debug",
+            "hidden": true,
             "cacheVariables": {
                 "CMAKE_EXPORT_COMPILE_COMMANDS": true,
                 "CMAKE_BUILD_TYPE": "Debug"
             }
         },
         {
+            "name": "default",
+            "displayName": "Build using Ninja generator",
+            "inherits": ["Ninja", "Debug"],
+            "binaryDir": "${sourceDir}/build/${presetName}/"
+        },
+        {
             "name": "ninjamulticonfig",
             "displayName": "Build using Ninja Multi-Config generator",
             "generator": "Ninja Multi-Config",
-            "binaryDir": "${sourceDir}/build-with-ninja-multiconfig/",
             "inherits": "default"
+        },
+        {
+            "name": "Dummy"
+        },
+        {
+            "name": "ninjamulticonfig2",
+            "displayName": "Build using Ninja Multi-Config generator",
+            "generator": "Ninja Multi-Config",
+            "inherits": ["default", "Dummy"]
         }
     ],
     "buildPresets": [

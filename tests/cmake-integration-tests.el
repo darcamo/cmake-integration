@@ -43,10 +43,9 @@ file/folder to exist."
 
 This is used in the tests definitions to make sure we run the
 test code from inside a 'test project'."
-  (unwind-protect
-      (let ((default-directory (expand-file-name subfolder))
-            (cmake-integration-last-configure-preset nil))
-        (funcall body))))
+  (let ((default-directory (expand-file-name subfolder))
+        (cmake-integration-last-configure-preset nil))
+    (funcall body)))
 
 
 ;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -74,6 +73,53 @@ test code from inside a 'test project'."
    (lambda ()
      (should (file-equal-p (cmake-integration-get-project-root-folder)
                            "..")))))
+
+
+(ert-deftest test-cmake-integration-get-parent-preset ()
+  (test-fixture-setup
+   "./test-project-with-presets"
+   (lambda ()
+     ;; If there is no parent, return nil
+     (let* ((preset (cmake-integration--get-preset-by-name "default"))
+            (parent-preset (cmake-integration-get-parent-preset preset)))
+       (should-not parent-preset))
+
+     ;; When there is a single parent, return it
+     (let* ((preset (cmake-integration--get-preset-by-name "ninjamulticonfig"))
+            (parent-preset (cmake-integration-get-parent-preset preset))
+            (parent-name (cmake-integration--get-preset-name parent-preset)))
+       (should (string-equal parent-name "default")))
+
+     (let* ((preset (cmake-integration--get-preset-by-name "ninjamulticonfig2"))
+            (parent-presets (cmake-integration-get-parent-preset preset))
+            (parent-names (mapcar 'cmake-integration--get-preset-name parent-presets))
+            )
+       (should (vectorp parent-presets))
+       (should (equal parent-names '("default" "Dummy")))))))
+
+
+(ert-deftest test-cmake-integration-get-binaryDir ()
+  (test-fixture-setup
+   "./test-project-with-presets"
+   (lambda ()
+     (let ((preset (cmake-integration--get-preset-by-name "Dummy")))
+       (should-not (cmake-integration-get-binaryDir preset)))
+     
+     (let* ((preset (cmake-integration--get-preset-by-name "default"))
+            (binaryDir (cmake-integration-get-binaryDir preset))
+            (expected-binaryDir "${sourceDir}/build/${presetName}/"))
+       (should (filepath-equal-p binaryDir expected-binaryDir)))
+
+     (let* ((preset (cmake-integration--get-preset-by-name "ninjamulticonfig"))
+            (binaryDir (cmake-integration-get-binaryDir preset))
+            (expected-binaryDir "${sourceDir}/build/${presetName}/"))
+       (should (filepath-equal-p binaryDir expected-binaryDir)))
+     
+     (let* ((preset (cmake-integration--get-preset-by-name "ninjamulticonfig2"))
+            (binaryDir (cmake-integration-get-binaryDir preset))
+            (expected-binaryDir "${sourceDir}/build/${presetName}/"))
+       (should (filepath-equal-p binaryDir expected-binaryDir)))
+     )))
 
 
 (ert-deftest test-cmake-integration-get-build-folder-without-presets ()
@@ -325,7 +371,7 @@ test code from inside a 'test project'."
      (let ((presets-names (mapcar
                            '(lambda (elem) (cmake-integration--get-preset-name (cdr elem)) )
                            (cmake-integration-get-cmake-configure-presets)))
-           (expected-preset-names '("default" "ninjamulticonfig"))
+           (expected-preset-names '("default" "ninjamulticonfig" "Dummy" "ninjamulticonfig2"))
 
 
            )

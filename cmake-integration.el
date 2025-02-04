@@ -941,12 +941,27 @@ variable. This should be passed to gdb command in Emacs."
   (alist-get 'inherits preset))
 
 
-(defun cmake-integration-get-parent-preset (preset)
-  "Get the parent preset of PRESET."
+(defun cmake-integration--get-preset-by-name (preset-name)
+  "Get the preset from the list of presets with name PRESET-NAME."
   (alist-get
-   (cmake-integration-get-parent-preset-name preset)
+   preset-name
    (cmake-integration-get-cmake-configure-presets)
    nil nil 'equal))
+
+
+(defun cmake-integration-get-parent-preset (preset)
+  "Get the parent preset of PRESET.
+
+If the 'inherits' field in the presets file is a single string, then a
+single preset is returned. If the 'inherits' is an array of names, then
+a vector of presets is returned."
+  (let ((parent-name (cmake-integration-get-parent-preset-name preset)))
+    (if (vectorp parent-name)
+        (let ((presets (cl-coerce (remq nil (mapcar 'cmake-integration--get-preset-by-name parent-name)) 'vector)))
+          (if (seq-empty-p presets)
+              nil
+            presets))
+      (cmake-integration--get-preset-by-name parent-name))))
 
 
 (defun cmake-integration-get-binaryDir (preset)
@@ -954,12 +969,13 @@ variable. This should be passed to gdb command in Emacs."
 
 If not available, get the binaryDir or a parent preset."
   (when preset
-    (let (binary-dir)
-      (setq binary-dir (alist-get 'binaryDir preset))
-      (unless binary-dir
-        (setq binary-dir (cmake-integration-get-binaryDir (cmake-integration-get-parent-preset preset)))
-        )
-      binary-dir)))
+    (if-let* ((binary-dir (alist-get 'binaryDir preset)))
+        binary-dir
+      (let ((parents (cmake-integration-get-parent-preset preset)))
+        (if (vectorp parents)
+            (let ((binaryDirs (mapcar 'cmake-integration-get-binaryDir parents)))
+              (seq-find 'stringp binaryDirs))
+          (cmake-integration-get-binaryDir parents))))))
 
 
 ;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
