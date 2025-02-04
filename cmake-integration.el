@@ -301,58 +301,96 @@ and getting one of the configure presets in it."
       )))
 
 
+(defun cmake-integration--get-targets-from-configuration (config &optional predicate)
+  "Get all targets in CONFIG that match PREDICATE."
+  (if predicate
+      (seq-filter predicate (alist-get 'targets config))
+    (alist-get 'targets config)))
+
+
+(defun cmake-integration--get-target-name (target config-name)
+  "Get name for TARGET, including CONFIG-NAME (if not nil)."
+  (let* ((target-name (alist-get 'name target)))
+    (cmake-integration--mktarget target-name config-name)))
+
+
+(defun cmake-integration--get-prepared-targets-from-configuration (config config-name predicate)
+  "Get all targets in CONFIG with name CONFIG-NAME that match PREDICATE.
+
+The implicit targets 'all', 'clean' and optional 'install' targets will
+be returned as well.
+
+CONFIG-NAME is non-nil only when using ninja multi-config generator,
+where we have more than one configuration."
+  (let ((install-rule? (cl-some (lambda (dir) (alist-get 'hasInstallRule dir))
+                                (alist-get 'directories config)))
+        (targets-in-config (cmake-integration--get-targets-from-configuration config predicate)))
+    ;; Add implicit 'all', 'clean' and optional 'install' targets
+    (cmake-integration--add-all-clean-install-targets
+     (mapcar (lambda (target-info)
+               (let* ((target-name (cmake-integration--get-target-name target-info config-name)))
+                 (cons target-name target-info)))
+             targets-in-config)
+     config-name
+     install-rule?)))
+
+
 (defun cmake-integration-get-cmake-targets-from-codemodel-json-file (&optional json-filename predicate)
-  "Return the targets found in JSON-FILENAME that respect PREDICATE.
+  "Return the targets found in JSON-FILENAME that match PREDICATE.
 
 Return an alist of (target-name . target-info) elements for
 targets found in JSON-FILENAME.
 
-JSON-FILENAME must be a CMake API codemodel file.
+JSON-FILENAME must be a CMake API codemodel file. If is not provided,
+`cmake-integration-get-codemodel-reply-json-filename' is used.
 
-If JSON-FILENAME is not provided, use the value obtained with
-`cmake-integration-get-codemodel-reply-json-filename'.
+The returned alist includes:
+  - Explicit targets from the JSON file.
+  - Implicit targets: 'all', 'clean', and 'install' (if applicable).
 
-In addition to the targets defined in JSON-FILENAME, the returned
-alist also contains elements for the implicit targets `all' and
-`clean' plus optional `install' targets. These special targets
-don't have the `target-info' data."
+Each entry maps `target-name` to `target-info`."
 
   (let* ((json-filename (or json-filename
                             ;; If json-filename was not provided, get it from
                             ;; 'cmake-integration-get-codemodel-reply-json-filename'.
                             (cmake-integration-get-codemodel-reply-json-filename)))
-         (configurations (alist-get 'configurations (json-read-file json-filename))))
+         (all-config (alist-get 'configurations (json-read-file json-filename))))
     ;; The result of the nested `mapcar's below is a list of list of alists.
     ;; What we need a list of alists so remove one level and combine the next
     ;; level lists (of alists) of into a single list (of alists).
     (apply #'nconc
-           ;; process configurations vector
-           (mapcar (lambda (config-data)
+           ;; process all-config vector
+           (mapcar (lambda (config)
                      ;; config-name is non-nil only when using ninja
                      ;; multi-config generator, where we have more
                      ;; than one configuration
-                     (let ((config-name (and (> (length configurations) 1)
-                                             (alist-get 'name config-data)))
-                           (has-install-rule (cl-some (lambda (dir) (alist-get 'hasInstallRule dir))
-                                                      (alist-get 'directories config-data))))
-                       ;; Add implicit 'all', 'clean' and optional 'install' targets
-                       (cmake-integration--add-all-clean-install-targets
-                        (mapcar (lambda (target-info)
-                                  (let ((target-name (alist-get 'name target-info)))
-                                    (cons (cmake-integration--mktarget target-name config-name)
-                                          target-info)))
-                                ;; Sequence of targets from the json file. If predicate was
-                                ;; provided, get only the targets that match predicate.
-                                ;; Otherwise, get all targets.
-                                (if predicate
-                                    (seq-filter predicate (alist-get 'targets config-data))
-                                  (alist-get 'targets config-data)
-                                  ))
-                        config-name
-                        has-install-rule
-                        )))
+
+                     (let ((config-name (and (> (length all-config) 1)
+                                             (alist-get 'name config))))
+                       (cmake-integration--get-prepared-targets-from-configuration config config-name predicate)))
                    ;; Sequence mapped in the mapcar
-                   configurations))))
+                   all-config))))
+
+
+(defun cmake-integration--add-type-field-to-target (target)
+  "Add a `type' field to a TARGET.
+
+This will modify TARGET.
+
+TARGET is a list containing the target name followend by many cons, with
+each cons having some information about the TARGET. Particularly, TARGET
+has a cons cell with a `jsonFile' car and a `\"someJsonFile.json\"'
+filename. This json file will be read to extract the type that should be
+added to TARGET."
+
+  ;; ("target-name" (directoryIndex . 2) (id . "Continuous::@a44f0ac069e85531cdee") (jsonFile . "target-Continuous-Debug-32dbfb99931b31bc9c8f.json") (name . #1#) (projectIndex . 0))
+  (let ((target-name (car (split-string (car target) cmake-integration--multi-config-separator))))
+    (unless (or (equal target-name "all") (equal target-name "clean") (equal target-name "install"))
+      (let* ((json-file (alist-get 'jsonFile target))
+             (json-full-filename (file-name-concat (cmake-integration-get-reply-folder) json-file))
+             (target-json-data (json-read-file json-full-filename)))
+        ;; Set the value from the json data to `type' field
+        (setf (alist-get 'type (cdr target)) (alist-get 'type target-json-data))))))
 
 
 (defun cmake-integration-get-cmake-targets-from-codemodel-json-file-2 (&optional json-filename predicate)
@@ -364,21 +402,14 @@ with the exception that it adds the type of each target to a
 `type' field in the target. The main use for this information is
 during completion of target names, where this type information is
 shown as an annotation."
-  ;; Start with the list of targets returned by cmake-integration-get-cmake-targets-from-codemodel-json-file, then loop over each target to add the type information, skipping the "all", "clean" and "install" targets.
-  (let ((list-of-targets (cmake-integration-get-cmake-targets-from-codemodel-json-file json-filename predicate)))
-    (dolist (target list-of-targets)
-      (let ((target-name (car (split-string (car target) cmake-integration--multi-config-separator))))
-        (unless (or (equal target-name "all") (equal target-name "clean") (equal target-name "install"))
-          (let* ((json-file (alist-get 'jsonFile (cdr target)))
-                 (json-full-filename (file-name-concat (cmake-integration-get-reply-folder) json-file))
-                 (target-json-data (json-read-file json-full-filename))
-                 )
 
-            ;; Set the value from the json data to `type' field
-            (setf (alist-get 'type (cdr target)) (alist-get 'type target-json-data))
-            ))))
-    list-of-targets
-    ))
+  ;; Start with the list of targets returned by
+  ;; `cmake-integration-get-cmake-targets-from-codemodel-json-file',
+  ;; then loop over each target to add the type information, skipping
+  ;; the "all", "clean" and "install" targets.
+  (let ((list-of-targets (cmake-integration-get-cmake-targets-from-codemodel-json-file json-filename predicate)))
+    (mapc 'cmake-integration--add-type-field-to-target list-of-targets)
+    list-of-targets))
 
 
 (defun cmake-integration--add-all-clean-install-targets (targets config-name has-install-rule)
@@ -534,7 +565,6 @@ the marginalia package, or in Emacs standard completion buffer."
 A list of preset names if obtained from 'CMakePresets.json' and
 'CMakeUserPresets.json', if they exist. Then the user is asked to
 choose one of them (with completion)."
-  ;; TODO: Pass a predicate function to completing-read that remove any preset with "hidden" value of true
   (interactive)
 
   ;; Since we are changing the configure preset, the last target (if
@@ -695,7 +725,7 @@ If TARGET-NAME is not provided use the last target (saved in a
 (defun cmake-integration--get-target-type-from-name (target-name all-targets)
   "Get the type of the target with name TARGET-NAME from ALL-TARGETS.
 ALL-TARGETS is an alist like the one returned by
-`cmake-integration-get-cmake-targets-from-codemodel-json-file'."
+`cmake-integration-get-cmake-targets-from-codemodel-json-file-2'."
   (let ((target (alist-get target-name all-targets nil nil 'equal)))
     ;; (cmake-integration--get-target-type target)
     (alist-get 'type target)

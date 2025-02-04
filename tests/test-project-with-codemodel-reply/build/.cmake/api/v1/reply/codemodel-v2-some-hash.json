@@ -3,6 +3,11 @@
         {
             "targets" :
 			[
+                {
+					"jsonFile" : "target-somelib-some-hash.json",
+					"name" : "somelib",
+					"projectIndex" : 0
+				},
 				{
 					"jsonFile" : "target-main-some-hash.json",
 					"name" : "main",

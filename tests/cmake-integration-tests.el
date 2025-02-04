@@ -323,12 +323,22 @@ test code from inside a 'test project'."
 
 ;;; TODO: add more cases to the test (install target, ninja multi-config, etc)
 (ert-deftest test-cmake-integration-get-cmake-targets-from-codemodel-json-file ()
-  ;; Simplest case possible: there is only one executable target called "main"
   (test-fixture-setup
    "./test-project-with-codemodel-reply"
    (lambda ()
-     (should (equal (cmake-integration-get-cmake-targets-from-codemodel-json-file)
-                    '(("all") ("clean") ("main" (jsonFile . "target-main-some-hash.json") (name . "main") (projectIndex . 0))))))))
+
+     (let ((targets (cmake-integration-get-cmake-targets-from-codemodel-json-file))
+           (expected-targets '(("all")
+                               ("clean")
+                               ("somelib"
+                                (jsonFile . "target-somelib-some-hash.json")
+                                (name . "somelib")
+                                (projectIndex . 0))
+                               ("main"
+                                (jsonFile . "target-main-some-hash.json")
+                                (name . "main")
+                                (projectIndex . 0)))))
+       (should (equal targets expected-targets))))))
 
 
 (ert-deftest test-cmake-integration--change-to-absolute-filename ()
