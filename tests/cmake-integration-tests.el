@@ -52,16 +52,11 @@ test code from inside a 'test project'."
 ;; xxxxxxxxxxxxxxx Define the tests xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
-
-
 ;; test-cmake-integration--mktarget
-(ert-deftest test-cmake-integration--mktarget ()
-  (should (equal (cmake-integration--mktarget "target" "config") "target/config"))
+(ert-deftest test-cmake-integration--create-target-fullname ()
+  (should (equal (cmake-integration--create-target-fullname "target" "config") "target/config"))
   (let ((cmake-integration--multi-config-separator "|"))
-    (should (equal (cmake-integration--mktarget "target" "config") "target|config"))))
-
-
-
+    (should (equal (cmake-integration--create-target-fullname "target" "config") "target|config"))))
 
 
 ;; NOTE: For this test to pass a folder with a `.project' file must be recognized as a project.
@@ -104,7 +99,7 @@ test code from inside a 'test project'."
    (lambda ()
      (let ((preset (cmake-integration--get-preset-by-name "Dummy")))
        (should-not (cmake-integration-get-binaryDir preset)))
-     
+
      (let* ((preset (cmake-integration--get-preset-by-name "default"))
             (binaryDir (cmake-integration-get-binaryDir preset))
             (expected-binaryDir "${sourceDir}/build/${presetName}/"))
@@ -114,7 +109,7 @@ test code from inside a 'test project'."
             (binaryDir (cmake-integration-get-binaryDir preset))
             (expected-binaryDir "${sourceDir}/build/${presetName}/"))
        (should (filepath-equal-p binaryDir expected-binaryDir)))
-     
+
      (let* ((preset (cmake-integration--get-preset-by-name "ninjamulticonfig2"))
             (binaryDir (cmake-integration-get-binaryDir preset))
             (expected-binaryDir "${sourceDir}/build/${presetName}/"))
@@ -339,6 +334,40 @@ test code from inside a 'test project'."
                                 (name . "main")
                                 (projectIndex . 0)))))
        (should (equal targets expected-targets))))))
+
+
+(ert-deftest test-cmake-integration--add-all-clean-install-targets ()
+  ;; Test when config-name is nil
+  (let* ((targets '(("main" (name . "main")) ("somelib" (name . "somelib"))))
+         (expected-all-targets '(("all") ("clean") ("main" (name . "main")) ("somelib" (name . "somelib"))))
+         (config-name nil)
+         (install-rule? nil)
+         (all-targets (cmake-integration--add-all-clean-install-targets targets config-name install-rule?)))
+    (should (equal all-targets expected-all-targets)))
+
+  ;; With a non-nil config-name
+  (let* ((targets '(("main" (name . "main")) ("somelib" (name . "somelib"))))
+         (expected-all-targets '(("all/someConfig") ("clean/someConfig") ("main" (name . "main")) ("somelib" (name . "somelib"))))
+         (config-name "someConfig")
+         (install-rule? nil)
+         (all-targets (cmake-integration--add-all-clean-install-targets targets config-name install-rule?)))
+    (should (equal all-targets expected-all-targets)))
+
+  ;; With an install rule
+  (let* ((targets '(("main" (name . "main")) ("somelib" (name . "somelib"))))
+         (expected-all-targets '(("all") ("clean") ("install") ("main" (name . "main")) ("somelib" (name . "somelib"))))
+         (config-name nil)
+         (install-rule? t)
+         (all-targets (cmake-integration--add-all-clean-install-targets targets config-name install-rule?)))
+    (should (equal all-targets expected-all-targets)))
+
+  ;; With non-nil config-name and an install rule
+  (let* ((targets '(("main" (name . "main")) ("somelib" (name . "somelib"))))
+         (expected-all-targets '(("all/someConfig") ("clean/someConfig") ("install/someConfig") ("main" (name . "main")) ("somelib" (name . "somelib"))))
+         (config-name "someConfig")
+         (install-rule? t)
+         (all-targets (cmake-integration--add-all-clean-install-targets targets config-name install-rule?)))
+    (should (equal all-targets expected-all-targets))))
 
 
 (ert-deftest test-cmake-integration--change-to-absolute-filename ()

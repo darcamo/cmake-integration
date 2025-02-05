@@ -170,11 +170,19 @@ Function to verify is VAL is save as a value for the
   )
 
 
-(defun cmake-integration--mktarget (target-name &optional config-name)
-  "Return target constructed from from TARGET-NAME and CONFIG-NAME."
+(defun cmake-integration--create-target-fullname (target-name &optional config-name)
+  "Return target constructed from TARGET-NAME and CONFIG-NAME."
   (if config-name
       (concat target-name cmake-integration--multi-config-separator config-name)
     target-name))
+
+
+(defun cmake-integration--create-target (target-name &optional config-name)
+  "Create a simple target containing only its TARGET-NAME for config CONFIG-NAME.
+
+This is only used for the `all', `clean', and `install' targets."
+  (let ((target-full-name (cmake-integration--create-target-fullname target-name config-name)))
+    (list target-full-name)))
 
 
 (defun cmake-integration-get-project-root-folder ()
@@ -311,7 +319,17 @@ and getting one of the configure presets in it."
 (defun cmake-integration--get-target-name (target config-name)
   "Get name for TARGET, including CONFIG-NAME (if not nil)."
   (let* ((target-name (alist-get 'name target)))
-    (cmake-integration--mktarget target-name config-name)))
+    (cmake-integration--create-target-fullname target-name config-name)))
+
+
+(defun cmake-integration--add-name-to-target (target config-name)
+  "Add the target name to TARGET for CONFIG-NAME.
+
+TARGET is a list of cons cells, including one with 'name` field. This
+function will extract the value in the name field and prepend it to the
+list."
+  (let ((target-name (cmake-integration--get-target-name target config-name)))
+    (cons target-name target)))
 
 
 (defun cmake-integration--get-prepared-targets-from-configuration (config config-name predicate)
@@ -324,13 +342,13 @@ CONFIG-NAME is non-nil only when using ninja multi-config generator,
 where we have more than one configuration."
   (let ((install-rule? (cl-some (lambda (dir) (alist-get 'hasInstallRule dir))
                                 (alist-get 'directories config)))
-        (targets-in-config (cmake-integration--get-targets-from-configuration config predicate)))
+        (targets-in-config (cmake-integration--get-targets-from-configuration config predicate))
+        (targets-and-name))
+    (setq targets-and-name (mapcar (lambda (target-info) (cmake-integration--add-name-to-target target-info config-name))
+                                   targets-in-config))
     ;; Add implicit 'all', 'clean' and optional 'install' targets
     (cmake-integration--add-all-clean-install-targets
-     (mapcar (lambda (target-info)
-               (let* ((target-name (cmake-integration--get-target-name target-info config-name)))
-                 (cons target-name target-info)))
-             targets-in-config)
+     targets-and-name
      config-name
      install-rule?)))
 
@@ -416,11 +434,10 @@ shown as an annotation."
   "Return TARGETS with extra `all', `clean' and `install' for CONFIG-NAME.
 
 The `install' target is only included if HAS-INSTALL-RULE is true."
-  (nconc `((,(cmake-integration--mktarget "all" config-name)))
-         `((,(cmake-integration--mktarget "clean" config-name)))
-         (when has-install-rule
-           `((,(cmake-integration--mktarget "install" config-name))))
-         targets))
+  (let ((all-target (list (cmake-integration--create-target "all" config-name)))
+        (clean-target (list (cmake-integration--create-target "clean" config-name)))
+        (install-target (when has-install-rule (list (cmake-integration--create-target "install" config-name)))))
+    (nconc all-target clean-target install-target targets)))
 
 
 (defun cmake-integration--change-to-absolute-filename (filename parent-folder)
@@ -966,7 +983,7 @@ variable. This should be passed to gdb command in Emacs."
   (cmake-integration-run-last-target))
 
 
-(defun cmake-integration-get-parent-preset-name (preset)
+(defun cmake-integration--get-parent-preset-name (preset)
   "Get the name in the `inherits' field of the preset PRESET."
   (alist-get 'inherits preset))
 
@@ -985,7 +1002,7 @@ variable. This should be passed to gdb command in Emacs."
 If the 'inherits' field in the presets file is a single string, then a
 single preset is returned. If the 'inherits' is an array of names, then
 a vector of presets is returned."
-  (let ((parent-name (cmake-integration-get-parent-preset-name preset)))
+  (let ((parent-name (cmake-integration--get-parent-preset-name preset)))
     (if (vectorp parent-name)
         (let ((presets (cl-coerce (remq nil (mapcar 'cmake-integration--get-preset-by-name parent-name)) 'vector)))
           (if (seq-empty-p presets)
