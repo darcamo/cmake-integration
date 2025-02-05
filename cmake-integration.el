@@ -119,7 +119,7 @@ If nil, use standard gdb graphical interface (see Emacs manual)."
 (defcustom cmake-integration-include-conan-toolchain-file nil
   "If t, pass '--toolchain conan_toolchain.cmake' to cmake.
 
-If you are using the 'CMakeToolchain' generator, set this to true
+If you are using the `CMakeToolchain' generator, set this to true
 in a directory local variable in your project."
   :type 'boolean :safe #'booleanp :group 'cmake-integration)
 
@@ -325,7 +325,7 @@ and getting one of the configure presets in it."
 (defun cmake-integration--add-name-to-target (target config-name)
   "Add the target name to TARGET for CONFIG-NAME.
 
-TARGET is a list of cons cells, including one with 'name` field. This
+TARGET is a list of cons cells, including one with `name` field. This
 function will extract the value in the name field and prepend it to the
 list."
   (let ((target-name (cmake-integration--get-target-name target config-name)))
@@ -335,7 +335,7 @@ list."
 (defun cmake-integration--get-prepared-targets-from-configuration (config config-name predicate)
   "Get all targets in CONFIG with name CONFIG-NAME that match PREDICATE.
 
-The implicit targets 'all', 'clean' and optional 'install' targets will
+The implicit targets `all', `clean' and optional `install' targets will
 be returned as well.
 
 CONFIG-NAME is non-nil only when using ninja multi-config generator,
@@ -364,7 +364,7 @@ JSON-FILENAME must be a CMake API codemodel file. If is not provided,
 
 The returned alist includes:
   - Explicit targets from the JSON file.
-  - Implicit targets: 'all', 'clean', and 'install' (if applicable).
+  - Implicit targets: `all', `clean', and `install' (if applicable).
 
 Each entry maps `target-name` to `target-info`."
 
@@ -451,14 +451,12 @@ Otherwise return it unchanged."
 (defun cmake-integration--get-cmake-include-filenames (json-filename)
   "Return a list of include preset filenames in the JSON-FILENAME.
 
-A CMake presets file can include other presets files, which can
-include other preset files themselves. This function will return
-a flat list with the absolute paths of all of these included
-presets.
+A CMake presets file can include other presets files, which can include
+other preset files themselves. This function will return a flat list
+with the absolute paths of all of these included presets.
 
-NOTE: JSON-FILENAME is also returned as the lasts element, such
-that the output of
-`cmake-integration--get-cmake-include-filenames' has all the
+NOTE: JSON-FILENAME is also returned as the lasts element, such that the
+output of `cmake-integration--get-cmake-include-filenames' has all the
 preset file names from where we want to get presets."
   (append (when (file-exists-p json-filename)
             (let ((parent-folder (f-parent json-filename)))
@@ -487,7 +485,9 @@ Return nil if the file does not exist."
 
 
 (defun cmake-integration--get-cmake-configure-presets-from-filename-2 (json-filename)
-  "Get the configure presets from the JSON-FILENAME also considering included presets."
+  "Get the configure presets from the JSON-FILENAME.
+
+It also considering included presets."
   (when (file-exists-p json-filename)
     ;; The mapcar will turn the list of presets (each preset is an
     ;; alist) into an alist where the key is the preset name. This
@@ -507,8 +507,8 @@ Return nil if the file does not exist."
 (defun cmake-integration-get-cmake-configure-presets ()
   "Get the configure presets.
 
-Get the configure presets in both 'CMakePresets.json' and
-'CMakeUserPresets.json' files."
+Get the configure presets in both `CMakePresets.json' and
+`CMakeUserPresets.json' files."
   (let ((cmake-system-presets-filename (file-name-concat (cmake-integration-get-project-root-folder) "CMakePresets.json"))
         (cmake-user-presets-filename (file-name-concat (cmake-integration-get-project-root-folder) "CMakeUserPresets.json")))
 
@@ -519,8 +519,8 @@ Get the configure presets in both 'CMakePresets.json' and
 (defun cmake-integration--get-cmake-configure-with-preset-command (preset)
   "Get the command to configure with CMake using the preset PRESET."
   (format "cd %s && cmake . -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --preset %s"
-                                 (cmake-integration-get-project-root-folder)
-                                 (cmake-integration--get-preset-name preset)))
+          (cmake-integration-get-project-root-folder)
+          (cmake-integration--get-preset-name preset)))
 
 
 (defun cmake-integration--get-cmake-configure-without-preset-command ()
@@ -579,8 +579,8 @@ the marginalia package, or in Emacs standard completion buffer."
 (defun cmake-integration-select-configure-preset ()
   "Select a configure preset for CMake.
 
-A list of preset names if obtained from 'CMakePresets.json' and
-'CMakeUserPresets.json', if they exist. Then the user is asked to
+A list of preset names if obtained from `CMakePresets.json' and
+`CMakeUserPresets.json', if they exist. Then the user is asked to
 choose one of them (with completion)."
   (interactive)
 
@@ -611,18 +611,18 @@ choose one of them (with completion)."
 
 ;;;###autoload
 (defun cmake-integration-cmake-configure-with-preset ()
-    "Configure CMake using one of the availeble presets.
+  "Configure CMake using one of the availeble presets.
 
-A list of preset names if obtained from 'CMakePresets.json' and
-'CMakeUserPresets.json', if they exist. Then the user is asked to
+A list of preset names if obtained from `CMakePresets.json' and
+`CMakeUserPresets.json', if they exist. Then the user is asked to
 choose one of them (with completion) and CMake is configured with
 the chosen preset."
   (interactive)
   (cmake-integration-select-configure-preset)
   ;; Configure the project -> This will do the right thing in both
-    ;; cases when 'cmake-integration-last-configure-preset' is nil and when it
-    ;; has a specific preset
-    (cmake-integration-cmake-reconfigure)
+  ;; cases when 'cmake-integration-last-configure-preset' is nil and when it
+  ;; has a specific preset
+  (cmake-integration-cmake-reconfigure)
   )
 
 
@@ -792,9 +792,9 @@ will be ignored."
      ;; Do not include utility and library targets
      ((and cmake-integration-hide-utility-targets-during-completion
            cmake-integration-hide-library-targets-during-completion)
-      (seq-filter '(lambda (target) (and
-                                (cmake-integration--target-is-not-utility-p target)
-                                (cmake-integration--target-is-not-library-p target)))
+      (seq-filter #'(lambda (target) (and
+                                 (cmake-integration--target-is-not-utility-p target)
+                                 (cmake-integration--target-is-not-library-p target)))
                   list-of-targets))
 
      ;; Do not include only utility targets
@@ -802,7 +802,7 @@ will be ignored."
       ;; Do not include utility targets
       (seq-filter 'cmake-integration--target-is-not-utility-p list-of-targets))
 
-     ; Do not include only library targets
+                                        ; Do not include only library targets
      (cmake-integration-hide-library-targets-during-completion
       (seq-filter 'cmake-integration--target-is-not-library-p list-of-targets))
 
@@ -999,8 +999,8 @@ variable. This should be passed to gdb command in Emacs."
 (defun cmake-integration-get-parent-preset (preset)
   "Get the parent preset of PRESET.
 
-If the 'inherits' field in the presets file is a single string, then a
-single preset is returned. If the 'inherits' is an array of names, then
+If the `inherits' field in the presets file is a single string, then a
+single preset is returned. If the `inherits' is an array of names, then
 a vector of presets is returned."
   (let ((parent-name (cmake-integration--get-parent-preset-name preset)))
     (if (vectorp parent-name)
@@ -1036,9 +1036,9 @@ configuration."
   (if profile
       (format "%s --profile %s" (cmake-integration--get-conan-run-command) profile)
     (format "cd %s && conan install %s %s"
-          (cmake-integration-get-build-folder)
-          (cmake-integration-get-project-root-folder)
-          cmake-integration-conan-arguments)))
+            (cmake-integration-get-build-folder)
+            (cmake-integration-get-project-root-folder)
+            cmake-integration-conan-arguments)))
 
 
 (defun cmake-integration-get-conan-run-command ()
