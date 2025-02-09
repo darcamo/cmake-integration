@@ -61,57 +61,57 @@ test code from inside a 'test project'."
 
 ;; NOTE: For this test to pass a folder with a `.project' file must be recognized as a project.
 ;; See https://www.reddit.com/r/emacs/comments/k3og7d/extending_projectel/
-(ert-deftest test-cmake-integration-get-project-root-folder ()
+(ert-deftest test-cmake-integration--get-project-root-folder ()
   "Test getting the project root when no presets are used."
   (test-fixture-setup
    "./test-project/subfolder" ;; project root is the parent "test-project" folder
    (lambda ()
-     (should (file-equal-p (cmake-integration-get-project-root-folder)
+     (should (file-equal-p (cmake-integration--get-project-root-folder)
                            "..")))))
 
 
-(ert-deftest test-cmake-integration-get-parent-preset ()
+(ert-deftest test-cmake-integration--get-configure-parent-preset ()
   (test-fixture-setup
    "./test-project-with-presets"
    (lambda ()
      ;; If there is no parent, return nil
-     (let* ((preset (cmake-integration--get-preset-by-name "default"))
-            (parent-preset (cmake-integration-get-parent-preset preset)))
+     (let* ((preset (cmake-integration--get-configure-preset-by-name "default"))
+            (parent-preset (cmake-integration--get-configure-parent-preset preset)))
        (should-not parent-preset))
 
      ;; When there is a single parent, return it
-     (let* ((preset (cmake-integration--get-preset-by-name "ninjamulticonfig"))
-            (parent-preset (cmake-integration-get-parent-preset preset))
+     (let* ((preset (cmake-integration--get-configure-preset-by-name "ninjamulticonfig"))
+            (parent-preset (cmake-integration--get-configure-parent-preset preset))
             (parent-name (cmake-integration--get-preset-name parent-preset)))
        (should (string-equal parent-name "default")))
 
-     (let* ((preset (cmake-integration--get-preset-by-name "ninjamulticonfig2"))
-            (parent-presets (cmake-integration-get-parent-preset preset))
+     (let* ((preset (cmake-integration--get-configure-preset-by-name "ninjamulticonfig2"))
+            (parent-presets (cmake-integration--get-configure-parent-preset preset))
             (parent-names (mapcar 'cmake-integration--get-preset-name parent-presets))
             )
        (should (vectorp parent-presets))
        (should (equal parent-names '("default" "Dummy")))))))
 
 
-(ert-deftest test-cmake-integration-get-binaryDir ()
+(ert-deftest test-cmake-integration--get-binaryDir ()
   (test-fixture-setup
    "./test-project-with-presets"
    (lambda ()
-     (let ((preset (cmake-integration--get-preset-by-name "Dummy")))
-       (should-not (cmake-integration-get-binaryDir preset)))
+     (let ((preset (cmake-integration--get-configure-preset-by-name "Dummy")))
+       (should-not (cmake-integration--get-binaryDir preset)))
 
-     (let* ((preset (cmake-integration--get-preset-by-name "default"))
-            (binaryDir (cmake-integration-get-binaryDir preset))
+     (let* ((preset (cmake-integration--get-configure-preset-by-name "default"))
+            (binaryDir (cmake-integration--get-binaryDir preset))
             (expected-binaryDir "${sourceDir}/build/${presetName}/"))
        (should (filepath-equal-p binaryDir expected-binaryDir)))
 
-     (let* ((preset (cmake-integration--get-preset-by-name "ninjamulticonfig"))
-            (binaryDir (cmake-integration-get-binaryDir preset))
+     (let* ((preset (cmake-integration--get-configure-preset-by-name "ninjamulticonfig"))
+            (binaryDir (cmake-integration--get-binaryDir preset))
             (expected-binaryDir "${sourceDir}/build/${presetName}/"))
        (should (filepath-equal-p binaryDir expected-binaryDir)))
 
-     (let* ((preset (cmake-integration--get-preset-by-name "ninjamulticonfig2"))
-            (binaryDir (cmake-integration-get-binaryDir preset))
+     (let* ((preset (cmake-integration--get-configure-preset-by-name "ninjamulticonfig2"))
+            (binaryDir (cmake-integration--get-binaryDir preset))
             (expected-binaryDir "${sourceDir}/build/${presetName}/"))
        (should (filepath-equal-p binaryDir expected-binaryDir)))
      )))
@@ -144,31 +144,31 @@ test code from inside a 'test project'."
 
 
 
-(ert-deftest test-cmake-integration-get-query-folder ()
+(ert-deftest test-cmake-integration--get-query-folder ()
   (test-fixture-setup
    "./test-project"
-   (lambda () (should (filepath-equal-p (cmake-integration-get-query-folder) "./build/.cmake/api/v1/query/client-emacs")))))
+   (lambda () (should (filepath-equal-p (cmake-integration--get-query-folder) "./build/.cmake/api/v1/query/client-emacs")))))
 
 
-(ert-deftest test-cmake-integration-get-reply-folder ()
+(ert-deftest test-cmake-integration--get-reply-folder ()
   (test-fixture-setup
    "./test-project"
-   (lambda () (should (filepath-equal-p (cmake-integration-get-reply-folder) "./build/.cmake/api/v1/reply/")))))
+   (lambda () (should (filepath-equal-p (cmake-integration--get-reply-folder) "./build/.cmake/api/v1/reply/")))))
 
 
-(ert-deftest test-cmake-integration-get-path-of-codemodel-query-file ()
+(ert-deftest test-cmake-integration--get-path-of-codemodel-query-file ()
   (test-fixture-setup
    "./test-project"
-   (lambda () (should (filepath-equal-p (cmake-integration-get-path-of-codemodel-query-file) "./build/.cmake/api/v1/query/client-emacs/codemodel-v2")))))
+   (lambda () (should (filepath-equal-p (cmake-integration--get-path-of-codemodel-query-file) "./build/.cmake/api/v1/query/client-emacs/codemodel-v2")))))
 
 
-(ert-deftest test-cmake-integration-get-codemodel-reply-json-filename ()
+(ert-deftest test-cmake-integration--get-codemodel-reply-json-filename ()
   (test-fixture-setup
    "./test-project-with-codemodel-reply"
    (lambda ()
      (should (filepath-equal-p
-              (cmake-integration-get-codemodel-reply-json-filename)
-              (format "%s%s" (cmake-integration-get-reply-folder)
+              (cmake-integration--get-codemodel-reply-json-filename)
+              (format "%s%s" (cmake-integration--get-reply-folder)
                       "codemodel-v2-some-hash.json"))))))
 
 
@@ -317,12 +317,12 @@ test code from inside a 'test project'."
 
 
 ;;; TODO: add more cases to the test (install target, ninja multi-config, etc)
-(ert-deftest test-cmake-integration-get-cmake-targets-from-codemodel-json-file ()
+(ert-deftest test-cmake-integration--get-cmake-targets-from-codemodel-json-file ()
   (test-fixture-setup
    "./test-project-with-codemodel-reply"
    (lambda ()
 
-     (let ((targets (cmake-integration-get-cmake-targets-from-codemodel-json-file))
+     (let ((targets (cmake-integration--get-cmake-targets-from-codemodel-json-file))
            (expected-targets '(("all")
                                ("clean")
                                ("somelib"
@@ -470,13 +470,13 @@ test code from inside a 'test project'."
        (should (equal (cmake-integration-get-conan-run-command)
                       (format "cd %s && conan install %s --build missing"
                               (cmake-integration-get-build-folder)
-                              (cmake-integration-get-project-root-folder)))))
+                              (cmake-integration--get-project-root-folder)))))
      ;; Test conan command when using a single fixed conan profile
      (let ((cmake-integration-conan-profile "some-conan-profile"))
        (should (equal (cmake-integration-get-conan-run-command)
                       (format "cd %s && conan install %s --build missing --profile some-conan-profile"
                               (cmake-integration-get-build-folder)
-                              (cmake-integration-get-project-root-folder)))))
+                              (cmake-integration--get-project-root-folder)))))
      ;; Test conan command when cmake profile names are mapped to conan profile names
      (let ((cmake-integration-conan-profile '(("cmake-profile-1" . "conan-profile-1")
                                               ("cmake-profile-2" . "conan-profile-2")))
@@ -485,21 +485,21 @@ test code from inside a 'test project'."
        (should (equal (cmake-integration-get-conan-run-command)
                       (format "cd %s && conan install %s --build missing --profile conan-profile-1"
                               (cmake-integration-get-build-folder)
-                              (cmake-integration-get-project-root-folder))
+                              (cmake-integration--get-project-root-folder))
                       ))
        ;; If we change cmake-integration-last-configure-preset the conan profile will be affected
        (setq cmake-integration-last-configure-preset '((name . "cmake-profile-2") (binaryDir . "build")))
        (should (equal (cmake-integration-get-conan-run-command)
                       (format "cd %s && conan install %s --build missing --profile conan-profile-2"
                               (cmake-integration-get-build-folder)
-                              (cmake-integration-get-project-root-folder))
+                              (cmake-integration--get-project-root-folder))
                       ))
        ;; If the cmake profile has no conan profile mapped to it, then no profile will be used
        (setq cmake-integration-last-configure-preset '((name . "cmake-profile-3") (binaryDir . "build")))
        (should (equal (cmake-integration-get-conan-run-command)
                       (format "cd %s && conan install %s --build missing"
                               (cmake-integration-get-build-folder)
-                              (cmake-integration-get-project-root-folder))
+                              (cmake-integration--get-project-root-folder))
                       ))))))
 
 
@@ -535,7 +535,7 @@ test code from inside a 'test project'."
 ;;     (let ((default-directory (expand-file-name "./test-project/subfolder"))
 ;;           (cmake-integration-build-dir "some-build-folder")
 ;;           expected-build-folder)
-;;       (setq expected-build-folder (file-name-concat (cmake-integration-get-project-root-folder) cmake-integration-build-dir))
+;;       (setq expected-build-folder (file-name-concat (cmake-integration--get-project-root-folder) cmake-integration-build-dir))
 ;;     (should (file-equal-p (cmake-integration-get-build-folder) expected-build-folder))
 ;;       ))
 
