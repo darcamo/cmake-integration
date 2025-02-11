@@ -20,8 +20,10 @@ If this is nil, then using presets is required." :type '(string) :group 'cmake-i
 
 If this is nil, then the generator is not explicitly set." :type '(string) :group 'cmake-integration)
 
+
 (defcustom cmake-integration-annotation-column 30
   "Column where annotations should start during completion." :type '(integer) :group 'cmake-integration)
+
 
 (defcustom cmake-integration-include-subproject-targets-during-completion t
   "If t, include subproject targets when presenting target names for completion.
@@ -31,18 +33,22 @@ target names. If nil, then only targets from the main cmake
 project are included (targets with projectIndex equal to zero)."
   :type 'boolean :safe #'booleanp :group 'cmake-integration)
 
+
 (defcustom cmake-integration-hide-utility-targets-during-completion nil
   "If t, then utility targets are not included during completion."
   :type 'boolean :safe #'booleanp :group 'cmake-integration)
+
 
 (defcustom cmake-integration-hide-library-targets-during-completion nil
   "If t, then library targets are not included during completion."
   :type 'boolean :safe #'booleanp :group 'cmake-integration)
 
+
 ;; Tell the byte compile that
 ;; cmake-integration--run-working-directory-p is defined in the
 ;; "-core" file
 (declare-function cmake-integration--run-working-directory-p "cmake-integration-core.el")
+
 
 (defcustom cmake-integration-run-working-directory 'bin
   "Working directory when running a target executable.
@@ -115,6 +121,8 @@ with `/' as configured separator).
 Note: The selected separator shall be a character that it is not
 a valid component of a CMake target name (see
 https://cmake.org/cmake/help/latest/policy/CMP0037.html).")
+
+
 
 (provide 'cmake-integration-variables)
 

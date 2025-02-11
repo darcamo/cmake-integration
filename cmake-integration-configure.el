@@ -23,14 +23,12 @@ If not available, get the binaryDir or a parent preset."
           (cmake-integration--get-binaryDir parents))))))
 
 
-
 (defun cmake-integration--get-configure-preset-by-name (preset-name)
   "Get the preset from the list of presets with name PRESET-NAME."
   (alist-get
    preset-name
    (cmake-integration-get-cmake-configure-presets)
    nil nil 'equal))
-
 
 
 (defun cmake-integration--get-cmake-configure-presets-from-filename (json-filename)
@@ -42,7 +40,6 @@ Return nil if the file does not exist."
     (append
      (alist-get 'configurePresets (json-read-file json-filename))
      nil)))
-
 
 
 (defun cmake-integration--get-cmake-configure-presets-from-filename-2 (json-filename)
@@ -77,7 +74,6 @@ Get the configure presets in both `CMakePresets.json' and
             (cmake-integration--get-cmake-configure-presets-from-filename-2 cmake-user-presets-filename))))
 
 
-
 (defun cmake-integration--get-configure-parent-preset (preset)
   "Get the parent preset of PRESET.
 
@@ -91,7 +87,6 @@ a vector of presets is returned."
               nil
             presets))
       (cmake-integration--get-configure-preset-by-name parent-name))))
-
 
 
 (defun cmake-integration-get-last-configure-preset-name ()
@@ -167,17 +162,13 @@ choose one of them (with completion)."
         choice)
 
     (let ((completion-extra-properties '(:annotation-function cmake-integration--configure-annotation-function )))
-      (setq choice (completing-read "Build preset: " all-presets nil t))
-      )
+      (setq choice (completing-read "Build preset: " all-presets nil t)))
 
     ;; If "No Preset" was selected, then we are not using any preset
     ;; and thus cmake-integration-last-configure-preset should be nil
     (if (equal choice "No Preset")
         (setq cmake-integration-last-configure-preset nil)
-      (setq cmake-integration-last-configure-preset (alist-get choice all-presets nil nil 'equal))
-      )
-
-    ))
+      (setq cmake-integration-last-configure-preset (alist-get choice all-presets nil nil 'equal)))))
 
 
 ;;;###autoload
@@ -193,8 +184,7 @@ the chosen preset."
   ;; Configure the project -> This will do the right thing in both
   ;; cases when 'cmake-integration-last-configure-preset' is nil and when it
   ;; has a specific preset
-  (cmake-integration-cmake-reconfigure)
-  )
+  (cmake-integration-cmake-reconfigure))
 
 
 ;;;###autoload
@@ -218,9 +208,7 @@ Note: If no preset is used then
 
     (if cmake-integration-include-conan-toolchain-file
         (compile (format "%s%s --toolchain conan_toolchain.cmake" conan-command cmake-command))
-      (compile (format "%s%s" conan-command cmake-command))
-      )
-    )
+      (compile (format "%s%s" conan-command cmake-command))))
 
   ;; Make a link of the compile_commands.json file to the project root
   (let ((compile-commands-file (file-name-concat (cmake-integration-get-build-folder) "compile_commands.json")))

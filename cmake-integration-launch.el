@@ -9,7 +9,6 @@
 ;; - Launch dired in build/target folder
 ;; 
 
-
 (defun cmake-integration-get-target-executable-filename (&optional target)
   "Get the executable filename for the target TARGET.
 
@@ -25,8 +24,7 @@ If TARGET-NAME is not provided use the last target (saved in a
   ;; throw an error asking the UE to select a target first by calling
   ;; `cmake-integration-save-and-compile'
   (unless (or target cmake-integration-current-target)
-    (error "Please select a target first `cmake-integration-save-and-compile' first")
-    )
+    (error "Please select a target first `cmake-integration-save-and-compile' first"))
 
   ;; The `target-info' variable inside the `let' has the data from the
   ;; codemodel json file for TARGET-NAME. This data is an alist and
@@ -67,8 +65,7 @@ If TARGET-NAME is not provided use the last target (saved in a
     ('root (cmake-integration--get-project-root-folder))
     ('build (cmake-integration-get-build-folder))
     ('bin (file-name-concat (cmake-integration-get-build-folder) (file-name-directory executable-filename)))
-    (_ (file-name-concat (cmake-integration--get-project-root-folder) cmake-integration-run-working-directory)))
-  )
+    (_ (file-name-concat (cmake-integration--get-project-root-folder) cmake-integration-run-working-directory))))
 
 
 (defun cmake-integration-get-target-executable-full-path (executable-filename)
@@ -154,6 +151,7 @@ variable. This should be passed to gdb command in Emacs."
 
 
 (declare-function dap-debug "dap-mode")
+
 
 (defun cmake-integration--launch-dap-debug-cpptools-last-target ()
   "Launch `dap-debug' using cpptools to debug the last target."

@@ -11,9 +11,6 @@
 (require 'cmake-integration-variables)
 
 
-;; (declare-function cmake-integration-get-build-folder "cmake-integration-build.el")
-
-
 ;; BUG: This function seems to work correctly, but when used as the
 ;; ":safe" predicate in the defcustom Emacs still asks for confirming
 ;; if the variable is safe for the symbol values
@@ -31,10 +28,7 @@ Function to verify is VAL is save as a value for the
       ('bin t)
       ('build t)
       ('root t)
-      (_ nil)
-      )
-    )
-  )
+      (_ nil))))
 
 
 (defun cmake-integration--get-project-root-folder ()
@@ -42,29 +36,16 @@ Function to verify is VAL is save as a value for the
   (project-root (project-current)))
 
 
-
-
-
-
 (defun cmake-integration--get-codemodel-reply-json-filename ()
   "Get the name of the json file with the targets.
 
 This file is created by CMake's File API."
-
   (elt (f-glob "codemodel-v2*json" (cmake-integration--get-reply-folder)) 0))
 
 
 (defun cmake-integration--get-parent-preset-name (preset)
   "Get the name in the `inherits' field of the preset PRESET."
   (alist-get 'inherits preset))
-
-
-
-
-
-
-
-
 
 
 (defun cmake-integration--change-to-absolute-filename (filename parent-folder)
@@ -98,7 +79,6 @@ preset file names from where we want to get presets."
                         (lambda (filename) (cmake-integration--change-to-absolute-filename filename parent-folder))
                         (alist-get 'include (json-read-file json-filename))))))
           (list json-filename)))
-
 
 
 (defun cmake-integration--get-query-folder ()
@@ -152,12 +132,6 @@ no valid build folder can be determined."
         (error "Build folder is not set.
 Call `cmake-integration-select-configure-preset' to select a configure preset,
 or set `cmake-integration-build-dir' manually")))))
-
-
-
-
-
-
 
 
 (defun cmake-integration--get-preset-name (preset)
