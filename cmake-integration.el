@@ -46,6 +46,7 @@
 (require 'cmake-integration-doxygen)
 (require 'cmake-integration-ctest)
 (require 'cmake-integration-cpack)
+(require 'cmake-integration-extra)
 
 
 
