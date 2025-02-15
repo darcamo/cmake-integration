@@ -91,7 +91,7 @@ a vector of presets is returned."
 
 (defun cmake-integration-get-last-configure-preset-name ()
   "Get the `name' field of the last preset used for configure."
-  (cmake-integration--get-preset-name cmake-integration-last-configure-preset))
+  (cmake-integration--get-preset-name cmake-integration-configure-preset))
 
 
 
@@ -165,10 +165,10 @@ choose one of them (with completion)."
       (setq choice (completing-read "Build preset: " all-presets nil t)))
 
     ;; If "No Preset" was selected, then we are not using any preset
-    ;; and thus cmake-integration-last-configure-preset should be nil
+    ;; and thus cmake-integration-configure-preset should be nil
     (if (equal choice "No Preset")
-        (setq cmake-integration-last-configure-preset nil)
-      (setq cmake-integration-last-configure-preset (alist-get choice all-presets nil nil 'equal)))))
+        (setq cmake-integration-configure-preset nil)
+      (setq cmake-integration-configure-preset (alist-get choice all-presets nil nil 'equal)))))
 
 
 ;;;###autoload
@@ -182,7 +182,7 @@ the chosen preset."
   (interactive)
   (cmake-integration-select-configure-preset)
   ;; Configure the project -> This will do the right thing in both
-  ;; cases when 'cmake-integration-last-configure-preset' is nil and when it
+  ;; cases when 'cmake-integration-configure-preset' is nil and when it
   ;; has a specific preset
   (cmake-integration-cmake-reconfigure))
 
@@ -197,9 +197,9 @@ Note: If no preset is used then
 
   (cmake-integration--create-empty-codemodel-file)
 
-  (let ((cmake-command (if cmake-integration-last-configure-preset
+  (let ((cmake-command (if cmake-integration-configure-preset
                            (cmake-integration--get-cmake-configure-with-preset-command
-                            cmake-integration-last-configure-preset)
+                            cmake-integration-configure-preset)
                          (cmake-integration--get-cmake-configure-without-preset-command)))
         ;; If a prefix argument was passed we will call conan before cmake
         (conan-command (if current-prefix-arg

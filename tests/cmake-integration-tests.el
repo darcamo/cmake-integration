@@ -27,6 +27,9 @@
 (require 'cmake-integration)
 
 
+;; TODO: Test cmake-integration-get-target-executable-filename
+
+
 ;; NOTE: Trailling backslash matters
 (defun filepath-equal-p (filepath1 filepath2)
   "Check that two file paths FILEPATH1 and FILEPATH2 are equal.
@@ -44,7 +47,7 @@ file/folder to exist."
 This is used in the tests definitions to make sure we run the
 test code from inside a 'test project'."
   (let ((default-directory (expand-file-name subfolder))
-        (cmake-integration-last-configure-preset nil))
+        (cmake-integration-configure-preset nil))
     (funcall body)))
 
 
@@ -135,11 +138,11 @@ test code from inside a 'test project'."
    "./test-project-with-presets" ;; project root is the parent "test-project" folder
    (lambda ()
      ;; Build folder is taken from the `binaryDir' field in
-     ;; `cmake-integration-last-configure-preset', which is an alist
-     (let ((cmake-integration-last-configure-preset '((binaryDir . "${sourceDir}/build-with-ninja-multiconfig"))))
+     ;; `cmake-integration-configure-preset', which is an alist
+     (let ((cmake-integration-configure-preset '((binaryDir . "${sourceDir}/build-with-ninja-multiconfig"))))
        (should (filepath-equal-p (cmake-integration-get-build-folder) "./build-with-ninja-multiconfig")))
 
-     (let ((cmake-integration-last-configure-preset '((binaryDir . "${sourceDir}/build-with-ninja"))))
+     (let ((cmake-integration-configure-preset '((binaryDir . "${sourceDir}/build-with-ninja"))))
        (should (filepath-equal-p (cmake-integration-get-build-folder) "./build-with-ninja"))))))
 
 
@@ -177,7 +180,7 @@ test code from inside a 'test project'."
    "./test-project-with-presets"
    (lambda ()
      (let ((cmake-integration-current-target "bin/main")
-           (cmake-integration-last-configure-preset '((name . "default")
+           (cmake-integration-configure-preset '((name . "default")
                                                       (binaryDir . "${sourceDir}/build-with-ninja/"))))
        (let ((cmake-integration-run-working-directory 'root))
          (should (equal (cmake-integration--get-working-directory cmake-integration-current-target)
@@ -219,7 +222,7 @@ test code from inside a 'test project'."
   (test-fixture-setup
    "./test-project"
    (lambda ()
-     (let ((cmake-integration-current-target-run-arguments "arg1 arg2 arg3")
+     (let ((cmake-integration-run-arguments "arg1 arg2 arg3")
            (cmake-integration-run-working-directory 'root))
        (should (equal (cmake-integration--get-run-command "bin/myexec")
                       (format "cd ~/%s && ~/%s arg1 arg2 arg3"
@@ -230,7 +233,7 @@ test code from inside a 'test project'."
   (test-fixture-setup
    "./test-project"
    (lambda ()
-     (let ((cmake-integration-current-target-run-arguments "arg1 arg2 arg3")
+     (let ((cmake-integration-run-arguments "arg1 arg2 arg3")
            (cmake-integration-run-working-directory 'build))
        (should (equal (cmake-integration--get-run-command "bin/myexec")
                       (format "cd ~/%s && %s arg1 arg2 arg3"
@@ -242,7 +245,7 @@ test code from inside a 'test project'."
   (test-fixture-setup
    "./test-project"
    (lambda ()
-     (let ((cmake-integration-current-target-run-arguments "arg1 arg2 arg3")
+     (let ((cmake-integration-run-arguments "arg1 arg2 arg3")
            (cmake-integration-run-working-directory 'bin))
        (should (equal (cmake-integration--get-run-command "bin/myexec")
                       (format "cd ~/%s/ && %s arg1 arg2 arg3"
@@ -254,7 +257,7 @@ test code from inside a 'test project'."
   (test-fixture-setup
    "./test-project"
    (lambda ()
-     (let ((cmake-integration-current-target-run-arguments "arg1 arg2 arg3")
+     (let ((cmake-integration-run-arguments "arg1 arg2 arg3")
            (cmake-integration-run-working-directory "subfolder"))
        (should (equal (cmake-integration--get-run-command "bin/myexec")
                       (format "cd ~/%s && ~/%s arg1 arg2 arg3"
@@ -267,39 +270,39 @@ test code from inside a 'test project'."
   (test-fixture-setup
    "./test-project"
    (lambda ()
-     (let ((cmake-integration-current-target-run-arguments "arg1 arg2")
+     (let ((cmake-integration-run-arguments "arg1 arg2")
            (cmake-integration-run-working-directory 'root))
        (should (equal (cmake-integration--get-debug-command "bin/myexec")
                       (format "gdb -i=mi --cd=~/%s --args ~/%s %s"
                               (file-relative-name "./" "~/")
                               (file-relative-name "./build/bin/myexec" "~/")
-                              cmake-integration-current-target-run-arguments)))))))
+                              cmake-integration-run-arguments)))))))
 
 
 (ert-deftest test-cmake-integration--get-debug-command--build-folder ()
   (test-fixture-setup
    "./test-project"
    (lambda ()
-     (let ((cmake-integration-current-target-run-arguments "arg1 arg2")
+     (let ((cmake-integration-run-arguments "arg1 arg2")
            (cmake-integration-run-working-directory 'build))
        (should (equal (cmake-integration--get-debug-command "bin/myexec")
                       (format "gdb -i=mi --cd=~/%s --args ~/%s %s"
                               (file-relative-name "./build" "~/")
                               (file-relative-name "./build/bin/myexec" "~/")
-                              cmake-integration-current-target-run-arguments)))))))
+                              cmake-integration-run-arguments)))))))
 
 
 (ert-deftest test-cmake-integration--get-debug-command--bin-folder ()
   (test-fixture-setup
    "./test-project"
    (lambda ()
-     (let ((cmake-integration-current-target-run-arguments "arg1 arg2")
+     (let ((cmake-integration-run-arguments "arg1 arg2")
            (cmake-integration-run-working-directory 'bin))
        (should (equal (cmake-integration--get-debug-command "bin/myexec")
                       (format "gdb -i=mi --cd=~/%s --args ~/%s %s"
                               (file-relative-name "./build/bin/" "~/")
                               (file-relative-name "./build/bin/myexec" "~/")
-                              cmake-integration-current-target-run-arguments
+                              cmake-integration-run-arguments
                               )))))))
 
 
@@ -307,13 +310,13 @@ test code from inside a 'test project'."
   (test-fixture-setup
    "./test-project"
    (lambda ()
-     (let ((cmake-integration-current-target-run-arguments "arg1 arg2")
+     (let ((cmake-integration-run-arguments "arg1 arg2")
            (cmake-integration-run-working-directory "subfolder"))
        (should (equal (cmake-integration--get-debug-command "bin/myexec")
                       (format "gdb -i=mi --cd=~/%s --args ~/%s %s"
                               (file-relative-name "./subfolder" "~/")
                               (file-relative-name "./build/bin/myexec" "~/")
-                              cmake-integration-current-target-run-arguments)))))))
+                              cmake-integration-run-arguments)))))))
 
 
 ;;; TODO: add more cases to the test (install target, ninja multi-config, etc)
@@ -456,7 +459,7 @@ test code from inside a 'test project'."
    "./test-project-with-presets"
    (lambda ()
      (let ((project-dir (format "~/%s" (file-relative-name "./" "~/")))
-           (cmake-integration-last-configure-preset '("default" (name . "default"))))
+           (cmake-integration-configure-preset '("default" (name . "default"))))
        (should (equal (cmake-integration-get-compile-command "the_target")
                       (format "cd %s && cmake --build --preset default --target the_target" project-dir)))))))
 
@@ -480,22 +483,22 @@ test code from inside a 'test project'."
      ;; Test conan command when cmake profile names are mapped to conan profile names
      (let ((cmake-integration-conan-profile '(("cmake-profile-1" . "conan-profile-1")
                                               ("cmake-profile-2" . "conan-profile-2")))
-           (cmake-integration-last-configure-preset '((name . "cmake-profile-1") (binaryDir . "build")))
+           (cmake-integration-configure-preset '((name . "cmake-profile-1") (binaryDir . "build")))
            )
        (should (equal (cmake-integration-get-conan-run-command)
                       (format "cd %s && conan install %s --build missing --profile conan-profile-1"
                               (cmake-integration-get-build-folder)
                               (cmake-integration--get-project-root-folder))
                       ))
-       ;; If we change cmake-integration-last-configure-preset the conan profile will be affected
-       (setq cmake-integration-last-configure-preset '((name . "cmake-profile-2") (binaryDir . "build")))
+       ;; If we change cmake-integration-configure-preset the conan profile will be affected
+       (setq cmake-integration-configure-preset '((name . "cmake-profile-2") (binaryDir . "build")))
        (should (equal (cmake-integration-get-conan-run-command)
                       (format "cd %s && conan install %s --build missing --profile conan-profile-2"
                               (cmake-integration-get-build-folder)
                               (cmake-integration--get-project-root-folder))
                       ))
        ;; If the cmake profile has no conan profile mapped to it, then no profile will be used
-       (setq cmake-integration-last-configure-preset '((name . "cmake-profile-3") (binaryDir . "build")))
+       (setq cmake-integration-configure-preset '((name . "cmake-profile-3") (binaryDir . "build")))
        (should (equal (cmake-integration-get-conan-run-command)
                       (format "cd %s && conan install %s --build missing"
                               (cmake-integration-get-build-folder)
@@ -514,7 +517,7 @@ test code from inside a 'test project'."
 ;;   (CMAKE_BUILD_TYPE . "Debug")))
 
 
-;; (setq cmake-integration-last-configure-preset '((name . "cmake-profile-1") (binaryDir . "build")))
+;; (setq cmake-integration-configure-preset '((name . "cmake-profile-1") (binaryDir . "build")))
 ;; (setq cmake-integration-conan-profile '(("cmake-profile-1" . "conan-profile-1")
 ;;                                               ("cmake-profile-2" . "conan-profile-2")))
 ;; (cmake-integration-get-conan-run-command)

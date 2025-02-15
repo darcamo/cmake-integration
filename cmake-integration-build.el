@@ -172,7 +172,7 @@ missing. Please run either `cmake-integration-cmake-reconfigure' or
                              cmake-integration--multi-config-separator)))
     (format "cd %s && cmake --build %s%s --target %s"
             (cmake-integration--get-project-root-folder)
-            (if cmake-integration-last-configure-preset
+            (if cmake-integration-configure-preset
                 (format "--preset %s" (cmake-integration-get-last-configure-preset-name))
               (file-relative-name (cmake-integration-get-build-folder)
                                   (cmake-integration--get-project-root-folder)))

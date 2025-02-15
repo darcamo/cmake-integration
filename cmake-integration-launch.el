@@ -78,7 +78,7 @@ If TARGET-NAME is not provided use the last target (saved in a
   (format "cd %s && %s %s"
           (cmake-integration--get-working-directory executable-filename)
           (cmake-integration-get-target-executable-full-path executable-filename)
-          cmake-integration-current-target-run-arguments))
+          cmake-integration-run-arguments))
 
 
 (defun cmake-integration--get-run-command-build-folder-cwd (executable-filename)
@@ -86,7 +86,7 @@ If TARGET-NAME is not provided use the last target (saved in a
   (format "cd %s && %s %s"
           (cmake-integration--get-working-directory executable-filename)
           executable-filename
-          cmake-integration-current-target-run-arguments))
+          cmake-integration-run-arguments))
 
 
 (defun cmake-integration--get-run-command-bin-folder-cwd (executable-filename)
@@ -96,7 +96,7 @@ The binary folder is the folder containing the executable."
   (format "cd %s && ./%s %s"
           (cmake-integration--get-working-directory executable-filename)
           (file-name-nondirectory executable-filename)
-          cmake-integration-current-target-run-arguments))
+          cmake-integration-run-arguments))
 
 
 (defun cmake-integration--get-run-command-custom-cwd (executable-filename project-subfolder)
@@ -105,7 +105,7 @@ The binary folder is the folder containing the executable."
   (format "cd %s && %s %s"
           (cmake-integration--get-working-directory executable-filename)
           (cmake-integration-get-target-executable-full-path executable-filename)
-          cmake-integration-current-target-run-arguments))
+          cmake-integration-run-arguments))
 
 
 (defun cmake-integration--get-run-command (executable-filename)
@@ -142,7 +142,7 @@ variable. This should be passed to gdb command in Emacs."
      "gdb -i=mi --cd=%s --args %s %s"
      cwd
      (cmake-integration-get-target-executable-full-path executable-filename)
-     cmake-integration-current-target-run-arguments)))
+     cmake-integration-run-arguments)))
 
 
 (defun cmake-integration--launch-gdb-with-last-target ()
@@ -166,7 +166,7 @@ variable. This should be passed to gdb command in Emacs."
                        :name "cmake-integration-target"
                        :MIMode "gdb"
                        :program program-path
-                       :arguments cmake-integration-current-target-run-arguments
+                       :arguments cmake-integration-run-arguments
                        :cwd cwd)))))
 
 
@@ -186,7 +186,7 @@ variable. This should be passed to gdb command in Emacs."
 (defun cmake-integration-run-last-target-with-arguments (run-arguments)
   "Run the last compiled target passing RUN-ARGUMENTS as arguments."
   (interactive "sArguments: ")
-  (setq cmake-integration-current-target-run-arguments run-arguments)
+  (setq cmake-integration-run-arguments run-arguments)
   (cmake-integration-run-last-target))
 
 

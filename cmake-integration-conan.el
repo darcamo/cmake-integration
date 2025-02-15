@@ -30,7 +30,7 @@ configuration and the profile passed to conan is taken from the
       (if (stringp cmake-integration-conan-profile)
           (cmake-integration--get-conan-run-command cmake-integration-conan-profile)
         ;; Map cmake profile name to conan profile name
-        (let* ((cmake-profile-name (alist-get 'name cmake-integration-last-configure-preset))
+        (let* ((cmake-profile-name (alist-get 'name cmake-integration-configure-preset))
                (conan-profile-name (alist-get cmake-profile-name cmake-integration-conan-profile nil nil 'equal)))
           ;; Note that if we have no conan profile name in the alist
           ;; for the current cmake profile nane, then

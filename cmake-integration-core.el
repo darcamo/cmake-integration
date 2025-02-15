@@ -114,7 +114,7 @@ Returns the build folder path based on either the configure preset or
 the manually specified `cmake-integration-build-dir'. Throws an error if
 no valid build folder can be determined."
   (let ((project-root-folder (cmake-integration--get-project-root-folder))
-        (preset cmake-integration-last-configure-preset)
+        (preset cmake-integration-configure-preset)
         (build-dir cmake-integration-build-dir))
     (unless project-root-folder
       (error "Not in a project"))

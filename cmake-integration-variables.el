@@ -107,9 +107,21 @@ If \"${sourceDir}/\" is in `cmake-integration-docs-folder' it
 will be replaced by the project root." :type 'string :group 'cmake-integration)
 
 
-(defvar cmake-integration-current-target nil)
-(defvar cmake-integration-current-target-run-arguments "")
-(defvar cmake-integration-last-configure-preset nil)
+(defvar cmake-integration-current-target nil "Name of the target that will be compiled and run.")
+
+
+(defvar cmake-integration-run-arguments "" "Command line arguments when running a target.")
+
+
+;; This an alist like
+;;   ((name . "preset-name") (displayName . "Preset name shown in annotation")
+;;    (description . "...")
+;;    (generator . "Ninja")
+;;    (cacheVariables (CMAKE_POLICY_DEFAULT_CMP0091 . "NEW"))
+;;    (toolchainFile . "generators/conan_toolchain.cmake")
+;;    (binaryDir . "/some/path/to/build/folder"))
+(defvar cmake-integration-configure-preset nil "Preset used for the configure step.")
+
 
 (defconst cmake-integration--multi-config-separator "/"
   "Character used to separate target name from config name.
@@ -120,7 +132,7 @@ with `/' as configured separator).
 
 Note: The selected separator shall be a character that it is not
 a valid component of a CMake target name (see
-https://cmake.org/cmake/help/latest/policy/CMP0037.html).")
+https://cmake.org/cmake/help/latest/policy/CMP0037.html ).")
 
 
 
