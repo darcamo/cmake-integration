@@ -96,6 +96,24 @@ test code from inside a 'test project'."
        (should (equal parent-names '("default" "Dummy")))))))
 
 
+(ert-deftest test-cmake-integration--perform-binaryDir-replacements ()
+  (test-fixture-setup
+   "./test-project-with-presets"
+   (lambda ()
+     (let ((project-root-folder "~/some_path/my-project/")
+           (preset-name "my-preset"))
+
+       (let ((binaryDir "~/some-folder/some-subfolder"))
+         (should (filepath-equal-p
+                  (cmake-integration--perform-binaryDir-replacements binaryDir project-root-folder preset-name)
+                  "~/some-folder/some-subfolder")))
+
+       (let ((binaryDir "${sourceDir}/build/${presetName}/"))
+         (should (filepath-equal-p
+                  (cmake-integration--perform-binaryDir-replacements binaryDir project-root-folder preset-name)
+                  "~/some_path/my-project/build/my-preset/")))))))
+
+
 (ert-deftest test-cmake-integration--get-binaryDir ()
   (test-fixture-setup
    "./test-project-with-presets"
@@ -116,6 +134,30 @@ test code from inside a 'test project'."
      (let* ((preset (cmake-integration--get-configure-preset-by-name "ninjamulticonfig2"))
             (binaryDir (cmake-integration--get-binaryDir preset))
             (expected-binaryDir "${sourceDir}/build/${presetName}/"))
+       (should (filepath-equal-p binaryDir expected-binaryDir)))
+     )))
+
+
+(ert-deftest test-cmake-integration--get-binaryDir-with-replacements ()
+  (test-fixture-setup
+   "./test-project-with-presets"
+   (lambda ()
+     (let ((preset (cmake-integration--get-configure-preset-by-name "Dummy")))
+       (should-not (cmake-integration--get-binaryDir-with-replacements preset)))
+
+     (let* ((preset (cmake-integration--get-configure-preset-by-name "default"))
+            (binaryDir (cmake-integration--get-binaryDir-with-replacements preset))
+            (expected-binaryDir "~/.emacs.d/elpaca/repos/cmake-integration/tests/test-project-with-presets/build/default/"))
+       (should (filepath-equal-p binaryDir expected-binaryDir)))
+
+     (let* ((preset (cmake-integration--get-configure-preset-by-name "ninjamulticonfig"))
+            (binaryDir (cmake-integration--get-binaryDir-with-replacements preset))
+            (expected-binaryDir "~/.emacs.d/elpaca/repos/cmake-integration/tests/test-project-with-presets/build/ninjamulticonfig/"))
+       (should (filepath-equal-p binaryDir expected-binaryDir)))
+
+     (let* ((preset (cmake-integration--get-configure-preset-by-name "ninjamulticonfig2"))
+            (binaryDir (cmake-integration--get-binaryDir-with-replacements preset))
+            (expected-binaryDir "~/.emacs.d/elpaca/repos/cmake-integration/tests/test-project-with-presets/build/ninjamulticonfig2/"))
        (should (filepath-equal-p binaryDir expected-binaryDir)))
      )))
 
@@ -438,20 +480,21 @@ test code from inside a 'test project'."
        (should (equal presets-names expected-preset-names))))))
 
 
-(ert-deftest test-cmake-integration-get-compile-command ()
+(ert-deftest test-cmake-integration-get-build-command ()
   (test-fixture-setup
    "./test-project"
    (lambda ()
      (let ((project-dir (format "~/%s" (file-relative-name "./" "~/"))))
-       (should (equal (cmake-integration-get-compile-command "the_target")
-                      (format "cd %s && cmake --build %s --target the_target" project-dir cmake-integration-build-dir))))))
+       (should (equal (cmake-integration-get-build-command "the_target")
+                      (format "cd %s && cmake --build %s --target the_target" project-dir cmake-integration-build-dir)))
+       )))
 
   ;; Without setting a preset
   (test-fixture-setup
    "./test-project-with-presets"
    (lambda ()
      (let ((project-dir (format "~/%s" (file-relative-name "./" "~/"))))
-       (should (equal (cmake-integration-get-compile-command "the_target")
+       (should (equal (cmake-integration-get-build-command "the_target")
                       (format "cd %s && cmake --build %s --target the_target" project-dir cmake-integration-build-dir))))))
 
 
@@ -460,7 +503,7 @@ test code from inside a 'test project'."
    (lambda ()
      (let ((project-dir (format "~/%s" (file-relative-name "./" "~/")))
            (cmake-integration-configure-preset '("default" (name . "default"))))
-       (should (equal (cmake-integration-get-compile-command "the_target")
+       (should (equal (cmake-integration-get-build-command "the_target")
                       (format "cd %s && cmake --build --preset default --target the_target" project-dir)))))))
 
 

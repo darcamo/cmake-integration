@@ -121,10 +121,7 @@ no valid build folder can be determined."
 
     (if preset
         ;; Use the build folder from the configure preset
-        (let* ((source-dir-replacement (cons "${sourceDir}/" project-root-folder))
-               (preset-name-replacement (cons "${presetName}" (alist-get 'name preset)))
-               (replacements (list source-dir-replacement preset-name-replacement)))
-          (s-replace-all replacements (cmake-integration--get-binaryDir preset)))
+        (cmake-integration--get-binaryDir-with-replacements preset)
 
       ;; Use manually set build directory or throw an error
       (if build-dir
@@ -132,6 +129,13 @@ no valid build folder can be determined."
         (error "Build folder is not set.
 Call `cmake-integration-select-configure-preset' to select a configure preset,
 or set `cmake-integration-build-dir' manually")))))
+
+
+(defun cmake-integration--get-build-folder-relative-to-project ()
+  "Get the build folder relative to project folder."
+  (let ((build-folder (cmake-integration-get-build-folder))
+        (project-folder (cmake-integration--get-project-root-folder)))
+    (file-relative-name build-folder project-folder)))
 
 
 (defun cmake-integration--get-preset-name (preset)

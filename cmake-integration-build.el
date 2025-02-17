@@ -48,7 +48,7 @@ complain in that case."
   (check-if-build-folder-exists-and-throws-if-not)
 
   (setq cmake-integration-current-target target)
-  (let ((compile-command (cmake-integration-get-compile-command target)))
+  (let ((compile-command (cmake-integration-get-build-command target)))
     (compile compile-command)))
 
 
@@ -164,19 +164,21 @@ missing. Please run either `cmake-integration-cmake-reconfigure' or
    (or cmake-integration-current-target "all")))
 
 
-
-(defun cmake-integration-get-compile-command (target)
+(defun cmake-integration-get-build-command (target)
   "Get the command to compile target TARGET."
-  (pcase-let ((`(,target-name ,config-name)
-               (split-string target
-                             cmake-integration--multi-config-separator)))
+  (pcase-let* ((`(,target-name ,config-name)
+                (split-string target cmake-integration--multi-config-separator))
+               (project-root (cmake-integration--get-project-root-folder))
+               (preset-arg-or-build-folder (if cmake-integration-configure-preset
+                                               (format "--preset %s" (cmake-integration-get-last-configure-preset-name))
+                                             (cmake-integration--get-build-folder-relative-to-project)))
+               (config-option (if config-name
+                                  (format " --config %s" config-name)
+                                "")))
     (format "cd %s && cmake --build %s%s --target %s"
-            (cmake-integration--get-project-root-folder)
-            (if cmake-integration-configure-preset
-                (format "--preset %s" (cmake-integration-get-last-configure-preset-name))
-              (file-relative-name (cmake-integration-get-build-folder)
-                                  (cmake-integration--get-project-root-folder)))
-            (if config-name (format " --config %s" config-name) "")
+            project-root
+            preset-arg-or-build-folder
+            config-option
             target-name)))
 
 

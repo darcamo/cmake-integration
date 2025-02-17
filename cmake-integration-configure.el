@@ -8,6 +8,17 @@
 
 (declare-function cmake-integration-get-conan-run-command "cmake-integration-conan.el")
 
+(defun cmake-integration--perform-binaryDir-replacements (binaryDir project-root-folder preset-name)
+  "Replace `${sourceDir}' and `${presetName}' in a BINARYDIR string.
+
+They will be replaced with PROJECT-ROOT-FOLDER and PRESET-NAME, respectively.
+
+NOTE: `project-root-folder' must end with a slash."
+  (let* ((source-dir-replacement (cons "${sourceDir}/" project-root-folder))
+         (preset-name-replacement (cons "${presetName}" preset-name))
+         (replacements (list source-dir-replacement preset-name-replacement)))
+    (s-replace-all replacements binaryDir)))
+
 
 (defun cmake-integration--get-binaryDir (preset)
   "Get the `binaryDir' field of a preset PRESET.
@@ -21,6 +32,16 @@ If not available, get the binaryDir or a parent preset."
             (let ((binaryDirs (mapcar 'cmake-integration--get-binaryDir parents)))
               (seq-find 'stringp binaryDirs))
           (cmake-integration--get-binaryDir parents))))))
+
+
+(defun cmake-integration--get-binaryDir-with-replacements (preset)
+  "Get the `binaryDir' field of a preset PRESET, and also perform the replacements."
+  (let ((binaryDir (cmake-integration--get-binaryDir preset)))
+    (when binaryDir
+      (let ((project-root (cmake-integration--get-project-root-folder))
+            (preset-name (cmake-integration--get-preset-name preset))
+            (binaryDir (cmake-integration--get-binaryDir preset)))
+        (cmake-integration--perform-binaryDir-replacements binaryDir project-root preset-name)))))
 
 
 (defun cmake-integration--get-configure-preset-by-name (preset-name)
