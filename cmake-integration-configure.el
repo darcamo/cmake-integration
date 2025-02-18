@@ -4,6 +4,7 @@
 
 ;;; Code:
 (require 'cmake-integration-core)
+(require 'cmake-integration-core-presets)
 
 
 (declare-function cmake-integration-get-conan-run-command "cmake-integration-conan.el")
@@ -56,11 +57,7 @@ If not available, get the binaryDir or a parent preset."
   "Get the configure presets from the JSON-FILENAME.
 
 Return nil if the file does not exist."
-  (when (file-exists-p json-filename)
-    ;; Append a vector to nil transforms it into a list
-    (append
-     (alist-get 'configurePresets (json-read-file json-filename))
-     nil)))
+  (cmake-integration--get-presets-of-given-type json-filename 'configurePresets))
 
 
 (defun cmake-integration--get-cmake-configure-presets-from-filename-2 (json-filename)
@@ -80,7 +77,7 @@ It also considering included presets."
                  (vconcat
                   (-mapcat
                    (lambda (elem) (cmake-integration--get-cmake-configure-presets-from-filename elem) )
-                   (cmake-integration--get-cmake-include-filenames json-filename)))))))
+                   (cmake-integration--get-include-presets-filenames json-filename)))))))
 
 
 (defun cmake-integration-get-cmake-configure-presets ()
@@ -88,11 +85,11 @@ It also considering included presets."
 
 Get the configure presets in both `CMakePresets.json' and
 `CMakeUserPresets.json' files."
-  (let ((cmake-system-presets-filename (file-name-concat (cmake-integration--get-project-root-folder) "CMakePresets.json"))
-        (cmake-user-presets-filename (file-name-concat (cmake-integration--get-project-root-folder) "CMakeUserPresets.json")))
+  (let ((system-presets-file (cmake-integration--get-system-presets-file))
+        (user-presets-file (cmake-integration--get-user-presets-file)))
 
-    (append (cmake-integration--get-cmake-configure-presets-from-filename-2 cmake-system-presets-filename)
-            (cmake-integration--get-cmake-configure-presets-from-filename-2 cmake-user-presets-filename))))
+    (append (cmake-integration--get-cmake-configure-presets-from-filename-2 system-presets-file)
+            (cmake-integration--get-cmake-configure-presets-from-filename-2 user-presets-file))))
 
 
 (defun cmake-integration--get-configure-parent-preset (preset)

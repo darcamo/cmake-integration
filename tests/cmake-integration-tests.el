@@ -425,17 +425,17 @@ test code from inside a 'test project'."
                    (f-join parent-folder relative-filename)))))
 
 
-(ert-deftest test-cmake-integration--get-cmake-include-filenames ()
+(ert-deftest test-cmake-integration--get-include-presets-filenames ()
   (test-fixture-setup
    "./test-project-with-presets"
    (lambda ()
-     (let ((filenames (cmake-integration--get-cmake-include-filenames "CMakePresets.json")))
+     (let ((filenames (cmake-integration--get-include-presets-filenames "CMakePresets.json")))
        (should (equal filenames '("CMakePresets.json"))))))
 
   (test-fixture-setup
    "./test-project-with-presets-with-includes"
    (lambda ()
-     (let ((filenames (cmake-integration--get-cmake-include-filenames "CMakePresets.json")))
+     (let ((filenames (cmake-integration--get-include-presets-filenames "CMakePresets.json")))
        (should (equal filenames '("subfolder2/MorePresets-Extra.json""MorePresets.json" "subfolder/EvenMorePresets.json" "CMakePresets.json")))))))
 
 

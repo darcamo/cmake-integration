@@ -39,6 +39,7 @@
 
 (require 'cmake-integration-variables)
 (require 'cmake-integration-core)
+(require 'cmake-integration-core-presets)
 (require 'cmake-integration-conan)
 (require 'cmake-integration-configure)
 (require 'cmake-integration-build)
