@@ -15,29 +15,20 @@
   (file-name-concat (cmake-integration--get-project-root-folder) "CMakeUserPresets.json"))
 
 
-(defun cmake-integration--get-include-presets-filenames (json-filename)
-  "Return a list of include preset filenames in the JSON-FILENAME.
+(defun cmake-integration--expand-included-presets (json-filename)
+  "Return a list containing JSON-FILENAME and any included presets file.
 
-A CMake presets file can include other presets files, which can include
-other preset files themselves. This function will return a flat list
-with the absolute paths of all of these included presets.
-
-NOTE: JSON-FILENAME is also returned as the lasts element, such that the
-output of `cmake-integration--get-include-presets-filenames' has all the
-preset file names from where we want to get presets."
-  (append (when (file-exists-p json-filename)
-            (let ((parent-folder (f-parent json-filename)))
-              ;; This outer -mapcat is used for the recursion such
-              ;; that if an included preset file has included preset
-              ;; files as well, they can be obtained
-              (-mapcat 'cmake-integration--get-include-presets-filenames
-                       ;; This mapcar will return a list of cmake
-                       ;; preset files included by the current preset
-                       ;; file
-                       (mapcar
-                        (lambda (filename) (cmake-integration--change-to-absolute-filename filename parent-folder))
-                        (alist-get 'include (json-read-file json-filename))))))
-          (list json-filename)))
+A CMake presets file can include other preset files, which can include
+other preset files themselves. This function returns a list containing
+both JSON-FILENAME as well as any presets file included in it."
+  (when (file-exists-p json-filename)
+    (let* ((parent-folder (f-parent json-filename))
+           (included-files (alist-get 'include (json-read-file json-filename)))
+           (absolute-included-files (mapcar (lambda (filename)
+                                              (cmake-integration--change-to-absolute-filename filename parent-folder))
+                                            included-files)))
+      (append (-mapcat #'cmake-integration--expand-included-presets absolute-included-files)
+              (list json-filename)))))
 
 
 (defun cmake-integration--get-parent-preset-name (preset)
@@ -74,6 +65,13 @@ Return nil if the file does not exist."
     (append
      (alist-get type (json-read-file json-filename))
      nil)))
+
+
+(defun cmake-integration--get-preset-by-name (name list-of-presets)
+  "Get the preset in LIST-OF-PRESETS with name NAME."
+  (seq-find
+   (lambda (preset) (equal name (alist-get 'name preset)))
+   list-of-presets))
 
 
 (provide 'cmake-integration-core-presets)

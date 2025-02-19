@@ -7,7 +7,7 @@
 ;; TODO: Add functions to:
 ;; - Launch terminal in build/target folder
 ;; - Launch dired in build/target folder
-;; 
+;;
 
 (defun cmake-integration-get-target-executable-filename (&optional target)
   "Get the executable filename for the target TARGET.
@@ -36,7 +36,7 @@ If TARGET-NAME is not provided use the last target (saved in a
          (target-name (car (split-string target cmake-integration--multi-config-separator)))
          (target-info (alist-get
                        target
-                       (cmake-integration--get-cmake-targets-from-codemodel-json-file)
+                       (cmake-integration--get-targets-from-codemodel-json-file)
                        nil nil 'equal)))
 
     (unless (cdr target-info)

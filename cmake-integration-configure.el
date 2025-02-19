@@ -47,20 +47,18 @@ If not available, get the binaryDir or a parent preset."
 
 (defun cmake-integration--get-configure-preset-by-name (preset-name)
   "Get the preset from the list of presets with name PRESET-NAME."
-  (alist-get
-   preset-name
-   (cmake-integration-get-cmake-configure-presets)
-   nil nil 'equal))
+  (let ((list-of-presets (cmake-integration-get-configure-presets)))
+    (cmake-integration--get-preset-by-name preset-name list-of-presets)))
 
 
-(defun cmake-integration--get-cmake-configure-presets-from-filename (json-filename)
+(defun cmake-integration--get-configure-presets-from-filename (json-filename)
   "Get the configure presets from the JSON-FILENAME.
 
 Return nil if the file does not exist."
   (cmake-integration--get-presets-of-given-type json-filename 'configurePresets))
 
 
-(defun cmake-integration--get-cmake-configure-presets-from-filename-2 (json-filename)
+(defun cmake-integration--get-configure-presets-from-filename-2 (json-filename)
   "Get the configure presets from the JSON-FILENAME.
 
 It also considering included presets."
@@ -70,17 +68,14 @@ It also considering included presets."
     ;; will allow us to use the returned alist as the COLLECTION
     ;; argument of completing-read and to also retrieve information of
     ;; the chosen preset.
-    (seq-filter 'cmake-integration--is-preset-visible
-                (mapcar
-                 (lambda (preset) (cons (alist-get 'name preset) preset))
-
-                 (vconcat
-                  (-mapcat
-                   (lambda (elem) (cmake-integration--get-cmake-configure-presets-from-filename elem) )
-                   (cmake-integration--get-include-presets-filenames json-filename)))))))
+    (let* ((expanded-preset-files (cmake-integration--expand-included-presets json-filename))
+           (all-configure-presets (-mapcat
+                                   #'cmake-integration--get-configure-presets-from-filename
+                                   expanded-preset-files)))
+      (seq-filter 'cmake-integration--is-preset-visible all-configure-presets))))
 
 
-(defun cmake-integration-get-cmake-configure-presets ()
+(defun cmake-integration-get-configure-presets ()
   "Get the configure presets.
 
 Get the configure presets in both `CMakePresets.json' and
@@ -88,8 +83,8 @@ Get the configure presets in both `CMakePresets.json' and
   (let ((system-presets-file (cmake-integration--get-system-presets-file))
         (user-presets-file (cmake-integration--get-user-presets-file)))
 
-    (append (cmake-integration--get-cmake-configure-presets-from-filename-2 system-presets-file)
-            (cmake-integration--get-cmake-configure-presets-from-filename-2 user-presets-file))))
+    (append (cmake-integration--get-configure-presets-from-filename-2 system-presets-file)
+            (cmake-integration--get-configure-presets-from-filename-2 user-presets-file))))
 
 
 (defun cmake-integration--get-configure-parent-preset (preset)
@@ -113,14 +108,14 @@ a vector of presets is returned."
 
 
 
-(defun cmake-integration--get-cmake-configure-with-preset-command (preset)
+(defun cmake-integration--get-configure-command-with-preset (preset)
   "Get the command to configure with CMake using the preset PRESET."
   (format "cd %s && cmake . -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --preset %s"
           (cmake-integration--get-project-root-folder)
           (cmake-integration--get-preset-name preset)))
 
 
-(defun cmake-integration--get-cmake-configure-without-preset-command ()
+(defun cmake-integration--get-configure-command-without-preset ()
   "Get the command to configure with CMake when presets are not used."
   (if cmake-integration-generator
       ;; case with generator set
@@ -159,6 +154,22 @@ the marginalia package, or in Emacs standard completion buffer."
     (concat (cmake-integration--get-annotation-initial-spaces preset) (alist-get 'displayName (alist-get preset minibuffer-completion-table nil nil 'equal)))))
 
 
+(defun cmake-integration--prepare-for-completing-read (list-of-presets)
+  "Transform LIST-OF-PRESETS to be used with `completing-read'.
+
+This will create a transformed list of presets which maps each preset in
+LIST-OF-PRESETS into a cons with the preset name and the preset itself.
+It will also append the string 'No Preset' to this transformed list.
+This makes it suitable to be used as the collection argument in
+`completing-read'."
+  (let ((transformed-list-of-presets (mapcar
+   (lambda (preset) (cons (cmake-integration--get-preset-name preset) preset))
+   list-of-presets)))
+    ;; Add a "No Preset" option to all-presets to allow a user to
+    ;; remove the preset and use default build folder
+    (append transformed-list-of-presets '("No Preset"))))
+
+
 ;;;###autoload
 (defun cmake-integration-select-configure-preset ()
   "Select a configure preset for CMake.
@@ -173,20 +184,16 @@ choose one of them (with completion)."
   ;; target.
   (setq cmake-integration-current-target nil)
 
-  (let ((all-presets
-         ;; Add a "No Preset" option to all-presets to allow a user to
-         ;; remove the preset and use default build folder
-         (append (cmake-integration-get-cmake-configure-presets) '("No Preset")))
-        choice)
-
-    (let ((completion-extra-properties '(:annotation-function cmake-integration--configure-annotation-function )))
-      (setq choice (completing-read "Build preset: " all-presets nil t)))
+  (let* ((all-presets (cmake-integration-get-configure-presets))
+         (collection (cmake-integration--prepare-for-completing-read all-presets))
+         (completion-extra-properties '(:annotation-function cmake-integration--configure-annotation-function))
+         (choice (completing-read "Build preset: " collection nil t)))
 
     ;; If "No Preset" was selected, then we are not using any preset
     ;; and thus cmake-integration-configure-preset should be nil
     (if (equal choice "No Preset")
         (setq cmake-integration-configure-preset nil)
-      (setq cmake-integration-configure-preset (alist-get choice all-presets nil nil 'equal)))))
+      (setq cmake-integration-configure-preset (cmake-integration--get-preset-by-name choice all-presets)))))
 
 
 ;;;###autoload
@@ -216,9 +223,9 @@ Note: If no preset is used then
   (cmake-integration--create-empty-codemodel-file)
 
   (let ((cmake-command (if cmake-integration-configure-preset
-                           (cmake-integration--get-cmake-configure-with-preset-command
+                           (cmake-integration--get-configure-command-with-preset
                             cmake-integration-configure-preset)
-                         (cmake-integration--get-cmake-configure-without-preset-command)))
+                         (cmake-integration--get-configure-command-without-preset)))
         ;; If a prefix argument was passed we will call conan before cmake
         (conan-command (if current-prefix-arg
                            (format "%s && " (cmake-integration-get-conan-run-command))

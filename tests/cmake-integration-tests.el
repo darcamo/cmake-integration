@@ -73,6 +73,15 @@ test code from inside a 'test project'."
                            "..")))))
 
 
+(ert-deftest test-cmake-integration--get-preset-by-name ()
+  (let* ((preset1 '((name . "preset1") (displayName . "The first preset")))
+         (preset2 '((name . "preset2") (displayName . "The second preset")))
+         (list-of-presets (list preset1 preset2))
+         )
+    (should (equal (cmake-integration--get-preset-by-name "preset1" list-of-presets) preset1))
+    (should (equal (cmake-integration--get-preset-by-name "preset2" list-of-presets) preset2))))
+
+
 (ert-deftest test-cmake-integration--get-configure-parent-preset ()
   (test-fixture-setup
    "./test-project-with-presets"
@@ -223,7 +232,7 @@ test code from inside a 'test project'."
    (lambda ()
      (let ((cmake-integration-current-target "bin/main")
            (cmake-integration-configure-preset '((name . "default")
-                                                      (binaryDir . "${sourceDir}/build-with-ninja/"))))
+                                                 (binaryDir . "${sourceDir}/build-with-ninja/"))))
        (let ((cmake-integration-run-working-directory 'root))
          (should (equal (cmake-integration--get-working-directory cmake-integration-current-target)
                         (format "~/%s" (file-relative-name "./" "~/"))))
@@ -362,12 +371,12 @@ test code from inside a 'test project'."
 
 
 ;;; TODO: add more cases to the test (install target, ninja multi-config, etc)
-(ert-deftest test-cmake-integration--get-cmake-targets-from-codemodel-json-file ()
+(ert-deftest test-cmake-integration--get-targets-from-codemodel-json-file ()
   (test-fixture-setup
    "./test-project-with-codemodel-reply"
    (lambda ()
 
-     (let ((targets (cmake-integration--get-cmake-targets-from-codemodel-json-file))
+     (let ((targets (cmake-integration--get-targets-from-codemodel-json-file))
            (expected-targets '(("all")
                                ("clean")
                                ("somelib"
@@ -425,27 +434,27 @@ test code from inside a 'test project'."
                    (f-join parent-folder relative-filename)))))
 
 
-(ert-deftest test-cmake-integration--get-include-presets-filenames ()
+(ert-deftest test-cmake-integration--expand-included-presets ()
   (test-fixture-setup
    "./test-project-with-presets"
    (lambda ()
-     (let ((filenames (cmake-integration--get-include-presets-filenames "CMakePresets.json")))
+     (let ((filenames (cmake-integration--expand-included-presets "CMakePresets.json")))
        (should (equal filenames '("CMakePresets.json"))))))
 
   (test-fixture-setup
    "./test-project-with-presets-with-includes"
    (lambda ()
-     (let ((filenames (cmake-integration--get-include-presets-filenames "CMakePresets.json")))
+     (let ((filenames (cmake-integration--expand-included-presets "CMakePresets.json")))
        (should (equal filenames '("subfolder2/MorePresets-Extra.json""MorePresets.json" "subfolder/EvenMorePresets.json" "CMakePresets.json")))))))
 
 
 
-(ert-deftest test-cmake-integration-get-cmake-configure-presets ()
+(ert-deftest test-cmake-integration-get-configure-presets ()
   ;; Without any presets file
   (test-fixture-setup
    "./test-project"
    (lambda ()
-     (let ((presets (cmake-integration-get-cmake-configure-presets)))
+     (let ((presets (cmake-integration-get-configure-presets)))
        (should (equal presets nil)))))
 
   ;; With a presets file
@@ -453,20 +462,17 @@ test code from inside a 'test project'."
    "./test-project-with-presets"
    (lambda ()
      (let ((presets-names (mapcar
-                           '(lambda (elem) (cmake-integration--get-preset-name (cdr elem)) )
-                           (cmake-integration-get-cmake-configure-presets)))
-           (expected-preset-names '("default" "ninjamulticonfig" "Dummy" "ninjamulticonfig2"))
-
-
-           )
+                           #'cmake-integration--get-preset-name
+                           (cmake-integration-get-configure-presets)))
+           (expected-preset-names '("default" "ninjamulticonfig" "Dummy" "ninjamulticonfig2")))
        (should (equal presets-names expected-preset-names)))))
 
   (test-fixture-setup
    "./test-project-with-presets-with-includes"
    (lambda ()
      (let ((presets-names (mapcar
-                           '(lambda (elem) (cmake-integration--get-preset-name (cdr elem)) )
-                           (cmake-integration-get-cmake-configure-presets)))
+                           #'cmake-integration--get-preset-name
+                           (cmake-integration-get-configure-presets)))
            (expected-preset-names '("MorePresets-Extra-1"
                                     "MorePresets-Extra-2"
                                     "MorePresets-Extra-3"

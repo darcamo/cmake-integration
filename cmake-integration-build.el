@@ -55,7 +55,7 @@ complain in that case."
 (defun cmake-integration--get-target-type-from-name (target-name all-targets)
   "Get the type of the target with name TARGET-NAME from ALL-TARGETS.
 ALL-TARGETS is an alist like the one returned by
-`cmake-integration--get-cmake-targets-from-codemodel-json-file-2'."
+`cmake-integration--get-targets-from-codemodel-json-file-2'."
   (let ((target (alist-get target-name all-targets nil nil 'equal)))
     ;; (cmake-integration--get-target-type target)
     (alist-get 'type target)
@@ -93,9 +93,9 @@ If a prefix argument is provided, then the value of
 will be ignored."
   (let* ((include-subprojects (or current-prefix-arg cmake-integration-include-subproject-targets-during-completion))
          (list-of-targets (if include-subprojects
-                              (cmake-integration--get-cmake-targets-from-codemodel-json-file-2
+                              (cmake-integration--get-targets-from-codemodel-json-file-2
                                json-filename)
-                            (cmake-integration--get-cmake-targets-from-codemodel-json-file-2
+                            (cmake-integration--get-targets-from-codemodel-json-file-2
                              json-filename
                              'cmake-integration--target-is-in-projectIndex0-p))))
 
@@ -257,7 +257,7 @@ The `install' target is only included if HAS-INSTALL-RULE is true."
     (nconc all-target clean-target install-target targets)))
 
 
-(defun cmake-integration--get-cmake-targets-from-codemodel-json-file (&optional json-filename predicate)
+(defun cmake-integration--get-targets-from-codemodel-json-file (&optional json-filename predicate)
   "Return the targets found in JSON-FILENAME that match PREDICATE.
 
 Return an alist of (target-name . target-info) elements for
@@ -315,21 +315,21 @@ added to TARGET."
         (setf (alist-get 'type (cdr target)) (alist-get 'type target-json-data))))))
 
 
-(defun cmake-integration--get-cmake-targets-from-codemodel-json-file-2 (&optional json-filename predicate)
+(defun cmake-integration--get-targets-from-codemodel-json-file-2 (&optional json-filename predicate)
   "Return the targets found in JSON-FILENAME that respect PREDICATE.
 
 This function is the same as
-`cmake-integration--get-cmake-targets-from-codemodel-json-file',
+`cmake-integration--get-targets-from-codemodel-json-file',
 with the exception that it adds the type of each target to a
 `type' field in the target. The main use for this information is
 during completion of target names, where this type information is
 shown as an annotation."
 
   ;; Start with the list of targets returned by
-  ;; `cmake-integration--get-cmake-targets-from-codemodel-json-file',
+  ;; `cmake-integration--get-targets-from-codemodel-json-file',
   ;; then loop over each target to add the type information, skipping
   ;; the "all", "clean" and "install" targets.
-  (let ((list-of-targets (cmake-integration--get-cmake-targets-from-codemodel-json-file json-filename predicate)))
+  (let ((list-of-targets (cmake-integration--get-targets-from-codemodel-json-file json-filename predicate)))
     (mapc 'cmake-integration--add-type-field-to-target list-of-targets)
     list-of-targets))
 
