@@ -21,9 +21,10 @@
 (defun cmake-integration--get-cpack-command ()
   "Get the command to run cpack."
   (let* ((preset-name (cmake-integration-get-last-configure-preset-name))
-         (build-folder (cmake-integration-get-build-folder)))
+         (build-folder (cmake-integration-get-build-folder))
+         (project-folder (cmake-integration--get-project-root-folder)))
     (if preset-name
-        (format "cpack --preset %s" preset-name)
+        (format "cd %s && cpack --preset %s" project-folder preset-name)
       (format "cd %s && cpack ." build-folder))))
 
 
