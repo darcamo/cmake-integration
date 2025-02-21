@@ -36,6 +36,14 @@ both JSON-FILENAME as well as any presets file included in it."
   (alist-get 'inherits preset))
 
 
+(defun cmake-integration--get-all-preset-files ()
+  "Get the system and user preset files, as well as included files."
+  (let ((system-presets-file (cmake-integration--get-system-presets-file))
+        (user-presets-file (cmake-integration--get-user-presets-file)))
+    (append (cmake-integration--expand-included-presets system-presets-file)
+            (cmake-integration--expand-included-presets user-presets-file))))
+
+
 (defun cmake-integration--get-preset-name (preset)
   "Get the name of the preset PRESET.
 
@@ -65,6 +73,18 @@ Return nil if the file does not exist."
     (append
      (alist-get type (json-read-file json-filename))
      nil)))
+
+
+(defun cmake-integration-get-all-presets-of-type (type)
+  "Get the presets of type TYPE from all preset files.
+
+Get the configure presets in both `CMakePresets.json' and
+`CMakeUserPresets.json' files, as well as any included file.."
+  (let* ((all-preset-files (cmake-integration--get-all-preset-files))
+         (all-configure-presets (-mapcat
+                                 #'(lambda (presets-file) (cmake-integration--get-presets-of-given-type presets-file type))
+                                 all-preset-files)))
+    (seq-filter 'cmake-integration--is-preset-visible all-configure-presets)))
 
 
 (defun cmake-integration--get-preset-by-name (name list-of-presets)

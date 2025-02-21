@@ -51,40 +51,12 @@ If not available, get the binaryDir or a parent preset."
     (cmake-integration--get-preset-by-name preset-name list-of-presets)))
 
 
-(defun cmake-integration--get-configure-presets-from-filename (json-filename)
-  "Get the configure presets from the JSON-FILENAME.
-
-Return nil if the file does not exist."
-  (cmake-integration--get-presets-of-given-type json-filename 'configurePresets))
-
-
-(defun cmake-integration--get-configure-presets-from-filename-2 (json-filename)
-  "Get the configure presets from the JSON-FILENAME.
-
-It also considering included presets."
-  (when (file-exists-p json-filename)
-    ;; The mapcar will turn the list of presets (each preset is an
-    ;; alist) into an alist where the key is the preset name. This
-    ;; will allow us to use the returned alist as the COLLECTION
-    ;; argument of completing-read and to also retrieve information of
-    ;; the chosen preset.
-    (let* ((expanded-preset-files (cmake-integration--expand-included-presets json-filename))
-           (all-configure-presets (-mapcat
-                                   #'cmake-integration--get-configure-presets-from-filename
-                                   expanded-preset-files)))
-      (seq-filter 'cmake-integration--is-preset-visible all-configure-presets))))
-
-
 (defun cmake-integration-get-configure-presets ()
   "Get the configure presets.
 
 Get the configure presets in both `CMakePresets.json' and
 `CMakeUserPresets.json' files."
-  (let ((system-presets-file (cmake-integration--get-system-presets-file))
-        (user-presets-file (cmake-integration--get-user-presets-file)))
-
-    (append (cmake-integration--get-configure-presets-from-filename-2 system-presets-file)
-            (cmake-integration--get-configure-presets-from-filename-2 user-presets-file))))
+  (cmake-integration-get-all-presets-of-type 'configurePresets))
 
 
 (defun cmake-integration--get-configure-parent-preset (preset)
@@ -159,8 +131,8 @@ the marginalia package, or in Emacs standard completion buffer."
 
 This will create a transformed list of presets which maps each preset in
 LIST-OF-PRESETS into a cons with the preset name and the preset itself.
-It will also append the string 'No Preset' to this transformed list.
-This makes it suitable to be used as the collection argument in
+It will also append the string \\='No Preset\\=' to this transformed
+list. This makes it suitable to be used as the collection argument in
 `completing-read'."
   (let ((transformed-list-of-presets (mapcar
    (lambda (preset) (cons (cmake-integration--get-preset-name preset) preset))

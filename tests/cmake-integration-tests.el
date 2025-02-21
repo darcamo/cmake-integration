@@ -55,7 +55,71 @@ test code from inside a 'test project'."
 ;; xxxxxxxxxxxxxxx Define the tests xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
-;; test-cmake-integration--mktarget
+(ert-deftest test-cmake-integration--get-system-presets-file ()
+  (test-fixture-setup
+   "./test-project/subfolder" ;; project root is the parent "test-project" folder
+   (lambda ()
+     (let* ((project-root-folder (cmake-integration--get-project-root-folder))
+            (expected-system-preset (file-name-concat project-root-folder "CMakePresets.json")))
+       (should (equal (cmake-integration--get-system-presets-file) expected-system-preset))))))
+
+
+(ert-deftest test-cmake-integration--get-user-presets-file ()
+  (test-fixture-setup
+   "./test-project/subfolder" ;; project root is the parent "test-project" folder
+   (lambda ()
+     (let* ((project-root-folder (cmake-integration--get-project-root-folder))
+            (expected-user-preset (file-name-concat project-root-folder "CMakeUserPresets.json")))
+       (should (equal (cmake-integration--get-user-presets-file) expected-user-preset))))))
+
+
+(ert-deftest test-cmake-integration--expand-included-presets ()
+  (test-fixture-setup
+   "./test-project-with-presets"
+   (lambda ()
+     (let ((filenames (cmake-integration--expand-included-presets "CMakePresets.json")))
+       (should (equal filenames '("CMakePresets.json"))))))
+
+  (test-fixture-setup
+   "./test-project-with-presets-with-includes"
+   (lambda ()
+     (let ((filenames (cmake-integration--expand-included-presets "CMakePresets.json")))
+       (should (equal filenames '("subfolder2/MorePresets-Extra.json""MorePresets.json" "subfolder/EvenMorePresets.json" "CMakePresets.json")))))))
+
+
+(ert-deftest test-cmake-integration--get-all-preset-files ()
+  (test-fixture-setup
+   "./test-project"
+   (lambda ()
+     (let ((all-files (cmake-integration--get-all-preset-files))
+           ;; There are no preset files in test-project
+           (expected-preset-files '()))
+       (should (equal all-files expected-preset-files)))))
+
+  (test-fixture-setup
+   "./test-project-with-presets/"
+   (lambda ()
+     (let ((all-files (cmake-integration--get-all-preset-files))
+           ;; Theres only the system preset, and it does not include other presets
+           (expected-preset-files (list (cmake-integration--get-system-presets-file))))
+       (should (equal all-files expected-preset-files)))))
+
+  (test-fixture-setup
+   "./test-project-with-presets-with-includes/"
+   (lambda ()
+     (let* ((all-files (cmake-integration--get-all-preset-files))
+            ;; Theres only the system preset, but it include other presets (which include other preset)
+            (expected-preset-files (list
+                                    (expand-file-name "./subfolder2/MorePresets-Extra.json")
+                                    (expand-file-name "./MorePresets.json")
+                                    (expand-file-name "./subfolder/EvenMorePresets.json")
+                                    (expand-file-name "./CMakePresets.json"))))
+       
+       (should (equal (length all-files) (length expected-preset-files)))
+       ;; Iterate over both lists (all-files and expected-preset-files) and compare each the elements in them
+       (cl-mapc (lambda (obtained expected) (should (filepath-equal-p expected obtained)) ) all-files expected-preset-files)))))
+
+
 (ert-deftest test-cmake-integration--create-target-fullname ()
   (should (equal (cmake-integration--create-target-fullname "target" "config") "target/config"))
   (let ((cmake-integration--multi-config-separator "|"))
@@ -434,21 +498,6 @@ test code from inside a 'test project'."
                    (f-join parent-folder relative-filename)))))
 
 
-(ert-deftest test-cmake-integration--expand-included-presets ()
-  (test-fixture-setup
-   "./test-project-with-presets"
-   (lambda ()
-     (let ((filenames (cmake-integration--expand-included-presets "CMakePresets.json")))
-       (should (equal filenames '("CMakePresets.json"))))))
-
-  (test-fixture-setup
-   "./test-project-with-presets-with-includes"
-   (lambda ()
-     (let ((filenames (cmake-integration--expand-included-presets "CMakePresets.json")))
-       (should (equal filenames '("subfolder2/MorePresets-Extra.json""MorePresets.json" "subfolder/EvenMorePresets.json" "CMakePresets.json")))))))
-
-
-
 (ert-deftest test-cmake-integration-get-configure-presets ()
   ;; Without any presets file
   (test-fixture-setup
@@ -555,51 +604,10 @@ test code from inside a 'test project'."
                       ))))))
 
 
-
-;; ((name . "default")
-;;  (displayName . "Default build using Ninja generator")
-;;  (generator . "Ninja")
-;;  (binaryDir . "build")
-;;  (toolchainFile . "${sourceDir}/dpc++-toolchain.cmake")
-;;  (cacheVariables
-;;   (CMAKE_EXPORT_COMPILE_COMMANDS . t)
-;;   (CMAKE_BUILD_TYPE . "Debug")))
-
-
-;; (setq cmake-integration-configure-preset '((name . "cmake-profile-1") (binaryDir . "build")))
-;; (setq cmake-integration-conan-profile '(("cmake-profile-1" . "conan-profile-1")
-;;                                               ("cmake-profile-2" . "conan-profile-2")))
-;; (cmake-integration-get-conan-run-command)
-
-
-
-
-;; (filepath-equal-p
-;;  "~/git_files/cmake-integration/tests/test-project/build"
-;;  "./test-project/build")
-
-
-;; ;; Test getting the build folder
-;; ;; - no presets
-;; ;;   - different values of cmake-integration-build-dir
-;; ;; - with different presets
-;; (ert-deftest test-getting-build-folder ()
-;;     (let ((default-directory (expand-file-name "./test-project/subfolder"))
-;;           (cmake-integration-build-dir "some-build-folder")
-;;           expected-build-folder)
-;;       (setq expected-build-folder (file-name-concat (cmake-integration--get-project-root-folder) cmake-integration-build-dir))
-;;     (should (file-equal-p (cmake-integration-get-build-folder) expected-build-folder))
-;;       ))
-
-
-
-
 ;; Assert macros:
 ;; - should
 ;; - should-not
 ;; - should-error
-
-
 
 
 (provide 'cmake-integration-tests)
