@@ -49,7 +49,7 @@ the marginalia package, or in Emacs standard completion buffer."
   "Select a build preset for CMake."
   (interactive)
   (when (not cmake-integration-configure-preset)
-    (error "Please, select a confgure preset first"))
+    (error "Please, select a configure preset first"))
 
   (let* ((all-presets (cmake-integration-get-build-presets))
          (collection (cmake-integration--prepare-for-completing-read all-presets))
