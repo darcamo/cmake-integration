@@ -158,6 +158,21 @@ marginalia package, or in Emacs standard completion buffer."
       preset-annotation)))
 
 
+(defun cmake-integration-select-preset (all-presets prompt)
+  "Select a CMake preset from ALL-PRESETS using PROMPT for the message.
+
+ALL-PRESETS is the list of all available presets. PROMPT is the prompt
+string for the `completing-read' function. Returns the selected preset
+or nil if \\='No Preset\\=' is selected."
+  (let* ((collection (cmake-integration--prepare-for-completing-read all-presets))
+         (completion-extra-properties '(:annotation-function cmake-integration--annotation-from-displayName-function))
+         (choice (completing-read prompt collection nil t)))
+    (if (equal choice "No Preset")
+        nil
+      (cmake-integration--get-preset-by-name choice all-presets))))
+
+
+
 (provide 'cmake-integration-core-presets)
 
 ;;; cmake-integration-core-presets.el ends here

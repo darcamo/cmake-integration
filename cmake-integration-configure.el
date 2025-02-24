@@ -110,21 +110,12 @@ A list of preset names if obtained from `CMakePresets.json' and
 choose one of them (with completion)."
   (interactive)
 
-  ;; Since we are changing the configure preset, the last target (if
-  ;; any) might not be valid anymore. Thus, we unset the current
-  ;; target.
   (setq cmake-integration-current-target nil)
+  (setq cmake-integration-build-preset nil)
 
-  (let* ((all-presets (cmake-integration-get-configure-presets))
-         (collection (cmake-integration--prepare-for-completing-read all-presets))
-         (completion-extra-properties '(:annotation-function cmake-integration--annotation-from-displayName-function))
-         (choice (completing-read "Configure preset: " collection nil t)))
-
-    ;; If "No Preset" was selected, then we are not using any preset
-    ;; and thus cmake-integration-configure-preset should be nil
-    (if (equal choice "No Preset")
-        (setq cmake-integration-configure-preset nil)
-      (setq cmake-integration-configure-preset (cmake-integration--get-preset-by-name choice all-presets)))))
+  (let ((all-presets (cmake-integration-get-configure-presets)))
+    (setq cmake-integration-configure-preset
+          (cmake-integration-select-preset all-presets "Configure preset: "))))
 
 
 ;;;###autoload (autoload 'cmake-integration-cmake-configure-with-preset "cmake-integration")

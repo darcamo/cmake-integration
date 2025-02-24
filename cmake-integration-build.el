@@ -25,21 +25,16 @@ variable will be used."
   (cmake-integration-get-presets-of-type 'buildPresets configure-preset))
 
 
+;;;###autoload (autoload 'cmake-integration-select-build-preset "cmake-integration")
 (defun cmake-integration-select-build-preset ()
   "Select a build preset for CMake."
   (interactive)
   (when (not cmake-integration-configure-preset)
     (error "Please, select a configure preset first"))
-
-  (let* ((all-presets (cmake-integration-get-build-presets))
-         (collection (cmake-integration--prepare-for-completing-read all-presets))
-         (completion-extra-properties '(:annotation-function cmake-integration--annotation-from-displayName-function))
-         (choice (completing-read "Build preset: " collection nil t)))
-
-    (if (equal choice "No Preset")
-        (setq cmake-integration-build-preset nil)
-      (setq cmake-integration-build-preset (cmake-integration--get-preset-by-name choice all-presets)))))
-
+  (let ((all-presets (cmake-integration-get-build-presets)))
+    (when all-presets
+      (setq cmake-integration-build-preset
+            (cmake-integration-select-preset all-presets "Build preset: ")))))
 
 (defun cmake-integration--create-target-fullname (target-name &optional config-name)
   "Return target constructed from TARGET-NAME and CONFIG-NAME."
