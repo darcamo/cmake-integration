@@ -147,7 +147,7 @@ annotation is shown during the completions if you are using the
 marginalia package, or in Emacs standard completion buffer."
 
   (let* ((initial-spaces (cmake-integration--get-annotation-initial-spaces preset))
-         (no-preset-annotation (concat initial-spaces "Don't use any preset."))
+         (no-preset-annotation (format "%sDon't use any preset. The build folder is '%s'" initial-spaces (cmake-integration--get-build-folder-relative-to-project)))
          ;; Note that `minibuffer-completion-table' has the list of
          ;; completions currently in use, from which we know PRESET is
          ;; one of them

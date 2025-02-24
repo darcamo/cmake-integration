@@ -101,30 +101,6 @@ a vector of presets is returned."
             (cmake-integration--get-project-root-folder))))
 
 
-(defun cmake-integration--configure-annotation-function (preset)
-  "Annotation function that takes a PRESET and return an annotation for it.
-
-This is used in `cmake-integration-select-configure-preset'
-when completing a preset name to generate an annotation for that
-preset, which is shown during the completions if you are using
-the marginalia package, or in Emacs standard completion buffer."
-
-  (if (equal preset "No Preset")
-      (concat (cmake-integration--get-annotation-initial-spaces "No Preset")
-              "Don't use any preset."
-              (cond
-               ((and cmake-integration-build-dir cmake-integration-generator)
-                (format "The build folder is '%s' and the generator is '%s'."
-                        cmake-integration-build-dir
-                        cmake-integration-generator))
-               (t (format "The build folder is '%s'."
-                          cmake-integration-build-dir))))
-    ;; Note that `minibuffer-completion-table' has the list of
-    ;; completions currently in use, from which we know PRESET is one
-    ;; of them
-    (concat (cmake-integration--get-annotation-initial-spaces preset) (alist-get 'displayName (alist-get preset minibuffer-completion-table nil nil 'equal)))))
-
-
 ;;;###autoload (autoload 'cmake-integration-select-configure-preset "cmake-integration")
 (defun cmake-integration-select-configure-preset ()
   "Select a configure preset for CMake.
@@ -141,7 +117,7 @@ choose one of them (with completion)."
 
   (let* ((all-presets (cmake-integration-get-configure-presets))
          (collection (cmake-integration--prepare-for-completing-read all-presets))
-         (completion-extra-properties '(:annotation-function cmake-integration--configure-annotation-function))
+         (completion-extra-properties '(:annotation-function cmake-integration--annotation-from-displayName-function))
          (choice (completing-read "Configure preset: " collection nil t)))
 
     ;; If "No Preset" was selected, then we are not using any preset
