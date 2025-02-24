@@ -105,7 +105,8 @@ or set `cmake-integration-build-dir' manually")))))
   "Get the build folder relative to project folder."
   (let ((build-folder (cmake-integration-get-build-folder))
         (project-folder (cmake-integration--get-project-root-folder)))
-    (file-relative-name build-folder project-folder)))
+    (when (and build-folder project-folder)
+      (file-relative-name build-folder project-folder))))
 
 
 (defun cmake-integration--get-annotation-initial-spaces (annotated-string)
