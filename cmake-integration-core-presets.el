@@ -138,6 +138,26 @@ the `cmake-integration-configure-preset' variable will be used."
      all-presets)))
 
 
+(defun cmake-integration--annotation-from-displayName-function (preset)
+  "Function that returns an annotation with the displayName field in a PRESET.
+
+This is used in `cmake-integration-select-*-preset' functions when
+completing a preset name to generate an annotation for that preset. This
+annotation is shown during the completions if you are using the
+marginalia package, or in Emacs standard completion buffer."
+
+  (let* ((initial-spaces (cmake-integration--get-annotation-initial-spaces preset))
+         (no-preset-annotation (concat initial-spaces "Don't use any preset."))
+         ;; Note that `minibuffer-completion-table' has the list of
+         ;; completions currently in use, from which we know PRESET is
+         ;; one of them
+         (display-name (alist-get 'displayName (alist-get preset minibuffer-completion-table nil nil 'equal)))
+         (preset-annotation (concat initial-spaces display-name)))
+    (if (equal preset "No Preset")
+        no-preset-annotation
+      preset-annotation)))
+
+
 (provide 'cmake-integration-core-presets)
 
 ;;; cmake-integration-core-presets.el ends here

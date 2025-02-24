@@ -25,26 +25,6 @@ variable will be used."
   (cmake-integration-get-presets-of-type 'buildPresets configure-preset))
 
 
-(defun cmake-integration--build-annotation-function (preset)
-  "Annotation function that takes a PRESET and return an annotation for it.
-
-This is used in `cmake-integration-select-configure-preset'
-when completing a preset name to generate an annotation for that
-preset, which is shown during the completions if you are using
-the marginalia package, or in Emacs standard completion buffer."
-
-  (let* ((initial-spaces (cmake-integration--get-annotation-initial-spaces preset))
-         (no-preset-annotation (concat initial-spaces "Don't use any preset."))
-         ;; Note that `minibuffer-completion-table' has the list of
-         ;; completions currently in use, from which we know PRESET is
-         ;; one of them
-         (display-name (alist-get 'displayName (alist-get preset minibuffer-completion-table nil nil 'equal)))
-         (preset-annotation (concat initial-spaces display-name)))
-    (if (equal preset "No Preset")
-        no-preset-annotation
-      preset-annotation)))
-
-
 (defun cmake-integration-select-build-preset ()
   "Select a build preset for CMake."
   (interactive)
@@ -53,7 +33,7 @@ the marginalia package, or in Emacs standard completion buffer."
 
   (let* ((all-presets (cmake-integration-get-build-presets))
          (collection (cmake-integration--prepare-for-completing-read all-presets))
-         (completion-extra-properties '(:annotation-function cmake-integration--build-annotation-function))
+         (completion-extra-properties '(:annotation-function cmake-integration--annotation-from-displayName-function))
          (choice (completing-read "Build preset: " collection nil t)))
 
     (if (equal choice "No Preset")
