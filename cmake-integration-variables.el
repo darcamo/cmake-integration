@@ -123,6 +123,9 @@ will be replaced by the project root." :type 'string :group 'cmake-integration)
 (defvar cmake-integration-configure-preset nil "Preset used for the configure step.")
 
 
+(defvar cmake-integration-build-preset nil "Preset used for the build step.")
+
+
 (defconst cmake-integration--multi-config-separator "/"
   "Character used to separate target name from config name.
 

@@ -114,7 +114,7 @@ test code from inside a 'test project'."
                                     (expand-file-name "./MorePresets.json")
                                     (expand-file-name "./subfolder/EvenMorePresets.json")
                                     (expand-file-name "./CMakePresets.json"))))
-       
+
        (should (equal (length all-files) (length expected-preset-files)))
        ;; Iterate over both lists (all-files and expected-preset-files) and compare each the elements in them
        (cl-mapc (lambda (obtained expected) (should (filepath-equal-p expected obtained)) ) all-files expected-preset-files)))))
@@ -552,14 +552,26 @@ test code from inside a 'test project'."
        (should (equal (cmake-integration-get-build-command "the_target")
                       (format "cd %s && cmake --build %s --target the_target" project-dir cmake-integration-build-dir))))))
 
-
+  ;; Without a build preset
   (test-fixture-setup
    "./test-project-with-presets"
    (lambda ()
      (let ((project-dir (format "~/%s" (file-relative-name "./" "~/")))
-           (cmake-integration-configure-preset '("default" (name . "default"))))
+           (cmake-integration-configure-preset '("default" (name . "default") (binaryDir . "theBuildFolder"))))
        (should (equal (cmake-integration-get-build-command "the_target")
-                      (format "cd %s && cmake --build --preset default --target the_target" project-dir)))))))
+                      (format "cd %s && cmake --build theBuildFolder --target the_target" project-dir))))))
+
+  ;; With a build preset
+  (test-fixture-setup
+   "./test-project-with-presets"
+   (lambda ()
+     (let ((project-dir (format "~/%s" (file-relative-name "./" "~/")))
+           (cmake-integration-configure-preset '("config-preset" (name . "config-preset") (binaryDir . "theBuildFolder")))
+           (cmake-integration-build-preset '("build-preset" (name . "build-preset") (configurePreset . "config-preset")))
+           )
+       (should (equal (cmake-integration-get-build-command "the_target")
+                      (format "cd %s && cmake --build --preset build-preset --target the_target" project-dir))))))
+  )
 
 
 (ert-deftest test-cmake-integration-get-conan-run-command ()
@@ -602,6 +614,66 @@ test code from inside a 'test project'."
                               (cmake-integration-get-build-folder)
                               (cmake-integration--get-project-root-folder))
                       ))))))
+
+
+(ert-deftest test-cmake-integration--get-associated-configure-preset ()
+  (let ((build-preset1 '((name . "presetName1") (configurePreset . "configurePresetName1")))
+        (build-preset2 '((name . "presetName2") (configurePreset . "configurePresetName2"))))
+    (should (equal (cmake-integration--get-associated-configure-preset build-preset1) "configurePresetName1"))
+    (should (equal (cmake-integration--get-associated-configure-preset build-preset2) "configurePresetName2"))))
+
+
+(ert-deftest test-cmake-integration--preset-has-matching-configure-preset-p ()
+  (let ((preset1 '((name . "preset1") (configurePreset . "configurePreset1")))
+        (preset2 '((name . "preset2") (configurePreset . "configurePreset2")))
+        (configurePreset1 '((name . "configurePreset1")))
+        (configurePreset2 '((name . "configurePreset2"))))
+    (should (cmake-integration--preset-has-matching-configure-preset-p preset1 configurePreset1))
+    (should (cmake-integration--preset-has-matching-configure-preset-p preset2 configurePreset2))
+    (should-not (cmake-integration--preset-has-matching-configure-preset-p preset1 configurePreset2))
+    (should-not (cmake-integration--preset-has-matching-configure-preset-p preset2 configurePreset1))))
+
+
+
+(ert-deftest test-cmake-integration-get-build-presets ()
+  (test-fixture-setup
+   "./test-project-with-presets"
+   (lambda ()
+     (let* ((all-build-presets (cmake-integration-get-all-presets-of-type 'buildPresets))
+            (configure-preset '((name . "ninjamulticonfig")))
+            (build-presets (cmake-integration-get-build-presets configure-preset))
+            (expected-build-presets
+             '(((name . "ninjamulticonfig") (displayName . "Build preset using ninja multi-config") (configurePreset . "ninjamulticonfig") (configuration . "Release")))))
+       (should (equal (length all-build-presets) 2))
+       (should (equal build-presets expected-build-presets)))))
+
+  ;; Test when not passing a configure preset to
+  ;; cmake-integration-get-build-presets -> The value in the
+  ;; `cmake-integration-configure-preset' is used.
+  (test-fixture-setup
+   "./test-project-with-presets"
+   (lambda ()
+     (let* ((all-build-presets (cmake-integration-get-all-presets-of-type 'buildPresets))
+            (cmake-integration-configure-preset '((name . "ninjamulticonfig")))
+            (build-presets (cmake-integration-get-build-presets))
+            (expected-build-presets
+             '(((name . "ninjamulticonfig") (displayName . "Build preset using ninja multi-config") (configurePreset . "ninjamulticonfig") (configuration . "Release")))))
+       (should (equal (length all-build-presets) 2))
+       (should (equal build-presets expected-build-presets)))))
+
+  ;; Test the case where there are multiple build presets with the same configure preset
+  (test-fixture-setup
+   "./test-project-with-presets-and-many-targets"
+   (lambda ()
+     (let* ((all-build-presets (cmake-integration-get-all-presets-of-type 'buildPresets))
+            (configure-preset '((name . "default")))
+            (build-presets (cmake-integration-get-build-presets configure-preset))
+            (expected-build-presets
+             '(((name . "default") (displayName . "Default build preset") (configurePreset . "default"))
+               ((name . "another") (displayName . "Another build preset with default as configure preset") (configurePreset . "default")))))
+
+       (should (equal (length all-build-presets) 3))
+       (should (equal build-presets expected-build-presets))))))
 
 
 ;; Assert macros:

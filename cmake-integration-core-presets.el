@@ -94,6 +94,22 @@ Get the configure presets in both `CMakePresets.json' and
    list-of-presets))
 
 
+(defun cmake-integration--prepare-for-completing-read (list-of-presets)
+  "Transform LIST-OF-PRESETS to be used with `completing-read'.
+
+This will create a transformed list of presets which maps each preset in
+LIST-OF-PRESETS into a cons with the preset name and the preset itself.
+It will also append the string \\='No Preset\\=' to this transformed
+list. This makes it suitable to be used as the collection argument in
+`completing-read'."
+  (let ((transformed-list-of-presets (mapcar
+   (lambda (preset) (cons (cmake-integration--get-preset-name preset) preset))
+   list-of-presets)))
+    ;; Add a "No Preset" option to all-presets to allow a user to
+    ;; remove the preset and use default build folder
+    (append transformed-list-of-presets '("No Preset"))))
+
+
 (provide 'cmake-integration-core-presets)
 
 ;;; cmake-integration-core-presets.el ends here

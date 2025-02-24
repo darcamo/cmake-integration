@@ -52,10 +52,10 @@ If not available, get the binaryDir or a parent preset."
 
 
 (defun cmake-integration-get-configure-presets ()
-  "Get the configure presets.
+  "Get all the non-hidden configure presets.
 
 Get the configure presets in both `CMakePresets.json' and
-`CMakeUserPresets.json' files."
+`CMakeUserPresets.json' files as well as in any included files."
   (cmake-integration-get-all-presets-of-type 'configurePresets))
 
 
@@ -77,7 +77,6 @@ a vector of presets is returned."
 (defun cmake-integration-get-last-configure-preset-name ()
   "Get the `name' field of the last preset used for configure."
   (cmake-integration--get-preset-name cmake-integration-configure-preset))
-
 
 
 (defun cmake-integration--get-configure-command-with-preset (preset)
@@ -126,22 +125,6 @@ the marginalia package, or in Emacs standard completion buffer."
     (concat (cmake-integration--get-annotation-initial-spaces preset) (alist-get 'displayName (alist-get preset minibuffer-completion-table nil nil 'equal)))))
 
 
-(defun cmake-integration--prepare-for-completing-read (list-of-presets)
-  "Transform LIST-OF-PRESETS to be used with `completing-read'.
-
-This will create a transformed list of presets which maps each preset in
-LIST-OF-PRESETS into a cons with the preset name and the preset itself.
-It will also append the string \\='No Preset\\=' to this transformed
-list. This makes it suitable to be used as the collection argument in
-`completing-read'."
-  (let ((transformed-list-of-presets (mapcar
-   (lambda (preset) (cons (cmake-integration--get-preset-name preset) preset))
-   list-of-presets)))
-    ;; Add a "No Preset" option to all-presets to allow a user to
-    ;; remove the preset and use default build folder
-    (append transformed-list-of-presets '("No Preset"))))
-
-
 ;;;###autoload
 (defun cmake-integration-select-configure-preset ()
   "Select a configure preset for CMake.
@@ -159,7 +142,7 @@ choose one of them (with completion)."
   (let* ((all-presets (cmake-integration-get-configure-presets))
          (collection (cmake-integration--prepare-for-completing-read all-presets))
          (completion-extra-properties '(:annotation-function cmake-integration--configure-annotation-function))
-         (choice (completing-read "Build preset: " collection nil t)))
+         (choice (completing-read "Configure preset: " collection nil t)))
 
     ;; If "No Preset" was selected, then we are not using any preset
     ;; and thus cmake-integration-configure-preset should be nil

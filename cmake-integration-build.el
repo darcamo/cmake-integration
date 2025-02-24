@@ -8,6 +8,77 @@
 (require 'cmake-integration-configure)
 
 
+(defun cmake-integration-get-last-build-preset-name ()
+  "Get the `name' field of the last preset used for build."
+  (cmake-integration--get-preset-name cmake-integration-build-preset))
+
+
+;; TODO: Make it work when configurePreset is not present, and instead
+;; its value should be taken from an inherited preset.
+(defun cmake-integration--get-associated-configure-preset (build-preset)
+  "Get the associated configure-preset of a BUILD-PRESET."
+  (alist-get 'configurePreset build-preset))
+
+
+(defun cmake-integration--preset-has-matching-configure-preset-p (preset configure-preset)
+  "Check if PRESET has a configure preset name matching CONFIGURE-PRESET."
+  (let* ((configure-preset-name (cmake-integration--get-preset-name configure-preset))
+         (associated-configure-preset-name (cmake-integration--get-associated-configure-preset preset)))
+    (equal configure-preset-name associated-configure-preset-name)))
+
+
+;;;###autoload
+(defun cmake-integration-get-build-presets (&optional configure-preset)
+  "Get the build presets associated with CONFIGURE-PRESET.
+
+Get the build presets in both `CMakePresets.json' and
+`CMakeUserPresets.json' files as well as in any included files whose
+configure preset is CONFIGURE-PRESET. If CONFIGURE-PRESET is not
+provided, then the value in the `cmake-integration-configure-preset'
+variable will be used."
+  (let ((configure-preset (or configure-preset cmake-integration-configure-preset))
+        (all-build-presets (cmake-integration-get-all-presets-of-type 'buildPresets)))
+    (seq-filter
+     #'(lambda (preset) (cmake-integration--preset-has-matching-configure-preset-p preset configure-preset))
+     all-build-presets)))
+
+
+(defun cmake-integration--build-annotation-function (preset)
+  "Annotation function that takes a PRESET and return an annotation for it.
+
+This is used in `cmake-integration-select-configure-preset'
+when completing a preset name to generate an annotation for that
+preset, which is shown during the completions if you are using
+the marginalia package, or in Emacs standard completion buffer."
+
+  (let* ((initial-spaces (cmake-integration--get-annotation-initial-spaces preset))
+         (no-preset-annotation (concat initial-spaces "Don't use any preset."))
+         ;; Note that `minibuffer-completion-table' has the list of
+         ;; completions currently in use, from which we know PRESET is
+         ;; one of them
+         (display-name (alist-get 'displayName (alist-get preset minibuffer-completion-table nil nil 'equal)))
+         (preset-annotation (concat initial-spaces display-name)))
+    (if (equal preset "No Preset")
+        no-preset-annotation
+      preset-annotation)))
+
+
+(defun cmake-integration-select-build-preset ()
+  "Select a build preset for CMake."
+  (interactive)
+  (when (not cmake-integration-configure-preset)
+    (error "Please, select a confgure preset first"))
+
+  (let* ((all-presets (cmake-integration-get-build-presets))
+         (collection (cmake-integration--prepare-for-completing-read all-presets))
+         (completion-extra-properties '(:annotation-function cmake-integration--build-annotation-function))
+         (choice (completing-read "Build preset: " collection nil t)))
+
+    (if (equal choice "No Preset")
+        (setq cmake-integration-build-preset nil)
+      (setq cmake-integration-build-preset (cmake-integration--get-preset-by-name choice all-presets)))))
+
+
 (defun cmake-integration--create-target-fullname (target-name &optional config-name)
   "Return target constructed from TARGET-NAME and CONFIG-NAME."
   (if config-name
@@ -169,8 +240,8 @@ missing. Please run either `cmake-integration-cmake-reconfigure' or
   (pcase-let* ((`(,target-name ,config-name)
                 (split-string target cmake-integration--multi-config-separator))
                (project-root (cmake-integration--get-project-root-folder))
-               (preset-arg-or-build-folder (if cmake-integration-configure-preset
-                                               (format "--preset %s" (cmake-integration-get-last-configure-preset-name))
+               (preset-arg-or-build-folder (if cmake-integration-build-preset
+                                               (format "--preset %s" (cmake-integration-get-last-build-preset-name))
                                              (cmake-integration--get-build-folder-relative-to-project)))
                (config-option (if config-name
                                   (format " --config %s" config-name)
