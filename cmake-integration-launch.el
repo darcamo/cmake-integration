@@ -121,7 +121,7 @@ variable."
     (_ (cmake-integration--get-run-command-custom-cwd executable-filename cmake-integration-run-working-directory))))
 
 
-;;;###autoload
+;;;###autoload (autoload 'cmake-integration-run-last-target "cmake-integration")
 (defun cmake-integration-run-last-target ()
   "Run the last compiled target."
   (interactive)
@@ -170,7 +170,7 @@ variable. This should be passed to gdb command in Emacs."
                        :cwd cwd)))))
 
 
-;;;###autoload
+;;;###autoload (autoload 'cmake-integration-debug-last-target "cmake-integration")
 (defun cmake-integration-debug-last-target ()
   "Run the last compiled target."
   (interactive)
@@ -182,7 +182,7 @@ variable. This should be passed to gdb command in Emacs."
     (cmake-integration--launch-gdb-with-last-target)))
 
 
-;;;###autoload
+;;;###autoload (autoload 'cmake-integration-run-last-target-with-arguments "cmake-integration")
 (defun cmake-integration-run-last-target-with-arguments (run-arguments)
   "Run the last compiled target passing RUN-ARGUMENTS as arguments."
   (interactive "sArguments: ")

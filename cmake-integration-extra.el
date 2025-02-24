@@ -4,6 +4,7 @@
 
 ;;; Code:
 
+;;;###autoload (autoload 'cmake-integration-open-shell-in-build-folder "cmake-integration")
 (defun cmake-integration-open-shell-in-build-folder ()
   "Open eshell in the build folder."
   (interactive)
@@ -11,6 +12,7 @@
     (eshell)))
 
 
+;;;###autoload (autoload 'cmake-integration-open-dired-in-build-folder "cmake-integration")
 (defun cmake-integration-open-dired-in-build-folder ()
   "Open dired in the buiild folder."
   (interactive)

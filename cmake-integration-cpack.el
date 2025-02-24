@@ -28,7 +28,7 @@
       (format "cd %s && cpack ." build-folder))))
 
 
-;;;###autoload
+;;;###autoload (autoload 'cmake-integration-run-cpack "cmake-integration")
 (defun cmake-integration-run-cpack ()
   "Run cpack."
   (interactive)

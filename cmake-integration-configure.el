@@ -125,7 +125,7 @@ the marginalia package, or in Emacs standard completion buffer."
     (concat (cmake-integration--get-annotation-initial-spaces preset) (alist-get 'displayName (alist-get preset minibuffer-completion-table nil nil 'equal)))))
 
 
-;;;###autoload
+;;;###autoload (autoload 'cmake-integration-select-configure-preset "cmake-integration")
 (defun cmake-integration-select-configure-preset ()
   "Select a configure preset for CMake.
 
@@ -151,7 +151,7 @@ choose one of them (with completion)."
       (setq cmake-integration-configure-preset (cmake-integration--get-preset-by-name choice all-presets)))))
 
 
-;;;###autoload
+;;;###autoload (autoload 'cmake-integration-cmake-configure-with-preset "cmake-integration")
 (defun cmake-integration-cmake-configure-with-preset ()
   "Configure CMake using one of the availeble presets.
 
@@ -167,7 +167,7 @@ the chosen preset."
   (cmake-integration-cmake-reconfigure))
 
 
-;;;###autoload
+;;;###autoload (autoload 'cmake-integration-cmake-reconfigure "cmake-integration")
 (defun cmake-integration-cmake-reconfigure ()
   "Call cmake again to re-configure the project.
 

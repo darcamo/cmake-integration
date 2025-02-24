@@ -19,7 +19,7 @@ added to the ctest command."
       ctest-command)))
 
 
-;;;###autoload
+;;;###autoload (autoload 'cmake-integration-run-ctest "cmake-integration")
 (defun cmake-integration-run-ctest ()
   "Run ctest."
   (interactive)

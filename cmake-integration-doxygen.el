@@ -9,6 +9,7 @@
   (s-replace "${sourceDir}/" (cmake-integration--get-project-root-folder) cmake-integration-docs-folder))
 
 
+;;;###autoload (autoload 'cmake-integration-generate-project-documentation "cmake-integration")
 (defun cmake-integration-generate-project-documentation ( )
   "Generate the documentation in a cmake based project using Doxygen.
 
@@ -19,6 +20,7 @@ from where the doxygen command will be run."
     (compile doxygen-command)))
 
 
+;;;###autoload (autoload 'cmake-integration-view-project-documentation "cmake-integration")
 (defun cmake-integration-view-project-documentation ()
   "Open generated doxygen documentation."
   (interactive)

@@ -41,7 +41,7 @@ configuration and the profile passed to conan is taken from the
     (cmake-integration--get-conan-run-command nil)))
 
 
-;;;###autoload
+;;;###autoload (autoload 'cmake-integration-run-conan "cmake-integration")
 (defun cmake-integration-run-conan ()
   "Run conan install in the current build folder."
   (compile (cmake-integration-get-conan-run-command)))

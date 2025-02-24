@@ -27,7 +27,7 @@
     (equal configure-preset-name associated-configure-preset-name)))
 
 
-;;;###autoload
+;;;###autoload (autoload 'cmake-integration-get-build-presets "cmake-integration")
 (defun cmake-integration-get-build-presets (&optional configure-preset)
   "Get the build presets associated with CONFIGURE-PRESET.
 
@@ -110,7 +110,7 @@ complain in that case."
 `cmake-integration-cmake-configure-with-preset' to configure the project")))
 
 
-;;;###autoload
+;;;###autoload (autoload 'cmake-integration-save-and-compile-no-completion "cmake-integration")
 (defun cmake-integration-save-and-compile-no-completion (target)
   "Save the buffer and compile TARGET."
   (interactive "sTarget: ")
@@ -193,7 +193,7 @@ will be ignored."
      (t list-of-targets))))
 
 
-;;;###autoload
+;;;###autoload (autoload 'cmake-integration-save-and-compile "cmake-integration")
 (defun cmake-integration-save-and-compile ()
   "Ask for a target name and compile it.
 
@@ -227,7 +227,7 @@ missing. Please run either `cmake-integration-cmake-reconfigure' or
     (command-execute 'cmake-integration-save-and-compile-no-completion)))
 
 
-;;;###autoload
+;;;###autoload (autoload 'cmake-integration-save-and-compile-last-target "cmake-integration")
 (defun cmake-integration-save-and-compile-last-target ()
   "Recompile the last target that was compiled (or `all')."
   (interactive)
