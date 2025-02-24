@@ -106,8 +106,36 @@ list. This makes it suitable to be used as the collection argument in
    (lambda (preset) (cons (cmake-integration--get-preset-name preset) preset))
    list-of-presets)))
     ;; Add a "No Preset" option to all-presets to allow a user to
-    ;; remove the preset and use default build folder
+    ;; remove the preset
     (append transformed-list-of-presets '("No Preset"))))
+
+
+;; TODO: Make it work when configurePreset is not present, and instead
+;; its value should be taken from an inherited preset.
+(defun cmake-integration--get-associated-configure-preset (preset)
+  "Get the associated configure-preset of a PRESET."
+  (alist-get 'configurePreset preset))
+
+
+(defun cmake-integration--preset-has-matching-configure-preset-p (preset configure-preset)
+  "Check if PRESET has a configure preset name matching CONFIGURE-PRESET."
+  (let* ((configure-preset-name (cmake-integration--get-preset-name configure-preset))
+         (associated-configure-preset-name (cmake-integration--get-associated-configure-preset preset)))
+    (equal configure-preset-name associated-configure-preset-name)))
+
+
+(defun cmake-integration-get-presets-of-type (type &optional configure-preset)
+  "Get the presets of type TYPE associated with CONFIGURE-PRESET.
+
+Get the presets in both `CMakePresets.json' and `CMakeUserPresets.json'
+files, as well as in any included files, whose configure preset is
+CONFIGURE-PRESET. If CONFIGURE-PRESET is not provided, then the value in
+the `cmake-integration-configure-preset' variable will be used."
+  (let ((configure-preset (or configure-preset cmake-integration-configure-preset))
+        (all-presets (cmake-integration-get-all-presets-of-type type)))
+    (seq-filter
+     #'(lambda (preset) (cmake-integration--preset-has-matching-configure-preset-p preset configure-preset))
+     all-presets)))
 
 
 (provide 'cmake-integration-core-presets)

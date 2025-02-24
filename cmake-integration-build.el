@@ -13,20 +13,6 @@
   (cmake-integration--get-preset-name cmake-integration-build-preset))
 
 
-;; TODO: Make it work when configurePreset is not present, and instead
-;; its value should be taken from an inherited preset.
-(defun cmake-integration--get-associated-configure-preset (build-preset)
-  "Get the associated configure-preset of a BUILD-PRESET."
-  (alist-get 'configurePreset build-preset))
-
-
-(defun cmake-integration--preset-has-matching-configure-preset-p (preset configure-preset)
-  "Check if PRESET has a configure preset name matching CONFIGURE-PRESET."
-  (let* ((configure-preset-name (cmake-integration--get-preset-name configure-preset))
-         (associated-configure-preset-name (cmake-integration--get-associated-configure-preset preset)))
-    (equal configure-preset-name associated-configure-preset-name)))
-
-
 ;;;###autoload (autoload 'cmake-integration-get-build-presets "cmake-integration")
 (defun cmake-integration-get-build-presets (&optional configure-preset)
   "Get the build presets associated with CONFIGURE-PRESET.
@@ -36,11 +22,7 @@ Get the build presets in both `CMakePresets.json' and
 configure preset is CONFIGURE-PRESET. If CONFIGURE-PRESET is not
 provided, then the value in the `cmake-integration-configure-preset'
 variable will be used."
-  (let ((configure-preset (or configure-preset cmake-integration-configure-preset))
-        (all-build-presets (cmake-integration-get-all-presets-of-type 'buildPresets)))
-    (seq-filter
-     #'(lambda (preset) (cmake-integration--preset-has-matching-configure-preset-p preset configure-preset))
-     all-build-presets)))
+  (cmake-integration-get-presets-of-type 'buildPresets configure-preset))
 
 
 (defun cmake-integration--build-annotation-function (preset)
