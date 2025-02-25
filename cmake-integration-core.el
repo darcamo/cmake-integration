@@ -33,7 +33,8 @@ Function to verify is VAL is save as a value for the
 
 (defun cmake-integration--get-project-root-folder ()
   "Get the current project root using Emacs built-in project."
-  (project-root (project-current)))
+  (when (project-current)
+    (project-root (project-current))))
 
 
 (defun cmake-integration--get-codemodel-reply-json-filename ()
