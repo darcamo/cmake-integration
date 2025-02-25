@@ -9,6 +9,10 @@
 
 (declare-function cmake-integration-get-conan-run-command "cmake-integration-conan.el")
 
+
+(defvar cmake-integration-after-set-configure-preset-hook nil "A hook run after changing the configure preset.")
+
+
 (defun cmake-integration--perform-binaryDir-replacements (binaryDir project-root-folder preset-name)
   "Replace `${sourceDir}' and `${presetName}' in a BINARYDIR string.
 
@@ -110,12 +114,10 @@ A list of preset names if obtained from `CMakePresets.json' and
 choose one of them (with completion)."
   (interactive)
 
-  (setq cmake-integration-current-target nil)
-  (setq cmake-integration-build-preset nil)
-
   (let ((all-presets (cmake-integration-get-configure-presets)))
     (setq cmake-integration-configure-preset
-          (cmake-integration-select-preset all-presets "Configure preset: "))))
+          (cmake-integration-select-preset all-presets "Configure preset: "))
+    (run-hooks 'cmake-integration-after-set-configure-preset-hook)))
 
 
 ;;;###autoload (autoload 'cmake-integration-cmake-configure-with-preset "cmake-integration")
