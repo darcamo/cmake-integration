@@ -4,18 +4,25 @@
 
 ;;; Code:
 
+
+(defun cmake-integration-get-last-test-preset-name ()
+  "Get the `name' field of the last preset used for test."
+  (cmake-integration--get-preset-name cmake-integration-test-preset))
+
+
 (defun cmake-integration--get-ctest-command (&optional only-failed?)
   "Get the command to run all tests, or only failed ones if ONLY-FAILED?.
 
 If only-failed? is t, then \"--rerun-failed --output-on-failure\" is
 added to the ctest command."
-  (let* ((preset-name (cmake-integration-get-last-configure-preset-name))
+  (let* ((preset-name (cmake-integration-get-last-test-preset-name))
+         (project-root (cmake-integration--get-project-root-folder))
          (build-folder (cmake-integration-get-build-folder))
          (ctest-command (if preset-name
-                            (format "ctest --preset %s" preset-name)
+                            (format "cd %s && ctest --preset %s" project-root preset-name)
                           (format "cd %s && ctest ." build-folder))))
     (if only-failed?
-        (format "%s %s" ctest-command "--rerun-failed --output-on-failure")
+        (concat ctest-command " --rerun-failed --output-on-failure")
       ctest-command)))
 
 
@@ -24,6 +31,49 @@ added to the ctest command."
   "Run ctest."
   (interactive)
   (compile (cmake-integration--get-ctest-command current-prefix-arg)))
+
+
+;;;###autoload (autoload 'cmake-integration-get-test-presets "cmake-integration")
+(defun cmake-integration-get-test-presets (&optional configure-preset)
+  "Get the test presets associated with CONFIGURE-PRESET.
+
+Get the test presets in both `CMakePresets.json' and
+`CMakeUserPresets.json' files as well as in any included files whose
+configure preset is CONFIGURE-PRESET. If CONFIGURE-PRESET is not
+provided, then the value in the `cmake-integration-configure-preset'
+variable will be used."
+  (cmake-integration-get-presets-of-type 'testPresets configure-preset))
+
+
+
+;;;###autoload (autoload 'cmake-integration-select-test-preset "cmake-integration")
+(defun cmake-integration-select-test-preset ()
+  "Select a test preset for CMake."
+  (interactive)
+  (when (not cmake-integration-configure-preset)
+    (error "Please, select a configure preset first"))
+  (let ((all-presets (cmake-integration-get-test-presets)))
+    (when all-presets
+      (setq cmake-integration-test-preset
+            (cmake-integration-select-preset all-presets "Test preset: ")))))
+
+
+(defun cmake-integration--adjust-test-preset ()
+  "Adjust the test preset when changing the configure preset.
+
+This function is added to `cmake-integration-after-set-configure-preset-hook'."
+  (when cmake-integration-test-preset
+    (if cmake-integration-configure-preset
+        (let ((presets (cmake-integration-get-test-presets)))
+          ;; Only change the test preset if there is excactly one
+          ;; test preset for the conffigure preset
+          (if (= (length presets) 1)
+              (setq cmake-integration-test-preset (car presets))
+            (setq cmake-integration-test-preset nil)))
+      (setq cmake-integration-test-preset nil))))
+
+
+(add-hook 'cmake-integration-after-set-configure-preset-hook 'cmake-integration--adjust-test-preset)
 
 
 
