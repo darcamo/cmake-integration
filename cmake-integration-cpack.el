@@ -70,15 +70,14 @@ variable will be used."
   "Adjust the package preset when changing the configure preset.
 
 This function is added to `cmake-integration-after-set-configure-preset-hook'."
-  (when cmake-integration-package-preset
-    (if cmake-integration-configure-preset
-        (let ((presets (cmake-integration-get-package-presets)))
-          ;; Only change the package preset if there is excactly one
-          ;; package preset for the conffigure preset
-          (if (= (length presets) 1)
-              (setq cmake-integration-package-preset (car presets))
-            (setq cmake-integration-package-preset nil)))
-      (setq cmake-integration-package-preset nil))))
+  (if cmake-integration-configure-preset
+      (let ((presets (cmake-integration-get-package-presets)))
+        ;; Only change the package preset if there is excactly one
+        ;; package preset for the conffigure preset
+        (if (= (length presets) 1)
+            (setq cmake-integration-package-preset (car presets))
+          (setq cmake-integration-package-preset nil)))
+    (setq cmake-integration-package-preset nil)))
 
 
 (add-hook 'cmake-integration-after-set-configure-preset-hook 'cmake-integration--adjust-package-preset)

@@ -62,15 +62,14 @@ variable will be used."
   "Adjust the test preset when changing the configure preset.
 
 This function is added to `cmake-integration-after-set-configure-preset-hook'."
-  (when cmake-integration-test-preset
-    (if cmake-integration-configure-preset
-        (let ((presets (cmake-integration-get-test-presets)))
-          ;; Only change the test preset if there is excactly one
-          ;; test preset for the conffigure preset
-          (if (= (length presets) 1)
-              (setq cmake-integration-test-preset (car presets))
-            (setq cmake-integration-test-preset nil)))
-      (setq cmake-integration-test-preset nil))))
+  (if cmake-integration-configure-preset
+      (let ((presets (cmake-integration-get-test-presets)))
+        ;; Only change the test preset if there is excactly one
+        ;; test preset for the conffigure preset
+        (if (= (length presets) 1)
+            (setq cmake-integration-test-preset (car presets))
+          (setq cmake-integration-test-preset nil)))
+    (setq cmake-integration-test-preset nil)))
 
 
 (add-hook 'cmake-integration-after-set-configure-preset-hook 'cmake-integration--adjust-test-preset)

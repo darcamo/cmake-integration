@@ -14,7 +14,7 @@
 
 ;;;###autoload (autoload 'cmake-integration-open-dired-in-build-folder "cmake-integration")
 (defun cmake-integration-open-dired-in-build-folder ()
-  "Open dired in the buiild folder."
+  "Open Dired in the buiild folder."
   (interactive)
   (dired (cmake-integration-get-build-folder)))
 

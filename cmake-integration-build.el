@@ -12,15 +12,14 @@
   "Adjust the build preset when changing the configure preset.
 
 This function is added to `cmake-integration-after-set-configure-preset-hook'."
-  (when cmake-integration-build-preset
-    (if cmake-integration-configure-preset
-        (let ((presets (cmake-integration-get-build-presets)))
-          ;; Only change the build preset if there is excactly one
-          ;; build preset for the conffigure preset
-          (if (= (length presets) 1)
-              (setq cmake-integration-build-preset (car presets))
-            (setq cmake-integration-build-preset nil)))
-      (setq cmake-integration-build-preset nil))))
+  (if cmake-integration-configure-preset
+      (let ((presets (cmake-integration-get-build-presets)))
+        ;; Only change the build preset if there is excactly one
+        ;; build preset for the conffigure preset
+        (if (= (length presets) 1)
+            (setq cmake-integration-build-preset (car presets))
+          (setq cmake-integration-build-preset nil)))
+    (setq cmake-integration-build-preset nil)))
 
 
 (add-hook 'cmake-integration-after-set-configure-preset-hook 'cmake-integration--adjust-build-preset)
