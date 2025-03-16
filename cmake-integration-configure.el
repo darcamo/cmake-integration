@@ -136,6 +136,29 @@ the chosen preset."
   (cmake-integration-cmake-reconfigure))
 
 
+(defun cmake-integration--create-link-to-compile-commands ( )
+  "Create a symbolic link to the compile_commands file in the project root.
+
+This will only create the link if
+`cmake-integration-create-compile-commands-link' is t and the
+`compile_commands.json' file exists in the build folder."
+  (let* ((compile-commands-file (file-name-concat (cmake-integration-get-build-folder) "compile_commands.json"))
+         (should-create-link (and cmake-integration-create-compile-commands-link
+                                  (file-exists-p compile-commands-file)))
+         (destination-directory (cmake-integration--get-project-root-folder))
+         (target (file-relative-name compile-commands-file destination-directory)))
+    (when should-create-link
+      (make-symbolic-link target destination-directory t))))
+
+
+(defun cmake-integration--get-reconfigure-command ()
+  "Get the cmake command to configure the project."
+  (if cmake-integration-configure-preset
+      (cmake-integration--get-configure-command-with-preset
+       cmake-integration-configure-preset)
+    (cmake-integration--get-configure-command-without-preset)))
+
+
 ;;;###autoload (autoload 'cmake-integration-cmake-reconfigure "cmake-integration")
 (defun cmake-integration-cmake-reconfigure ()
   "Call cmake again to re-configure the project.
@@ -146,24 +169,15 @@ Note: If no preset is used then
 
   (cmake-integration--create-empty-codemodel-file)
 
-  (let ((cmake-command (if cmake-integration-configure-preset
-                           (cmake-integration--get-configure-command-with-preset
-                            cmake-integration-configure-preset)
-                         (cmake-integration--get-configure-command-without-preset)))
-        ;; If a prefix argument was passed we will call conan before cmake
-        (conan-command (if current-prefix-arg
-                           (format "%s && " (cmake-integration-get-conan-run-command))
-                         "")))
-
-    (if cmake-integration-include-conan-toolchain-file
-        (compile (format "%s%s --toolchain conan_toolchain.cmake" conan-command cmake-command))
-      (compile (format "%s%s" conan-command cmake-command))))
+  (let* ((cmake-command (cmake-integration--get-reconfigure-command))
+         ;; If a prefix argument was passed we will call conan before cmake
+         (cmake-and-conan-command (if current-prefix-arg
+                                      (cmake-integration--prepend-conan-command cmake-command)
+                                    cmake-command)))
+    (compile cmake-and-conan-command))
 
   ;; Make a link of the compile_commands.json file to the project root
-  (let ((compile-commands-file (file-name-concat (cmake-integration-get-build-folder) "compile_commands.json")))
-    (when (and cmake-integration-create-compile-commands-link
-               (file-exists-p compile-commands-file))
-      (make-symbolic-link (file-relative-name compile-commands-file (cmake-integration--get-project-root-folder))  (cmake-integration--get-project-root-folder) t))))
+  (cmake-integration--create-link-to-compile-commands))
 
 
 (provide 'cmake-integration-configure)

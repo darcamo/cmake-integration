@@ -47,6 +47,15 @@ configuration and the profile passed to conan is taken from the
   (compile (cmake-integration-get-conan-run-command)))
 
 
+(defun cmake-integration--prepend-conan-command (cmake-command)
+  "Prepend the CMAKE-COMMAND with the conan command.
+
+The output can be passed to compile,"
+  (let* ((conan-command (format "%s && " (cmake-integration-get-conan-run-command))))
+    (if cmake-integration-include-conan-toolchain-file
+        (format "%s%s --toolchain conan_toolchain.cmake" conan-command cmake-command)
+      (format "%s%s" conan-command cmake-command))))
+
 
 (provide 'cmake-integration-conan)
 
