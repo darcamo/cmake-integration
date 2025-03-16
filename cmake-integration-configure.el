@@ -160,20 +160,26 @@ This will only create the link if
 
 
 ;;;###autoload (autoload 'cmake-integration-cmake-reconfigure "cmake-integration")
-(defun cmake-integration-cmake-reconfigure ()
-  "Call cmake again to re-configure the project.
+(defun cmake-integration-cmake-reconfigure (&optional extra-args)
+  "Call cmake to configure the project passing EXTRA-ARGS.
 
-Note: If no preset is used then
-`-DCMAKE_EXPORT_COMPILE_COMMANDS=ON' is passed to cmake."
+EXTRA-ARGS must be a list of strings. These strings will be concatenated
+with a space as separator and the result string will be appended to the
+cmake command. Example for EXTRA-ARGS: '(\"--fresh\")
+
+Note: If no preset is used then `-DCMAKE_EXPORT_COMPILE_COMMANDS=ON' is
+passed to cmake."
   (interactive)
 
   (cmake-integration--create-empty-codemodel-file)
 
   (let* ((cmake-command (cmake-integration--get-reconfigure-command))
+         (extra-args-string (string-join extra-args " "))
+         (cmake-command-with-extra-args (format "%s %s" cmake-command extra-args-string))
          ;; If a prefix argument was passed we will call conan before cmake
          (cmake-and-conan-command (if current-prefix-arg
-                                      (cmake-integration--prepend-conan-command cmake-command)
-                                    cmake-command)))
+                                      (cmake-integration--prepend-conan-command cmake-command-with-extra-args)
+                                    cmake-command-with-extra-args)))
     (compile cmake-and-conan-command))
 
   ;; Make a link of the compile_commands.json file to the project root
