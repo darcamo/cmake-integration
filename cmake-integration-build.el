@@ -84,18 +84,12 @@ complain in that case."
 `cmake-integration-cmake-configure-with-preset' to configure the project")))
 
 
-;;;###autoload (autoload 'cmake-integration-save-and-compile-no-completion "cmake-integration")
-(defun cmake-integration-save-and-compile-no-completion (target &optional extra-args)
+(defun cmake-integration--save-and-compile-no-completion (target &optional extra-args)
   "Save the buffer and compile TARGET also passing EXTRA-ARGS.
 
 See the documentation of `cmake-integration-get-build-command' for the
 EXTRA-ARGS parameter."
-  (interactive "sTarget: ")
   (save-buffer 0)
-
-  (check-if-build-folder-exists-and-throws-if-not)
-
-  (setq cmake-integration-current-target target)
   (let ((compile-command (cmake-integration-get-build-command target extra-args)))
     (compile compile-command)))
 
@@ -106,8 +100,7 @@ ALL-TARGETS is an alist like the one returned by
 `cmake-integration--get-targets-from-codemodel-json-file-2'."
   (let ((target (alist-get target-name all-targets nil nil 'equal)))
     ;; (cmake-integration--get-target-type target)
-    (alist-get 'type target)
-    ))
+    (alist-get 'type target)))
 
 
 (defun cmake-integration--target-annotation-function (target-name)
@@ -153,8 +146,8 @@ will be ignored."
      ((and cmake-integration-hide-utility-targets-during-completion
            cmake-integration-hide-library-targets-during-completion)
       (seq-filter #'(lambda (target) (and
-                                      (cmake-integration--target-is-not-utility-p target)
-                                      (cmake-integration--target-is-not-library-p target)))
+                                 (cmake-integration--target-is-not-utility-p target)
+                                 (cmake-integration--target-is-not-library-p target)))
                   list-of-targets))
 
      ;; Do not include only utility targets
@@ -170,6 +163,26 @@ will be ignored."
      (t list-of-targets))))
 
 
+(defun cmake-integration--select-build-target ()
+  "Ask for a target to build and return the target name."
+
+  ;; If the build folder is missing we should stop with an error
+  (check-if-build-folder-exists-and-throws-if-not)
+
+  (if-let* ((json-filename (cmake-integration--get-codemodel-reply-json-filename))
+            (list-of-targets (cmake-integration--get-all-targets json-filename))
+            (target (cmake-integration--get-target-using-completions list-of-targets)))
+      (setq cmake-integration-current-target target)
+
+    ;; If `json-filename' is nil that means we could not find the
+    ;; CMake reply with the file API, which means the query file is
+    ;; missing.
+    (display-warning 'cmake-integration "Could not find list of targets due to CMake file API file
+missing. Please run either `cmake-integration-cmake-reconfigure' or
+`cmake-integration-cmake-configure-with-preset'.")
+    (setq cmake-integration-current-target nil)))
+
+
 ;;;###autoload (autoload 'cmake-integration-save-and-compile "cmake-integration")
 (defun cmake-integration-save-and-compile ()
   "Ask for a target name and compile it.
@@ -180,28 +193,12 @@ that is not possible, ask for the target name without
 completions."
 
   (interactive)
-  ;; If the build folder is missing we should stop with an error
-  (check-if-build-folder-exists-and-throws-if-not)
+  ;; Ask the user for a target and set the
+  ;; cmake-integration-current-target variable with the chosen target
+  ;; name
+  (cmake-integration--select-build-target)
 
-  (if-let* ((json-filename (cmake-integration--get-codemodel-reply-json-filename))
-            ;; The list of targets also includes the convenience
-            ;; targets 'all', 'clean' and optional 'install' target
-            (list-of-targets (cmake-integration--get-all-targets json-filename))
-            (chosen-target (cmake-integration--get-target-using-completions list-of-targets)))
-      (cmake-integration-save-and-compile-no-completion chosen-target)
-
-    (unless json-filename
-      ;; If `json-filename' is nil that means we could not find the
-      ;; CMake reply with the file API, which means the query file is
-      ;; missing. All we need to do is to configure using either
-      ;; `cmake-integration-cmake-reconfigure' or
-      ;; `cmake-integration-cmake-configure-with-preset', which created
-      ;; the query file.
-      (display-warning 'cmake-integration "Could not find list of targets due to CMake file API file
-missing. Please run either `cmake-integration-cmake-reconfigure' or
-`cmake-integration-cmake-configure-with-preset'."))
-
-    (command-execute 'cmake-integration-save-and-compile-no-completion)))
+  (cmake-integration--save-and-compile-no-completion cmake-integration-current-target))
 
 
 ;;;###autoload (autoload 'cmake-integration-save-and-compile-last-target "cmake-integration")
@@ -211,7 +208,7 @@ missing. Please run either `cmake-integration-cmake-reconfigure' or
 See the documentation of `cmake-integration-get-build-command' for the
 EXTRA-ARGS parameter."
   (interactive)
-  (cmake-integration-save-and-compile-no-completion
+  (cmake-integration--save-and-compile-no-completion
    (or cmake-integration-current-target "all")
    extra-args))
 
