@@ -85,15 +85,18 @@ complain in that case."
 
 
 ;;;###autoload (autoload 'cmake-integration-save-and-compile-no-completion "cmake-integration")
-(defun cmake-integration-save-and-compile-no-completion (target)
-  "Save the buffer and compile TARGET."
+(defun cmake-integration-save-and-compile-no-completion (target &optional extra-args)
+  "Save the buffer and compile TARGET also passing EXTRA-ARGS.
+
+See the documentation of `cmake-integration-get-build-command' for the
+EXTRA-ARGS parameter."
   (interactive "sTarget: ")
   (save-buffer 0)
 
   (check-if-build-folder-exists-and-throws-if-not)
 
   (setq cmake-integration-current-target target)
-  (let ((compile-command (cmake-integration-get-build-command target)))
+  (let ((compile-command (cmake-integration-get-build-command target extra-args)))
     (compile compile-command)))
 
 
@@ -202,29 +205,43 @@ missing. Please run either `cmake-integration-cmake-reconfigure' or
 
 
 ;;;###autoload (autoload 'cmake-integration-save-and-compile-last-target "cmake-integration")
-(defun cmake-integration-save-and-compile-last-target ()
-  "Recompile the last target that was compiled (or `all')."
+(defun cmake-integration-save-and-compile-last-target (&optional extra-args)
+  "Recompile the last target that was compiled (or `all') also passing EXTRA-ARGS.
+
+See the documentation of `cmake-integration-get-build-command' for the
+EXTRA-ARGS parameter."
   (interactive)
   (cmake-integration-save-and-compile-no-completion
-   (or cmake-integration-current-target "all")))
+   (or cmake-integration-current-target "all")
+   extra-args))
 
 
-(defun cmake-integration-get-build-command (target)
-  "Get the command to compile target TARGET."
+(defun cmake-integration-get-build-command (target &optional extra-args)
+  "Get the command to compile target TARGET passing EXTRA-ARGS to cmake.
+
+EXTRA-ARGS is a list of strings, which will be joined with a space as
+separation and then passed to cmake command to build the target."
   (pcase-let* ((`(,target-name ,config-name)
                 (split-string target cmake-integration--multi-config-separator))
                (project-root (cmake-integration--get-project-root-folder))
                (preset-arg-or-build-folder (if cmake-integration-build-preset
                                                (format "--preset %s" (cmake-integration-get-last-build-preset-name))
                                              (cmake-integration--get-build-folder-relative-to-project)))
-               (config-option (if config-name
-                                  (format " --config %s" config-name)
-                                "")))
-    (format "cd %s && cmake --build %s%s --target %s"
-            project-root
-            preset-arg-or-build-folder
-            config-option
-            target-name)))
+               (build-args)
+               )
+
+    (add-to-list 'build-args preset-arg-or-build-folder)
+
+    ;; Add configuration argument if available
+    (when config-name (add-to-list 'build-args (format "--config %s" config-name) t))
+
+    ;; Append elements in extra-args to build-args
+    (nconc build-args extra-args)
+
+    ;; Add target argument
+    (add-to-list 'build-args (format "--target %s" target-name) t)
+
+    (format "cd %s && cmake --build %s" project-root (string-join build-args " "))))
 
 
 ;; See CMake file API documentation for what projectIndex is

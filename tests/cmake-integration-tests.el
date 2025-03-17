@@ -536,42 +536,66 @@ test code from inside a 'test project'."
 
 
 (ert-deftest test-cmake-integration-get-build-command ()
-  (test-fixture-setup
-   "./test-project"
-   (lambda ()
-     (let ((project-dir (format "~/%s" (file-relative-name "./" "~/"))))
-       (should (equal (cmake-integration-get-build-command "the_target")
-                      (format "cd %s && cmake --build %s --target the_target" project-dir cmake-integration-build-dir)))
-       )))
+  (let ((cmake-integration-build-preset nil))
 
-  ;; Without setting a preset
-  (test-fixture-setup
-   "./test-project-with-presets"
-   (lambda ()
-     (let ((project-dir (format "~/%s" (file-relative-name "./" "~/"))))
-       (should (equal (cmake-integration-get-build-command "the_target")
-                      (format "cd %s && cmake --build %s --target the_target" project-dir cmake-integration-build-dir))))))
+    (test-fixture-setup
+     "./test-project"
+     (lambda ()
+       (let ((project-dir (format "~/%s" (file-relative-name "./" "~/"))))
+         (should (equal (cmake-integration-get-build-command "the_target")
+                        (format "cd %s && cmake --build %s --target the_target" project-dir cmake-integration-build-dir)))
+         )))
 
-  ;; Without a build preset
-  (test-fixture-setup
-   "./test-project-with-presets"
-   (lambda ()
-     (let ((project-dir (format "~/%s" (file-relative-name "./" "~/")))
-           (cmake-integration-configure-preset '("default" (name . "default") (binaryDir . "theBuildFolder"))))
-       (should (equal (cmake-integration-get-build-command "the_target")
-                      (format "cd %s && cmake --build theBuildFolder --target the_target" project-dir))))))
+    ;; Without setting a preset
+    (test-fixture-setup
+     "./test-project-with-presets"
+     (lambda ()
+       (let ((project-dir (format "~/%s" (file-relative-name "./" "~/"))))
+         (should (equal (cmake-integration-get-build-command "the_target")
+                        (format "cd %s && cmake --build %s --target the_target" project-dir cmake-integration-build-dir))))))
 
-  ;; With a build preset
-  (test-fixture-setup
-   "./test-project-with-presets"
-   (lambda ()
-     (let ((project-dir (format "~/%s" (file-relative-name "./" "~/")))
-           (cmake-integration-configure-preset '("config-preset" (name . "config-preset") (binaryDir . "theBuildFolder")))
-           (cmake-integration-build-preset '("build-preset" (name . "build-preset") (configurePreset . "config-preset")))
-           )
-       (should (equal (cmake-integration-get-build-command "the_target")
-                      (format "cd %s && cmake --build --preset build-preset --target the_target" project-dir))))))
-  )
+    ;; Without a build preset
+    (test-fixture-setup
+     "./test-project-with-presets"
+     (lambda ()
+       (let ((project-dir (format "~/%s" (file-relative-name "./" "~/")))
+             (cmake-integration-configure-preset '("default" (name . "default") (binaryDir . "theBuildFolder"))))
+         (should (equal (cmake-integration-get-build-command "the_target")
+                        (format "cd %s && cmake --build theBuildFolder --target the_target" project-dir))))))
+
+    ;; With a build preset
+    (test-fixture-setup
+     "./test-project-with-presets"
+     (lambda ()
+       (let ((project-dir (format "~/%s" (file-relative-name "./" "~/")))
+             (cmake-integration-configure-preset '("config-preset" (name . "config-preset") (binaryDir . "theBuildFolder")))
+             (cmake-integration-build-preset '("build-preset" (name . "build-preset") (configurePreset . "config-preset")))
+             )
+         (should (equal (cmake-integration-get-build-command "the_target")
+                        (format "cd %s && cmake --build --preset build-preset --target the_target" project-dir))))))
+
+    ;; With a build preset and a target that has the configuration in the name
+    (test-fixture-setup
+     "./test-project-with-presets"
+     (lambda ()
+       (let ((project-dir (format "~/%s" (file-relative-name "./" "~/")))
+             (cmake-integration-configure-preset '("config-preset" (name . "config-preset") (binaryDir . "theBuildFolder")))
+             (cmake-integration-build-preset '("build-preset" (name . "build-preset") (configurePreset . "config-preset")))
+             )
+         (should (equal (cmake-integration-get-build-command "the_target/Debug")
+                        (format "cd %s && cmake --build --preset build-preset --config Debug --target the_target" project-dir))))))
+
+    ;; Passing extra args
+    (test-fixture-setup
+     "./test-project-with-presets"
+     (lambda ()
+       (let ((project-dir (format "~/%s" (file-relative-name "./" "~/")))
+             (cmake-integration-configure-preset '("config-preset" (name . "config-preset") (binaryDir . "theBuildFolder")))
+             (cmake-integration-build-preset '("build-preset" (name . "build-preset") (configurePreset . "config-preset")))
+             )
+         (should (equal (cmake-integration-get-build-command "the_target" '("--lala lele" "--lili lolo"))
+                        (format "cd %s && cmake --build --preset build-preset --lala lele --lili lolo --target the_target" project-dir))))))
+    ))
 
 
 (ert-deftest test-cmake-integration-get-conan-run-command ()
@@ -674,6 +698,18 @@ test code from inside a 'test project'."
 
        (should (equal (length all-build-presets) 3))
        (should (equal build-presets expected-build-presets))))))
+
+
+
+(ert-deftest test-name ()
+    (test-fixture-setup
+   "./test-project-with-presets"
+   (lambda ()
+     (cmake-integration-get-build-presets)
+     ))
+  )
+
+
 
 
 ;; Assert macros:
