@@ -270,47 +270,25 @@ will be obtained from PRESET and this returns the string
 
 
 (transient-define-prefix cmake-integration-transient ()
-
-  ["Presets"
-   (:info #'cmake-integration--display-configure-preset :format " %d")
-   (:info #'cmake-integration--display-build-preset :format " %d")
-   (:info #'cmake-integration--display-test-preset :format " %d")
-   (:info #'cmake-integration--display-package-preset :format " %d")
+  [
+   ["Presets"
+    (:info #'cmake-integration--display-configure-preset :format " %d")
+    (:info #'cmake-integration--display-build-preset :format " %d")
+    (:info #'cmake-integration--display-test-preset :format " %d")
+    (:info #'cmake-integration--display-package-preset :format " %d")
+    ]
+   ["Util"
+    ("ed" "Open dired in build folder" cmake-integration-open-dired-in-build-folder)
+    ("es" "Open shell in build folder" cmake-integration-open-shell-in-build-folder)]
    ]
   ["Operations"
    [("C" "Conan" cmake-integration--conan-transient)]
    [("c" "Configure" cmake-integration--configure-transient)]
    [("b" "Build" cmake-integration--build-transient)]
    [("t" "Test" cmake-integration--test-transient)]
-
-   ;; ["Configure"
-   ;;  ("pp" "--fresh" (lambda () (interactive)(message "Set --fresh flag")) :transient t)
-   ;;  ("pa" "--preset=" cmake-integration-select-configure-preset :transient nil)
-   ;;  ("pb" "-B" cmake-integration-select-configure-preset :transient nil)
-   ;;  ("pG" "-G" cmake-integration-select-configure-preset :transient nil)
-   ;;  ("pg" "Generate" cmake-integration-select-configure-preset :transient nil)
-   ;;  ]
-
-
-
-   ;; ["Build"
-   ;;  ("sp" "lala" cmake-integration-select-configure-preset :transient nil)
-   ;;  ("sa" "lele" cmake-integration-select-configure-preset :transient nil)]
-
-   ;; ["Test"
-   ;;  ("tp" "lala" cmake-integration-select-configure-preset :transient nil)
-   ;;  ("tt" "lele" cmake-integration-select-configure-preset :transient nil)]
-
    [("i" "Install" cmake-integration--install-transient)]
    [("p" "Package" cmake-integration--package-transient)]
    [("w" "Workflow" cmake-integration--workflow-transient)]
-
-   ;; ["Install"
-   ;;  ("ii" "lele" cmake-integration-select-configure-preset :transient nil)]
-   ;; ["Package"
-   ;;  ("pi" "lele" cmake-integration-select-configure-preset :transient nil)]
-   ;; ["Workflow"
-   ;;  ("wi" "lele" cmake-integration-select-configure-preset :transient nil)]
    ]
   )
 
