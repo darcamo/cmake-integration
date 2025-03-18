@@ -49,7 +49,7 @@
 (require 'cmake-integration-ctest)
 (require 'cmake-integration-cpack)
 (require 'cmake-integration-extra)
-
+(require 'cmake-integration-transient)
 
 
 (provide 'cmake-integration)
