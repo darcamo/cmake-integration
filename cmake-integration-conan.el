@@ -19,6 +19,19 @@
     (setq cmake-integration-conan-profile choice)))
 
 
+(defun cmake-integration-run-conan-list ()
+  "Run `conan list' to list installed packages.
+
+The result is displayed in a 'Conan List' buffer."
+  (interactive)
+  (let* ((output (shell-command-to-string "conan list"))
+         (buffer (get-buffer-create "*Conan List*")))
+    (with-current-buffer buffer
+      (erase-buffer)
+      (insert output))
+    (display-buffer buffer)))
+
+
 (defun cmake-integration--get-conan-run-command (&optional profile)
   "Get the command to run `conan install' using PROFILE.
 

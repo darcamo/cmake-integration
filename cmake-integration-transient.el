@@ -180,6 +180,7 @@ will be obtained from PRESET and this returns the string
 (transient-define-prefix cmake-integration--conan-transient ()
   ["Conan"
    ("p" cmake-integration--set-conan-profile-sufix)
+   ("l" "List installed packages" cmake-integration-run-conan-list)
    ("i" "Install" (lambda () (interactive) (cmake-integration-run-conan)))
    ]
   )
