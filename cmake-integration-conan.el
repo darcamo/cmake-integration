@@ -5,6 +5,19 @@
 ;;; Code:
 (require 'cmake-integration-build)
 
+(defun cmake-integration--get-conan-available-profiles ()
+  "Get the available conan profiles."
+  (let ((output (shell-command-to-string "conan profile list")))
+    (cdr (split-string output "\n" t))))
+
+
+(defun cmake-integration-select-conan-profile ()
+  "Select one of the available conan profiles and return the chosen one."
+  (interactive)
+  (let* ((all-profiles (cmake-integration--get-conan-available-profiles))
+         (choice (completing-read "Conan profile: " all-profiles nil t)))
+    (setq cmake-integration-conan-profile choice)))
+
 
 (defun cmake-integration--get-conan-run-command (&optional profile)
   "Get the command to run `conan install' using PROFILE.

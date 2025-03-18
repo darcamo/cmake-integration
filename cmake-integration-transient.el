@@ -109,6 +109,15 @@ will be obtained from PRESET and this returns the string
     (format "Select the build target (%s)" (cmake-integration--get-command-line-arg-with-face command-line cmake-integration-current-target))))
 
 
+(defun cmake-integration--describe-conan-profile ()
+  "Describe the current conan profile."
+  (let* ((profile-is-string (stringp cmake-integration-conan-profile))
+         (profile-name (if profile-is-string cmake-integration-conan-profile ""))
+         (command-line (format "--profile=%s" profile-name)))
+    (format "Select conan profile (%s)" (cmake-integration--get-command-line-arg-with-face command-line profile-is-string))))
+
+
+
 (transient-define-suffix cmake-integration--set-configure-preset-sufix ()
   "Set configure preset."
   :transient 'transient--do-call
@@ -136,6 +145,15 @@ will be obtained from PRESET and this returns the string
     (cmake-integration--select-build-target)))
 
 
+(transient-define-suffix cmake-integration--set-conan-profile-sufix ()
+  :transient 'transient--do-call
+  :description 'cmake-integration--describe-conan-profile
+  (interactive)
+  (if cmake-integration-conan-profile
+      (setq cmake-integration-conan-profile nil)
+    (cmake-integration-select-conan-profile)))
+
+
 ;; (transient-define-suffix darlan-sufix (the-prefix-arg)
 ;;     "Report the PREFIX-ARG, prefix's scope, and infix values."
 ;;     :transient 'transient--do-call
@@ -161,7 +179,8 @@ will be obtained from PRESET and this returns the string
 
 (transient-define-prefix cmake-integration--conan-transient ()
   ["Conan"
-   ("i" "Install" (lambda () (interactive) (message "Implement-me") ))
+   ("p" cmake-integration--set-conan-profile-sufix)
+   ("i" "Install" (lambda () (interactive) (cmake-integration-run-conan)))
    ]
   )
 
@@ -258,7 +277,7 @@ will be obtained from PRESET and this returns the string
    (:info #'cmake-integration--display-package-preset :format " %d")
    ]
   ["Operations"
-   [("d" "External dependencies" cmake-integration--conan-transient)]
+   [("C" "Conan" cmake-integration--conan-transient)]
    [("c" "Configure" cmake-integration--configure-transient)]
    [("b" "Build" cmake-integration--build-transient)]
    [("t" "Test" cmake-integration--test-transient)]
