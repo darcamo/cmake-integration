@@ -52,10 +52,10 @@ variable will be used."
   (interactive)
   (when (not cmake-integration-configure-preset)
     (error "Please, select a configure preset first"))
+
   (let ((all-presets (cmake-integration-get-test-presets)))
-    (when all-presets
-      (setq cmake-integration-test-preset
-            (cmake-integration-select-preset all-presets "Test preset: ")))))
+    (setq cmake-integration-test-preset
+          (cmake-integration-select-preset all-presets "Test preset: "))))
 
 
 (defun cmake-integration--adjust-test-preset ()

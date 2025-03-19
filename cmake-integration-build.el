@@ -48,10 +48,11 @@ variable will be used."
   (interactive)
   (when (not cmake-integration-configure-preset)
     (error "Please, select a configure preset first"))
+
   (let ((all-presets (cmake-integration-get-build-presets)))
-    (when all-presets
-      (setq cmake-integration-build-preset
-            (cmake-integration-select-preset all-presets "Build preset: ")))))
+    (setq cmake-integration-build-preset
+          (cmake-integration-select-preset all-presets "Build preset: "))))
+
 
 (defun cmake-integration--create-target-fullname (target-name &optional config-name)
   "Return target constructed from TARGET-NAME and CONFIG-NAME."

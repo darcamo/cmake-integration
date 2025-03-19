@@ -103,8 +103,8 @@ It will also append the string \\='No Preset\\=' to this transformed
 list. This makes it suitable to be used as the collection argument in
 `completing-read'."
   (let ((transformed-list-of-presets (mapcar
-   (lambda (preset) (cons (cmake-integration--get-preset-name preset) preset))
-   list-of-presets)))
+                                      (lambda (preset) (cons (cmake-integration--get-preset-name preset) preset))
+                                      list-of-presets)))
     ;; Add a "No Preset" option to all-presets to allow a user to
     ;; remove the preset
     (append transformed-list-of-presets '("No Preset"))))
@@ -147,7 +147,7 @@ annotation is shown during the completions if you are using the
 marginalia package, or in Emacs standard completion buffer."
 
   (let* ((initial-spaces (cmake-integration--get-annotation-initial-spaces preset))
-         (no-preset-annotation (format "%sDon't use any preset. The build folder is '%s'" initial-spaces cmake-integration-build-dir))
+         (no-preset-annotation (format "%sDon't use any preset. Current build folder: '%s'" initial-spaces cmake-integration-build-dir))
          ;; Note that `minibuffer-completion-table' has the list of
          ;; completions currently in use, from which we know PRESET is
          ;; one of them
