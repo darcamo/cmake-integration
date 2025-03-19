@@ -224,19 +224,16 @@ separation and then passed to cmake command to build the target."
                (preset-arg-or-build-folder (if cmake-integration-build-preset
                                                (format "--preset %s" (cmake-integration-get-last-build-preset-name))
                                              (cmake-integration--get-build-folder-relative-to-project)))
-               (build-args)
-               )
-
-    (add-to-list 'build-args preset-arg-or-build-folder)
+               (build-args extra-args))
 
     ;; Add configuration argument if available
-    (when config-name (add-to-list 'build-args (format "--config %s" config-name) t))
+    (when config-name (push (format "--config %s" config-name) build-args))
 
-    ;; Append elements in extra-args to build-args
-    (nconc build-args extra-args)
+    ;; Add the target
+    (push (format "--target %s" target-name) build-args)
 
-    ;; Add target argument
-    (add-to-list 'build-args (format "--target %s" target-name) t)
+    ;; Add build folder or preset part
+    (push preset-arg-or-build-folder build-args)
 
     (format "cd %s && cmake --build %s" project-root (string-join build-args " "))))
 

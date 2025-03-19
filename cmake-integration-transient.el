@@ -3,7 +3,8 @@
 ;;; Commentary:
 
 ;;; Code:
-
+(require 'transient)
+(require 'cmake-integration-conan)
 
 
 ;; (transient-define-argument tsc--exclusive-switches ()

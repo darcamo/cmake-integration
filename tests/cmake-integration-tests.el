@@ -583,7 +583,7 @@ test code from inside a 'test project'."
              (cmake-integration-build-preset '("build-preset" (name . "build-preset") (configurePreset . "config-preset")))
              )
          (should (equal (cmake-integration-get-build-command "the_target/Debug")
-                        (format "cd %s && cmake --build --preset build-preset --config Debug --target the_target" project-dir))))))
+                        (format "cd %s && cmake --build --preset build-preset --target the_target --config Debug" project-dir))))))
 
     ;; Passing extra args
     (test-fixture-setup
@@ -594,7 +594,7 @@ test code from inside a 'test project'."
              (cmake-integration-build-preset '("build-preset" (name . "build-preset") (configurePreset . "config-preset")))
              )
          (should (equal (cmake-integration-get-build-command "the_target" '("--lala lele" "--lili lolo"))
-                        (format "cd %s && cmake --build --preset build-preset --lala lele --lili lolo --target the_target" project-dir))))))
+                        (format "cd %s && cmake --build --preset build-preset --target the_target --lala lele --lili lolo" project-dir))))))
     ))
 
 

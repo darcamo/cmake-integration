@@ -8,6 +8,7 @@
 
 
 (declare-function cmake-integration-get-conan-run-command "cmake-integration-conan.el")
+(declare-function cmake-integration--prepend-conan-command "cmake-integration-conan.el")
 
 
 (defvar cmake-integration-after-set-configure-preset-hook nil "A hook run after changing the configure preset.")
@@ -165,7 +166,7 @@ This will only create the link if
 
 EXTRA-ARGS must be a list of strings. These strings will be concatenated
 with a space as separator and the result string will be appended to the
-cmake command. Example for EXTRA-ARGS: '(\"--fresh\")
+cmake command. Example for EXTRA-ARGS: `'(\"--fresh\")`
 
 Note: If no preset is used then `-DCMAKE_EXPORT_COMPILE_COMMANDS=ON' is
 passed to cmake."

@@ -20,9 +20,9 @@
 
 
 (defun cmake-integration-run-conan-list ()
-  "Run `conan list' to list installed packages.
+  "Run `conan list` to list installed packages.
 
-The result is displayed in a 'Conan List' buffer."
+The result is displayed in a `Conan List` buffer."
   (interactive)
   (let* ((output (shell-command-to-string "conan list"))
          (buffer (get-buffer-create "*Conan List*")))
