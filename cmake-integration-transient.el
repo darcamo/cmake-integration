@@ -103,6 +103,18 @@ will be obtained from PRESET and this returns the string
           (cmake-integration--describe-preset-command-line cmake-integration-build-preset)))
 
 
+(defun cmake-integration--describe-test-preset-command-line ( )
+  "Describe command line argument to set the test preset."
+  (format "Set the test preset (%s)"
+          (cmake-integration--describe-preset-command-line cmake-integration-test-preset)))
+
+
+(defun cmake-integration--describe-package-preset-command-line ( )
+  "Describe command line argument to set the package preset."
+  (format "Set the package preset (%s)"
+          (cmake-integration--describe-preset-command-line cmake-integration-package-preset)))
+
+
 (defun cmake-integration--describe-build-target ()
   "Describe the command line argument to set the build target."
   (let* ((target-name (if cmake-integration-current-target cmake-integration-current-target ""))
@@ -124,8 +136,9 @@ will be obtained from PRESET and this returns the string
   :transient 'transient--do-call
   :description #'cmake-integration--describe-configure-preset-command-line
   (interactive)
-  (cmake-integration-select-configure-preset)
-  )
+  (if cmake-integration-configure-preset
+      (setq cmake-integration-configure-preset nil)
+    (cmake-integration-select-configure-preset)))
 
 
 (transient-define-suffix cmake-integration--set-build-preset-sufix ()
@@ -133,8 +146,29 @@ will be obtained from PRESET and this returns the string
   :transient 'transient--do-call
   :description #'cmake-integration--describe-build-preset-command-line
   (interactive)
-  (cmake-integration-select-build-preset)
-  )
+  (if cmake-integration-build-preset
+      (setq cmake-integration-build-preset nil)
+    (cmake-integration-select-build-preset)))
+
+
+(transient-define-suffix cmake-integration--set-test-preset-sufix ()
+  "Set test preset."
+  :transient 'transient--do-call
+  :description #'cmake-integration--describe-test-preset-command-line
+  (interactive)
+  (if cmake-integration-test-preset
+      (setq cmake-integration-test-preset nil)
+    (cmake-integration-select-test-preset)))
+
+
+(transient-define-suffix cmake-integration--set-package-preset-sufix ()
+  "Set package preset."
+  :transient 'transient--do-call
+  :description #'cmake-integration--describe-package-preset-command-line
+  (interactive)
+  (if cmake-integration-package-preset
+      (setq cmake-integration-package-preset nil)
+    (cmake-integration-select-package-preset)))
 
 
 (transient-define-suffix cmake-integration--set-build-target-sufix ()
@@ -201,72 +235,62 @@ will be obtained from PRESET and this returns the string
    ""
    ("c" "Configure" (lambda () (interactive)
                       (let ((extra-args (transient-args (oref transient-current-prefix command))))
-                        (message (format "DARLAN extra-args: %s" extra-args))
-                        (cmake-integration-cmake-reconfigure extra-args)
-                        )
-
-                     ;; (let ((scope (transient-scope)))
-                     ;;   (message "scope: %s" scope))
-                     ) :transient nil)
+                        (cmake-integration-cmake-reconfigure extra-args)))
+    :transient nil)
    ]
   )
 
 
 (transient-define-prefix cmake-integration--build-transient ()
   ["Build"
-    ("p" cmake-integration--set-build-preset-sufix)
-    ("t" cmake-integration--set-build-target-sufix)
-    ;; ("j" "Number of jobs" cmake-integration-select-configure-preset :transient nil)
-    ;; ("c" "Select the configuration (only for ninja multi-config)" cmake-integration-select-configure-preset :transient nil)
-    ("C" "Clean first" "--clean-first" :transient t)
-    ("b" "Build" (lambda () (interactive)
-                   (let ((extra-args (transient-args (oref transient-current-prefix command))))
-                     (cmake-integration-save-and-compile-last-target extra-args)
-                     )
-
-                     ;; (let ((scope (transient-scope)))
-                     ;;   (message "scope: %s" scope))
-                     ) :transient nil)
-  ]
+   ("p" cmake-integration--set-build-preset-sufix)
+   ("t" cmake-integration--set-build-target-sufix)
+   ;; ("j" "Number of jobs" (lambda () (interactive) (message "Implement-me")) :transient nil)
+   ;; ("c" "Select the configuration (only for ninja multi-config)" (lambda () (interactive) (message "Implement-me")) :transient nil)
+   ("C" "Clean first" "--clean-first" :transient t)
+   ("b" "Build" (lambda () (interactive)
+                  (let ((extra-args (transient-args (oref transient-current-prefix command))))
+                    (cmake-integration-save-and-compile-last-target extra-args))) :transient nil)
+   ]
   )
 
 
 (transient-define-prefix cmake-integration--test-transient ()
   ["Test"
-    ("p" "Select the test preset" cmake-integration-select-configure-preset :transient nil)
-    ("d" "Select test directory" cmake-integration-select-configure-preset :transient nil)
-    ("f" "Re-run failed" cmake-integration-select-configure-preset :transient nil)
-    ("j" "Number of test in parallel" cmake-integration-select-configure-preset :transient nil)
-    ("P" "Show progress" cmake-integration-select-configure-preset :transient nil)
-    ("q" "Quiet" cmake-integration-select-configure-preset :transient nil)
-    ("t" "Run tests" cmake-integration-select-configure-preset :transient nil)
-    ]
+   ("p" cmake-integration--set-test-preset-sufix)
+   ;; ("d" "Select test directory" cmake-integration-select-configure-preset :transient nil)
+   ;; ("f" "Re-run failed" cmake-integration-select-configure-preset :transient nil)
+   ;; ("j" "Number of test in parallel" cmake-integration-select-configure-preset :transient nil)
+   ;; ("P" "Show progress" cmake-integration-select-configure-preset :transient nil)
+   ;; ("q" "Quiet" cmake-integration-select-configure-preset :transient nil)
+   ("t" "Run tests" (lambda () (interactive) (message "Implement-me")) :transient nil)
+   ]
   )
 
 
 (transient-define-prefix cmake-integration--install-transient ()
   ["Install"
-   ("c" "Select the configuration (only for ninja multi-config)" cmake-integration-select-configure-preset :transient nil)
-   ("p" "Install prefix" cmake-integration-select-configure-preset :transient nil)
-   ("s" "Strip" cmake-integration-select-configure-preset :transient nil)
-   ("C" "Component" cmake-integration-select-configure-preset :transient nil)
-
+   ;; ("c" "Select the configuration (only for ninja multi-config)" (lambda () (interactive) (message "Implement-me")) :transient nil)
+   ("p" "Install prefix" (lambda () (interactive) (message "Implement-me")) :transient nil)
+   ("s" "Strip" (lambda () (interactive) (message "Implement-me")) :transient nil)
+   ("C" "Component" (lambda () (interactive) (message "Implement-me")) :transient nil)
+   ("i" "Install" (lambda () (interactive) (message "Implement-me")) :transient nil)
    ]
   )
 
 
 (transient-define-prefix cmake-integration--package-transient ()
   ["Package"
-   ("p" "Select the test preset" cmake-integration-select-configure-preset :transient nil)
-   ("G" "Select the generator" (lambda () (interactive)(message "Set Generator")) :transient t)
-   ("c" "Create package" (lambda () (interactive)(message "Set Generator")) :transient t)
+   ("p" cmake-integration--set-package-preset-sufix)
+   ;; ("G" "Select the generator" (lambda () (interactive)(message "Set Generator")) :transient t)
+   ("c" "Create package" cmake-integration-run-cpack :transient t)
    ]
   )
 
 
 (transient-define-prefix cmake-integration--workflow-transient ()
   ["Workflow"
-   ("wi" "lele" cmake-integration-select-configure-preset :transient nil)]
+   ("wi" "Run workflow" (lambda () (interactive) (message "Implement-me")) :transient nil)]
   )
 
 
@@ -279,8 +303,8 @@ will be obtained from PRESET and this returns the string
     (:info #'cmake-integration--display-package-preset :format " %d")
     ]
    ["Util"
-    ("ed" "Open dired in build folder" cmake-integration-open-dired-in-build-folder)
-    ("es" "Open shell in build folder" cmake-integration-open-shell-in-build-folder)]
+    ("ud" "Open dired in build folder" cmake-integration-open-dired-in-build-folder)
+    ("us" "Open shell in build folder" cmake-integration-open-shell-in-build-folder)]
    ]
   ["Operations"
    [("C" "Conan" cmake-integration--conan-transient)]
@@ -289,7 +313,7 @@ will be obtained from PRESET and this returns the string
    [("t" "Test" cmake-integration--test-transient)]
    [("i" "Install" cmake-integration--install-transient)]
    [("p" "Package" cmake-integration--package-transient)]
-   [("w" "Workflow" cmake-integration--workflow-transient)]
+   ;; [("w" "Workflow" cmake-integration--workflow-transient)]
    ]
   )
 
