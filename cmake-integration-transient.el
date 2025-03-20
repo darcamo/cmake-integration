@@ -5,6 +5,8 @@
 ;;; Code:
 (require 'transient)
 (require 'cmake-integration-conan)
+(require 'cmake-integration-cpack)
+(require 'cmake-integration-ctest)
 
 
 ;; (transient-define-argument tsc--exclusive-switches ()
@@ -245,7 +247,7 @@ will be obtained from PRESET and this returns the string
   ["Build"
    ("p" cmake-integration--set-build-preset-sufix)
    ("t" cmake-integration--set-build-target-sufix)
-   ;; ("j" "Number of jobs" (lambda () (interactive) (message "Implement-me")) :transient nil)
+   ("j" "Number of concurrent processes to use" "--jobs=" :transient t)
    ;; ("c" "Select the configuration (only for ninja multi-config)" (lambda () (interactive) (message "Implement-me")) :transient nil)
    ("C" "Clean first" "--clean-first" :transient t)
    ("b" "Build" (lambda () (interactive)
@@ -259,11 +261,15 @@ will be obtained from PRESET and this returns the string
   ["Test"
    ("p" cmake-integration--set-test-preset-sufix)
    ;; ("d" "Select test directory" cmake-integration-select-configure-preset :transient nil)
-   ;; ("f" "Re-run failed" cmake-integration-select-configure-preset :transient nil)
+   ("f" "Run only previously failed tests" "--rerun-failed" :transient t)
+   ("o" "Output anything if the test should fail." "--output-on-failure" :transient t)
    ;; ("j" "Number of test in parallel" cmake-integration-select-configure-preset :transient nil)
-   ;; ("P" "Show progress" cmake-integration-select-configure-preset :transient nil)
-   ;; ("q" "Quiet" cmake-integration-select-configure-preset :transient nil)
-   ("t" "Run tests" (lambda () (interactive) (message "Implement-me")) :transient nil)
+   ("P" "Show progress" "--progress")
+   ("q" "Quiet" "--quiet" :transient t)
+   ("t" "Run tests" (lambda () (interactive)
+                    (let ((extra-args (transient-args (oref transient-current-prefix command))))
+                      (cmake-integration-run-ctest extra-args)))
+     :transient nil)
    ]
   )
 
@@ -271,13 +277,17 @@ will be obtained from PRESET and this returns the string
 (transient-define-prefix cmake-integration--install-transient ()
   ["Install"
    ;; ("c" "Select the configuration (only for ninja multi-config)" (lambda () (interactive) (message "Implement-me")) :transient nil)
-   ("p" "Install prefix" (lambda () (interactive) (message "Implement-me")) :transient nil)
-   ("s" "Strip" (lambda () (interactive) (message "Implement-me")) :transient nil)
-   ("C" "Component" (lambda () (interactive) (message "Implement-me")) :transient nil)
-   ("i" "Install" (lambda () (interactive) (message "Implement-me")) :transient nil)
+   ("p" "Override the installation prefix" "--prefix=")
+   ("s" "Strip before installing" "--strip")
+   ("C" "Component" "--component=")
+   ("i" "Install" (lambda () (interactive)
+                    (let ((extra-args (transient-args (oref transient-current-prefix command))))
+                      (cmake-integration-run-cmake-install extra-args)))
+    :transient nil)
    ]
   )
 
+;; ("-G" "Configure Generator" "--generator=" :choices ("primeira" "segunda" "terceira"))
 
 (transient-define-prefix cmake-integration--package-transient ()
   ["Package"
@@ -290,7 +300,8 @@ will be obtained from PRESET and this returns the string
 
 (transient-define-prefix cmake-integration--workflow-transient ()
   ["Workflow"
-   ("wi" "Run workflow" (lambda () (interactive) (message "Implement-me")) :transient nil)]
+   ;; choose preset -> Implement-me
+   ("w" "Run workflow" (lambda () (interactive) (message "Implement-me")) :transient nil)]
   )
 
 
