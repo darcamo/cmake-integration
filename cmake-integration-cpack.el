@@ -12,17 +12,26 @@
 
 ;; TODO: Allow specifying other arguments to "cmake --install", such
 ;; as "--config", "--component", "--prefix" and "--strip".
-(defun cmake-integration--get-install-command ()
-  "Get the command to run cmake install."
-  (let ((build-folder (cmake-integration-get-build-folder)))
-    (format "cmake --install %s" build-folder)))
+(defun cmake-integration--get-install-command (&optional extra-args)
+  "Get the command to run cmake install passing EXTRA-ARGS.
+
+EXTRA-ARGS must be a list of strings. These strings will be concatenated
+with a space as separator and the result string will be appended to the
+cmake command."
+  (let ((build-folder (cmake-integration-get-build-folder))
+        (extra-args-string (string-join extra-args " ")))
+    (format "cmake --install %s %s" build-folder extra-args-string)))
 
 
 ;;;###autoload (autoload 'cmake-integration-run-cmake-install "cmake-integration")
-(defun cmake-integration-run-cmake-install ()
-  "Run `cmake --install' in the current build folder."
+(defun cmake-integration-run-cmake-install (&optional extra-args)
+  "Run `cmake --install' in the current build folder passing EXTRA-ARGS.
+
+EXTRA-ARGS must be a list of strings. These strings will be concatenated
+with a space as separator and the result string will be appended to the
+cmake command."
   (interactive)
-  (compile (cmake-integration--get-install-command)))
+  (compile (cmake-integration--get-install-command extra-args)))
 
 
 (defun cmake-integration--get-cpack-command ()
