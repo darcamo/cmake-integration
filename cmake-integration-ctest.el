@@ -10,27 +10,35 @@
   (cmake-integration--get-preset-name cmake-integration-test-preset))
 
 
-(defun cmake-integration--get-ctest-command (&optional only-failed?)
-  "Get the command to run all tests, or only failed ones if ONLY-FAILED?.
+(defun cmake-integration--get-ctest-command (&optional extra-args)
+  "Get the command to run the tests passing EXTRA-ARGS.
 
-If only-failed? is t, then \"--rerun-failed --output-on-failure\" is
-added to the ctest command."
+EXTRA-ARGS must be a list of strings. These strings will be concatenated
+with a space as separator and the result string will be appended to the
+cmake command."
   (let* ((preset-name (cmake-integration-get-last-test-preset-name))
          (project-root (cmake-integration--get-project-root-folder))
          (build-folder (cmake-integration-get-build-folder))
-         (ctest-command (if preset-name
-                            (format "cd %s && ctest --preset %s" project-root preset-name)
-                          (format "cd %s && ctest ." build-folder))))
-    (if only-failed?
-        (concat ctest-command " --rerun-failed --output-on-failure")
-      ctest-command)))
+         (extra-args-string (string-join extra-args " ")))
+    (if preset-name
+        (format "cd %s && ctest --preset %s %s" project-root preset-name extra-args-string)
+      (format "cd %s && ctest . %s" build-folder extra-args-string))))
 
 
 ;;;###autoload (autoload 'cmake-integration-run-ctest "cmake-integration")
-(defun cmake-integration-run-ctest ()
-  "Run ctest."
+(defun cmake-integration-run-ctest (&optional extra-args)
+  "Run ctest passing EXTRA-ARGS.
+
+EXTRA-ARGS must be a list of strings. These strings will be concatenated
+with a space as separator and the result string will be appended to the
+cmake command."
   (interactive)
-  (compile (cmake-integration--get-ctest-command current-prefix-arg)))
+
+  (when current-prefix-arg
+    (push "--output-on-failure" extra-args)
+    (push "--rerun-failed" extra-args))
+  
+  (compile (cmake-integration--get-ctest-command extra-args)))
 
 
 ;;;###autoload (autoload 'cmake-integration-get-test-presets "cmake-integration")
