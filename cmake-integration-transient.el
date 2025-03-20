@@ -9,28 +9,6 @@
 (require 'cmake-integration-ctest)
 
 
-;; (transient-define-argument tsc--exclusive-switches ()
-;;     "This is a specialized infix for only selecting one of several values."
-;;     :class 'transient-switches
-;;     :argument-format "--%s-snowcone"
-;;     :argument-regexp "\\(--\\(grape\\|orange\\|cherry\\|lime\\)-snowcone\\)"
-;;     :choices '("grape" "orange" "cherry" "lime"))
-
-
-;; Variáveis de interesse
-;; - transient-current-prefix
-;; - transient-current-command
-;; - transient-current-suffixes
-
-
-
-;; Veja o link abaixo para um exemplo de como ler de uma variável
-;; [[file:~/git_files/transient-showcase/transient-showcase.org::*Lisp Variables][Lisp Variables]]
-
-
-;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-;; xxxxxxxxxxxxxxx Preset display functions xxxxxxxxxxxxxxxxxxxxxxxxxx
-;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 (defun cmake-integration--display-configure-preset ()
   "Return a string with the configure preset name."
   (interactive)
@@ -54,24 +32,6 @@
   (interactive)
   (format "Package preset: %s" (cmake-integration--get-preset-name cmake-integration-package-preset)))
 
-;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
-
-;; (defun cmake-integration--get-preset-names-in-list (list-of-presets)
-;;   "Get all preset names for the presets in LIST-OF-PRESETS."
-;;   (mapcar 'cmake-integration--get-preset-name list-of-presets))
-
-
-;; (defun cmake-integration--get-configure-preset-names ()
-;;   "Get all configure preset names."
-;;   (cmake-integration--get-preset-names-in-list (cmake-integration-get-configure-presets)))
-
-
-;; (defun cmake-integration--get-build-preset-names ()
-;;   "Get all build preset names."
-;;   (cmake-integration--get-preset-names-in-list (cmake-integration-get-build-presets)))
 
 (defun cmake-integration--get-command-line-arg-with-face (option is-set)
   "Return OPTION propertied with a face the depends on IS-SET.
@@ -191,29 +151,6 @@ will be obtained from PRESET and this returns the string
     (cmake-integration-select-conan-profile)))
 
 
-;; (transient-define-suffix darlan-sufix (the-prefix-arg)
-;;     "Report the PREFIX-ARG, prefix's scope, and infix values."
-;;     :transient 'transient--do-call
-;;     :description (lambda () (format "Eita hiha %s" (cmake-integration--get-preset-name cmake-integration-configure-preset)))
-;;     (interactive "P")
-;;     (let ((args (transient-args (oref transient-current-prefix command)))
-;;           (scope (transient-scope)))
-;;       (message "prefix-arg: %S - prefix's scope value: %S - transient-args: %S"
-;;                the-prefix-arg scope args)
-;;       ))
-
-
-;; (transient-define-prefix darlan-prefix ()
-;;   ["The prefix title"
-;;    ("-f" "Removing existing cache" "--fresh" :transient t)
-;;    ("-G" "Configure Generator" "--generator=" :choices ("primeira" "segunda" "terceira"))
-;;    ("pc" cmake-integration--set-configure-preset-sufix)
-;;    ("pb" cmake-integration--set-build-preset-sufix)
-;;    ("c" darlan-sufix)
-;;    ]
-;;   )
-
-
 (transient-define-prefix cmake-integration--conan-transient ()
   ["Conan"
    ("p" cmake-integration--set-conan-profile-sufix)
@@ -327,9 +264,6 @@ will be obtained from PRESET and this returns the string
    ;; [("w" "Workflow" cmake-integration--workflow-transient)]
    ]
   )
-
-
-;; (cmake-integration-transient)
 
 (provide 'cmake-integration-transient)
 
