@@ -1,51 +1,7 @@
-* TODO: Usando "ninja -t commands" vc lista todos os comandos para
-compilar cada cpp individualmente. Talvez dê pra usar isso pra implementar funcionalidade
-para compilar apenas um cpp específico.
 
-
-
-* TODO: When changing cmake preset do not erase the current target if
-it also exists with the new preset
 
 * TODO: Add an option to launch gdbgui (https://www.gdbgui.com/)
 
 * TODO: Save value "last target" and "runtime arguments" to a
 variable inside the ".cache" folder in the project root (this folder is already created by
 clangd).
-
-* TODO: create a transient menu ->
-- configure part: select preset, comnfigure, delete build folder, etc
-- runtime part: select executable, set runtime arguments, run, debug
-- documentation part: generate documentation, view documentation
-- conan part: select conan profile, run conan install, remove conan cache
-- package part: set cmake-integration-annotation-column and other variables
-
-
-
-
-#+begin_src elisp
-;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-;; xxxxxxxxxxxxxxx Transient Menu xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
-;; Super nice presentation: https://www.youtube.com/watch?v=w3krYEeqnyk
-(define-transient-command my-transient ()
-  "some explanation"
-  ["Group A"
-   ["Haha"
-    ("aa" "Say hi 'A'" (lambda ()(interactive) (message "Hi A")))
-    ("ab" "Say hi 'B'" (lambda ()(interactive) (message "Hi B")))
-    ]
-   ["Hehehe"
-    ("ac" "Say hi 'A'" (lambda ()(interactive) (message "Hi A")))
-    ("ad" "Say hi 'B'" (lambda ()(interactive) (message "Hi B")))
-    ]
-   ]
-  ["Group B"
-   ["lala"
-    ("ba" "Say hi 'A'" (lambda ()(interactive) (message "Hi A")))
-    ("bb" "Say hi 'B'" (lambda ()(interactive) (message "Hi B")))
-    ]
-   ]
-  )
-#+end_src
