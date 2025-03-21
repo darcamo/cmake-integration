@@ -235,6 +235,15 @@ will be obtained from PRESET and this returns the string
   )
 
 
+(transient-define-prefix cmake-integration--launch-transient ()
+  ["Run and Debug"
+   ("t" cmake-integration--set-build-target-sufix)
+   ("r" "Run last target" cmake-integration-run-last-target)
+   ("d" "Debug with gdb" cmake-integration-debug-last-target)
+   ]
+  )
+
+
 (transient-define-prefix cmake-integration--workflow-transient ()
   ["Workflow"
    ;; choose preset -> Implement-me
@@ -258,6 +267,7 @@ will be obtained from PRESET and this returns the string
    [("C" "Conan" cmake-integration--conan-transient)]
    [("c" "Configure" cmake-integration--configure-transient)]
    [("b" "Build" cmake-integration--build-transient)]
+   [("l" "Run and Debug" cmake-integration--launch-transient)]
    [("t" "Test" cmake-integration--test-transient)]
    [("i" "Install" cmake-integration--install-transient)]
    [("p" "Package" cmake-integration--package-transient)]
