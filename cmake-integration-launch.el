@@ -182,6 +182,13 @@ variable. This should be passed to gdb command in Emacs."
     (cmake-integration--launch-gdb-with-last-target)))
 
 
+(defun cmake-integration--set-runtime-arguments (run-arguments)
+  "Set arguments passed to the executable to RUN-ARGUMENTS."
+  (interactive "sArguments: ")
+  (setq cmake-integration-run-arguments run-arguments)
+  )
+
+
 ;;;###autoload (autoload 'cmake-integration-run-last-target-with-arguments "cmake-integration")
 (defun cmake-integration-run-last-target-with-arguments (run-arguments)
   "Run the last compiled target passing RUN-ARGUMENTS as arguments."

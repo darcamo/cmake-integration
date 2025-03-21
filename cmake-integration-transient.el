@@ -9,28 +9,28 @@
 (require 'cmake-integration-ctest)
 
 
-(defun cmake-integration--display-configure-preset ()
-  "Return a string with the configure preset name."
-  (interactive)
-  (format "Configure preset: %s" (cmake-integration--get-preset-name cmake-integration-configure-preset)))
+;; (defun cmake-integration--display-configure-preset ()
+;;   "Return a string with the configure preset name."
+;;   (interactive)
+;;   (format "Configure preset: %s" (cmake-integration--get-preset-name cmake-integration-configure-preset)))
 
 
-(defun cmake-integration--display-build-preset ()
-  "Return a string with the build preset name."
-  (interactive)
-  (format "Build preset: %s" (cmake-integration--get-preset-name cmake-integration-build-preset)))
+;; (defun cmake-integration--display-build-preset ()
+;;   "Return a string with the build preset name."
+;;   (interactive)
+;;   (format "Build preset: %s" (cmake-integration--get-preset-name cmake-integration-build-preset)))
 
 
-(defun cmake-integration--display-test-preset ()
-  "Return a string with the test preset name."
-  (interactive)
-  (format "Test preset: %s" (cmake-integration--get-preset-name cmake-integration-test-preset)))
+;; (defun cmake-integration--display-test-preset ()
+;;   "Return a string with the test preset name."
+;;   (interactive)
+;;   (format "Test preset: %s" (cmake-integration--get-preset-name cmake-integration-test-preset)))
 
 
-(defun cmake-integration--display-package-preset ()
-  "Return a string with the package preset name."
-  (interactive)
-  (format "Package preset: %s" (cmake-integration--get-preset-name cmake-integration-package-preset)))
+;; (defun cmake-integration--display-package-preset ()
+;;   "Return a string with the package preset name."
+;;   (interactive)
+;;   (format "Package preset: %s" (cmake-integration--get-preset-name cmake-integration-package-preset)))
 
 
 (defun cmake-integration--get-command-line-arg-with-face (option is-set)
@@ -56,24 +56,24 @@ will be obtained from PRESET and this returns the string
 
 (defun cmake-integration--describe-configure-preset-command-line ( )
   "Describe command line argument to set the configure preset."
-  (format "Set the configure preset (%s)" (cmake-integration--describe-preset-command-line cmake-integration-configure-preset)))
+  (format "Configure preset (%s)" (cmake-integration--describe-preset-command-line cmake-integration-configure-preset)))
 
 
 (defun cmake-integration--describe-build-preset-command-line ( )
   "Describe command line argument to set the build preset."
-  (format "Set the build preset (%s)"
+  (format "Build preset (%s)"
           (cmake-integration--describe-preset-command-line cmake-integration-build-preset)))
 
 
 (defun cmake-integration--describe-test-preset-command-line ( )
   "Describe command line argument to set the test preset."
-  (format "Set the test preset (%s)"
+  (format "Test preset (%s)"
           (cmake-integration--describe-preset-command-line cmake-integration-test-preset)))
 
 
 (defun cmake-integration--describe-package-preset-command-line ( )
   "Describe command line argument to set the package preset."
-  (format "Set the package preset (%s)"
+  (format "Package preset (%s)"
           (cmake-integration--describe-preset-command-line cmake-integration-package-preset)))
 
 
@@ -81,7 +81,7 @@ will be obtained from PRESET and this returns the string
   "Describe the command line argument to set the build target."
   (let* ((target-name (if cmake-integration-current-target cmake-integration-current-target ""))
          (command-line (format "--target=%s" target-name)))
-    (format "Select the build target (%s)" (cmake-integration--get-command-line-arg-with-face command-line cmake-integration-current-target))))
+    (format "Build target (%s)" (cmake-integration--get-command-line-arg-with-face command-line cmake-integration-current-target))))
 
 
 (defun cmake-integration--describe-conan-profile ()
@@ -149,6 +149,18 @@ will be obtained from PRESET and this returns the string
   (if cmake-integration-conan-profile
       (setq cmake-integration-conan-profile nil)
     (cmake-integration-select-conan-profile)))
+
+
+(transient-define-prefix cmake-integration--all-presetts-transient ()
+  "Easily set any o the possible cmake presets."
+  ["Set Presets"
+   ("sc" cmake-integration--set-configure-preset-sufix)
+   ("sb" cmake-integration--set-build-preset-sufix)
+   ("st" cmake-integration--set-test-preset-sufix)
+   ("sp" cmake-integration--set-package-preset-sufix)
+   ("q" "Quit" (lambda () (interactive) (transient-quit-seq)))
+   ]
+  )
 
 
 (transient-define-prefix cmake-integration--conan-transient ()
@@ -244,6 +256,7 @@ will be obtained from PRESET and this returns the string
 (transient-define-prefix cmake-integration--launch-transient ()
   "Perform actions related to running or debugging an executable target."
   ["Run and Debug"
+   ("a" "Set runtime arguments" cmake-integration--set-runtime-arguments :transient t)
    ("t" cmake-integration--set-build-target-sufix)
    ("r" "Run last target" cmake-integration-run-last-target)
    ("d" "Debug with gdb" cmake-integration-debug-last-target)
@@ -263,23 +276,31 @@ will be obtained from PRESET and this returns the string
   "Main transient menu, from where all other transient menus can be reached."
   [
    ["Presets"
-    (:info #'cmake-integration--display-configure-preset :format " %d")
-    (:info #'cmake-integration--display-build-preset :format " %d")
-    (:info #'cmake-integration--display-test-preset :format " %d")
-    (:info #'cmake-integration--display-package-preset :format " %d")
+    ;; (:info #'cmake-integration--display-configure-preset :format " %d")
+    ;; (:info #'cmake-integration--display-build-preset :format " %d")
+    ;; (:info #'cmake-integration--display-test-preset :format " %d")
+    ;; (:info #'cmake-integration--display-package-preset :format " %d")
+    ("sc" cmake-integration--set-configure-preset-sufix)
+    ("sb" cmake-integration--set-build-preset-sufix)
+    ("st" cmake-integration--set-test-preset-sufix)
+    ("sp" cmake-integration--set-package-preset-sufix)
+    ;; ("s" "Set any of the presets" cmake-integration--all-presetts-transient)
     ]
    ["Util"
-    ("ud" "Open dired in build folder" cmake-integration-open-dired-in-build-folder)
-    ("us" "Open shell in build folder" cmake-integration-open-shell-in-build-folder)]
+    ("ud" "Dired in build folder" cmake-integration-open-dired-in-build-folder)
+    ("us" "Shell in build folder" cmake-integration-open-shell-in-build-folder)]
+   ["Target"
+    ("t" cmake-integration--set-build-target-sufix)
+   ]
    ]
   ["Operations"
-   [("C" "Conan" cmake-integration--conan-transient)]
-   [("c" "Configure" cmake-integration--configure-transient)]
-   [("b" "Build" cmake-integration--build-transient)]
-   [("l" "Run and Debug" cmake-integration--launch-transient)]
-   [("t" "Test" cmake-integration--test-transient)]
-   [("i" "Install" cmake-integration--install-transient)]
-   [("p" "Package" cmake-integration--package-transient)]
+   [("oo" "Conan" cmake-integration--conan-transient)]
+   [("oc" "Configure" cmake-integration--configure-transient)]
+   [("ob" "Build" cmake-integration--build-transient)]
+   [("ol" "Run and Debug" cmake-integration--launch-transient)]
+   [("ot" "Test" cmake-integration--test-transient)]
+   [("oi" "Install" cmake-integration--install-transient)]
+   [("op" "Package" cmake-integration--package-transient)]
    ;; [("w" "Workflow" cmake-integration--workflow-transient)]
    ]
   )
