@@ -152,6 +152,7 @@ will be obtained from PRESET and this returns the string
 
 
 (transient-define-prefix cmake-integration--conan-transient ()
+  "Perform actions related to the conan package manager."
   ["Conan"
    ("p" cmake-integration--set-conan-profile-sufix)
    ("l" "List installed packages" cmake-integration-run-conan-list)
@@ -161,6 +162,7 @@ will be obtained from PRESET and this returns the string
 
 
 (transient-define-prefix cmake-integration--configure-transient ()
+  "Perform actions related to configuring the project."
   ["Configure"
    :pad-keys t
    ("f" "Removing existing cache" "--fresh" :transient t)
@@ -181,6 +183,7 @@ will be obtained from PRESET and this returns the string
 
 
 (transient-define-prefix cmake-integration--build-transient ()
+  "Performe actions related to building a target."
   ["Build"
    ("p" cmake-integration--set-build-preset-sufix)
    ("t" cmake-integration--set-build-target-sufix)
@@ -195,6 +198,7 @@ will be obtained from PRESET and this returns the string
 
 
 (transient-define-prefix cmake-integration--test-transient ()
+  "Perform actions related to running ctest."
   ["Test"
    ("p" cmake-integration--set-test-preset-sufix)
    ;; ("d" "Select test directory" cmake-integration-select-configure-preset :transient nil)
@@ -204,14 +208,15 @@ will be obtained from PRESET and this returns the string
    ("P" "Show progress" "--progress")
    ("q" "Quiet" "--quiet" :transient t)
    ("t" "Run tests" (lambda () (interactive)
-                    (let ((extra-args (transient-args (oref transient-current-prefix command))))
-                      (cmake-integration-run-ctest extra-args)))
-     :transient nil)
+                      (let ((extra-args (transient-args (oref transient-current-prefix command))))
+                        (cmake-integration-run-ctest extra-args)))
+    :transient nil)
    ]
   )
 
 
 (transient-define-prefix cmake-integration--install-transient ()
+  "Perform actions related to installing wih cmake."
   ["Install"
    ;; ("c" "Select the configuration (only for ninja multi-config)" (lambda () (interactive) (message "Implement-me")) :transient nil)
    ("p" "Override the installation prefix" "--prefix=")
@@ -227,6 +232,7 @@ will be obtained from PRESET and this returns the string
 ;; ("-G" "Configure Generator" "--generator=" :choices ("primeira" "segunda" "terceira"))
 
 (transient-define-prefix cmake-integration--package-transient ()
+  "Perform actions related to running cpack."
   ["Package"
    ("p" cmake-integration--set-package-preset-sufix)
    ;; ("G" "Select the generator" (lambda () (interactive)(message "Set Generator")) :transient t)
@@ -236,6 +242,7 @@ will be obtained from PRESET and this returns the string
 
 
 (transient-define-prefix cmake-integration--launch-transient ()
+  "Perform actions related to running or debugging an executable target."
   ["Run and Debug"
    ("t" cmake-integration--set-build-target-sufix)
    ("r" "Run last target" cmake-integration-run-last-target)
@@ -245,6 +252,7 @@ will be obtained from PRESET and this returns the string
 
 
 (transient-define-prefix cmake-integration--workflow-transient ()
+  "Perform actions related to running a workflow."
   ["Workflow"
    ;; choose preset -> Implement-me
    ("w" "Run workflow" (lambda () (interactive) (message "Implement-me")) :transient nil)]
@@ -252,6 +260,7 @@ will be obtained from PRESET and this returns the string
 
 
 (transient-define-prefix cmake-integration-transient ()
+  "Main transient menu, from where all other transient menus can be reached."
   [
    ["Presets"
     (:info #'cmake-integration--display-configure-preset :format " %d")
