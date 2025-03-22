@@ -92,6 +92,14 @@ will be obtained from PRESET and this returns the string
     (format "Select conan profile (%s)" (cmake-integration--get-command-line-arg-with-face command-line profile-is-string))))
 
 
+(defun cmake-integration--describe-install-prefix ()
+  "Describe the current cmake install prefix."
+  (let* ((has-value (stringp cmake-integration-install-prefix))
+         (install-prefix (if has-value cmake-integration-install-prefix ""))
+         (command-line (format "--prefix=%s" install-prefix)))
+    (format "Select install prefix (%s)"
+            (cmake-integration--get-command-line-arg-with-face command-line has-value))))
+
 
 (transient-define-suffix cmake-integration--set-configure-preset-sufix ()
   "Set configure preset."
@@ -149,6 +157,15 @@ will be obtained from PRESET and this returns the string
   (if cmake-integration-conan-profile
       (setq cmake-integration-conan-profile nil)
     (cmake-integration-select-conan-profile)))
+
+
+(transient-define-suffix cmake-integration--set-install-prefix-sufix ()
+  :transient 'transient--do-call
+  :description 'cmake-integration--describe-install-prefix
+  (interactive)
+  (if cmake-integration-install-prefix
+      (setq cmake-integration-install-prefix nil)
+    (cmake-integration-set-install-prefix)))
 
 
 (transient-define-prefix cmake-integration--all-presetts-transient ()
@@ -231,7 +248,7 @@ will be obtained from PRESET and this returns the string
   "Perform actions related to installing wih cmake."
   ["Install"
    ;; ("c" "Select the configuration (only for ninja multi-config)" (lambda () (interactive) (message "Implement-me")) :transient nil)
-   ("p" "Override the installation prefix" "--prefix=")
+   ("p" cmake-integration--set-install-prefix-sufix)
    ("s" "Strip before installing" "--strip")
    ("C" "Component" "--component=")
    ("i" "Install" (lambda () (interactive)

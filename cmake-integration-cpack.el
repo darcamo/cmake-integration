@@ -23,6 +23,12 @@ cmake command."
     (format "cmake --install %s %s" build-folder extra-args-string)))
 
 
+(defun cmake-integration-set-install-prefix ()
+  "Ask the user for a install prefix."
+  (interactive)
+  (setq cmake-integration-install-prefix (read-directory-name "Enter install prefix directory: ")))
+
+
 ;;;###autoload (autoload 'cmake-integration-run-cmake-install "cmake-integration")
 (defun cmake-integration-run-cmake-install (&optional extra-args)
   "Run `cmake --install' in the current build folder passing EXTRA-ARGS.
@@ -31,6 +37,10 @@ EXTRA-ARGS must be a list of strings. These strings will be concatenated
 with a space as separator and the result string will be appended to the
 cmake command."
   (interactive)
+
+  (when cmake-integration-install-prefix
+    (push (format "--prefix %s" cmake-integration-install-prefix) extra-args))
+
   (compile (cmake-integration--get-install-command extra-args)))
 
 
