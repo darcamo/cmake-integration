@@ -10,8 +10,6 @@
   (cmake-integration--get-preset-name cmake-integration-package-preset))
 
 
-;; TODO: Allow specifying other arguments to "cmake --install", such
-;; as "--config", "--component", "--prefix" and "--strip".
 (defun cmake-integration--get-install-command (&optional extra-args)
   "Get the command to run cmake install passing EXTRA-ARGS.
 
@@ -29,6 +27,8 @@ cmake command."
   (setq cmake-integration-install-prefix (read-directory-name "Enter install prefix directory: ")))
 
 
+;; TODO: Allow specifying other arguments to "cmake --install", such
+;; as "--config", "--component" and "--strip".
 ;;;###autoload (autoload 'cmake-integration-run-cmake-install "cmake-integration")
 (defun cmake-integration-run-cmake-install (&optional extra-args)
   "Run `cmake --install' in the current build folder passing EXTRA-ARGS.

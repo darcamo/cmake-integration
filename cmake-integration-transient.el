@@ -8,6 +8,10 @@
 (require 'cmake-integration-cpack)
 (require 'cmake-integration-ctest)
 
+;; TODO: Change function names with "sufix" to suffix
+
+;; TODO: Add a transient for doxygen commands
+
 
 ;; (defun cmake-integration--display-configure-preset ()
 ;;   "Return a string with the configure preset name."

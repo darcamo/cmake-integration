@@ -248,16 +248,14 @@ separation and then passed to cmake command to build the target."
 
 (defun cmake-integration--target-is-not-utility-p (target)
   "Return t if TARGET type is not `UTILITY'."
-  (not (equal (alist-get 'type target) "UTILITY"))
-  )
+  (not (equal (alist-get 'type target) "UTILITY")))
 
 
 (defun cmake-integration--target-is-not-library-p (target)
   "Return t if TARGET type is not `UTILITY'."
   (let ((type (alist-get 'type target)))
     (when type
-      (not (equal (car (cdr (split-string type "_"))) "LIBRARY"))
-      )))
+      (not (equal (car (cdr (split-string type "_"))) "LIBRARY")))))
 
 
 (defun cmake-integration--get-targets-from-configuration (config &optional predicate)

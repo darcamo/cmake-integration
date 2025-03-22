@@ -72,7 +72,9 @@ single preset is returned. If the `inherits' is an array of names, then
 a vector of presets is returned."
   (let ((parent-name (cmake-integration--get-parent-preset-name preset)))
     (if (vectorp parent-name)
-        (let ((presets (cl-coerce (remq nil (mapcar 'cmake-integration--get-configure-preset-by-name parent-name)) 'vector)))
+        (let* ((parent-presets (mapcar 'cmake-integration--get-configure-preset-by-name parent-name))
+               (parent-presets-no-nil (remq nil parent-presets))
+               (presets (cl-coerce parent-presets-no-nil 'vector)))
           (if (seq-empty-p presets)
               nil
             presets))
