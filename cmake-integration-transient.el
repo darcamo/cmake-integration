@@ -310,7 +310,8 @@ will be obtained from PRESET and this returns the string
     ]
    ["Util"
     ("ud" "Dired in build folder" cmake-integration-open-dired-in-build-folder)
-    ("us" "Shell in build folder" cmake-integration-open-shell-in-build-folder)]
+    ("us" "Shell in build folder" cmake-integration-open-shell-in-build-folder)
+    ("ur" "Remove the build folder" cmake-integration-delete-build-folder :transient transient--do-call)]
    ["Target"
     ("t" cmake-integration--set-build-target-sufix)
    ]
