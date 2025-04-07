@@ -3,6 +3,7 @@
 ;;; Commentary:
 
 ;;; Code:
+(require 'tablist)
 (require 'cmake-integration-build)
 
 (defun cmake-integration--get-conan-available-profiles ()
@@ -19,17 +20,122 @@
     (setq cmake-integration-conan-profile choice)))
 
 
-(defun cmake-integration-run-conan-list ()
-  "Run `conan list` to list installed packages.
 
-The result is displayed in a `Conan List` buffer."
+
+
+
+
+(defun cmake-integration--parse-conan-library-spec (library-spec)
+  "Parse the LIBRARY-SPEC string and return a list of strings.
+
+The retuened list has 4 elements, being the library name, the version,
+the user and the channel. If the user and channel are not present, they
+are set to nil."
+  (pcase-let* (
+             (`(,first-part ,second-part) (split-string library-spec "@"))
+             (`(,name ,version) (split-string first-part "/"))
+             (`(,user ,channel) (if second-part (split-string second-part "/") '("" "")))
+             )
+    (vector
+     (propertize name 'face 'font-lock-type-face)
+     (propertize version 'face 'font-lock-number-face)
+     (propertize user 'face 'font-lock-variable-name-face)
+     (propertize channel 'face 'font-lock-variable-name-face)
+     )))
+
+
+(defun cmake-integration--get-tabulated-entry (library-spec)
+  "Parse the LIBRARY-SPEC string and an entry for a tabulated list."
+  (list library-spec (cmake-integration--parse-conan-library-spec library-spec))
+  )
+
+
+(defun cmake-integration--get-tabulated-entries-from-conan-local-cache (library-symbols)
+  "Map a list of LIBRARY-SYMBOLS into entries for a tabulated list.
+
+The list of LIBRARY-SYMBOLS is obtained from parsing the conan list
+command output in json format. This function will turn each element in
+the list into a string, then break it into the different parts (name,
+version, user and channel) and then build an entry suitable to be used
+in `tabulated-list-entries'."
+  (mapcar #'(lambda (elem)
+             (let ((full-library-spec-string (symbol-name (car elem))))
+               (cmake-integration--get-tabulated-entry full-library-spec-string)))
+          library-symbols))
+
+
+(defun cmake-integration--get-conan-list-as-tabulated-entries ()
+  "Get a list of library information of the installed conan packages.
+
+Each library information in the returned list is a list of 4 elements,
+in the form (NAME VERSION USER CHANNEL), being the library name, the
+library version, the user name and the channel name. If the user and
+channel names are not present, they are set to nil."
+  (let* ((json-string (shell-command-to-string "conan list -f json 2> /dev/null"))
+         (parsed-json (json-read-from-string json-string))
+         (local-cache (alist-get 'Local\ Cache parsed-json)))
+    (cmake-integration--get-tabulated-entries-from-conan-local-cache local-cache)))
+
+
+(defvar cmake-integration--conan-tabulated-list-columns
+  [("Name" 30 t)
+   ("Version" 14 t)
+   ("User" 10 t)
+   ("Channel" 15 t)]
+  "Columns for the tabulated list.")
+
+
+(defun cmake-integration-view-conan-list-as-table ()
+  "Initialize the tabulated list mode."
   (interactive)
-  (let* ((output (shell-command-to-string "conan list"))
-         (buffer (get-buffer-create "*Conan List*")))
+  (let ((buffer (get-buffer-create "*My Tabulated List*")))
     (with-current-buffer buffer
-      (erase-buffer)
-      (insert output))
-    (display-buffer buffer)))
+      (setq tabulated-list-entries 'cmake-integration--get-conan-list-as-tabulated-entries)
+      (conan-list-view-mode)
+      (tabulated-list-print t))
+    (switch-to-buffer buffer)
+    (tablist-minor-mode 1)
+    ))
+
+
+
+(define-derived-mode conan-list-view-mode tablist-mode "Conan List"
+  "Visualize the output of conan list in as a table."
+  (setq tabulated-list-format cmake-integration--conan-tabulated-list-columns)
+  (setq tabulated-list-padding 2)
+  (tabulated-list-init-header))
+
+;; TODO Handle marked entries
+;; TODO Handle items marked for deletion
+
+
+
+
+
+;; (defun cmake-integration-run-conan-list ()
+;;   "Run `conan list` to list installed packages.
+
+;; The result is displayed in a `Conan List` buffer."
+;;   (interactive)
+;;   (let* ((output (shell-command-to-string "conan list"))
+;;          (buffer (get-buffer-create "*Conan List*")))
+;;     (with-current-buffer buffer
+;;       (erase-buffer)
+;;       (insert output))
+;;     (display-buffer buffer)))
+
+
+;; (defun cmake-integration-run-conan-list-2 ()
+;;   "Run `conan list` to list installed packages.
+
+;; The result is displayed in a `Conan List` buffer."
+;;   (interactive)
+;;   (let ((json-output (shell-command-to-string "conan list -f json 2> /dev/null"))
+;;         (buffer (get-buffer-create "*Conan List*")))
+;;     (with-current-buffer buffer
+;;       (erase-buffer)
+;;       (insert json-output))
+;;     (display-buffer buffer)))
 
 
 (defun cmake-integration--get-conan-run-command (&optional profile)

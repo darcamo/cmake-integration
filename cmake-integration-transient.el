@@ -188,7 +188,8 @@ will be obtained from PRESET and this returns the string
   "Perform actions related to the conan package manager."
   ["Conan"
    ("p" cmake-integration--set-conan-profile-sufix)
-   ("l" "List installed packages" cmake-integration-run-conan-list)
+   ;; ("l" "List installed packages" cmake-integration-run-conan-list)
+   ("l" "List installed packages" cmake-integration-view-conan-list-as-table)
    ("i" "Install" (lambda () (interactive) (cmake-integration-run-conan)))
    ]
   )

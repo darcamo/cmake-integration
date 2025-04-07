@@ -2,7 +2,7 @@
 
 ;; Author: Darlan Cavalcante Moreira <darcamo@gmail.com>
 ;; Version: 0.1
-;; Package-Requires: ((emacs "28.1") (f "0.20.0") (s "1.12.0") (json "1.5") (dash "2.19.1"))
+;; Package-Requires: ((emacs "28.1") (f "0.20.0") (s "1.12.0") (json "1.5") (dash "2.19.1") (tablist "1.1"))
 ;; Homepage: https://github.com/darcamo/cmake-integration
 ;; Keywords: c c++ cmake languages tools
 ;; URL: https://github.com/darcamo/cmake-integration/
