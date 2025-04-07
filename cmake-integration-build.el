@@ -69,13 +69,21 @@ This is only used for the `all', `clean', and `install' targets."
     (list target-full-name)))
 
 
+(defun cmake-integration--delete-build-folder-no-confirm ()
+  "Delete the current build folder."
+  (delete-directory (cmake-integration-get-build-folder) t))
+
+
 (defun cmake-integration-delete-build-folder ()
   "Delete the current build folder.
 
 It's useful in case you changed the generator, since CMake would
 complain in that case."
   (interactive)
-  (delete-directory (cmake-integration-get-build-folder) t))
+  (let ((folder (cmake-integration--get-build-folder-relative-to-project)))
+    (if (yes-or-no-p (format "Delete folder '%s'?" folder))
+        (cmake-integration--delete-build-folder-no-confirm)
+      (message "Build folder was not deleted"))))
 
 
 (defun check-if-build-folder-exists-and-throws-if-not ()
