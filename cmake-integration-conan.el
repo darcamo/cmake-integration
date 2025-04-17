@@ -88,7 +88,7 @@ channel names are not present, they are set to nil."
 (defun cmake-integration-view-conan-list-as-table ()
   "Initialize the tabulated list mode."
   (interactive)
-  (let ((buffer (get-buffer-create "*My Tabulated List*")))
+  (let ((buffer (get-buffer-create "*Conan List*")))
     (with-current-buffer buffer
       (setq tabulated-list-entries 'cmake-integration--get-conan-list-as-tabulated-entries)
       (conan-list-view-mode)
