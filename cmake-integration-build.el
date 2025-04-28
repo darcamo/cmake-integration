@@ -357,25 +357,39 @@ Each entry maps `target-name` to `target-info`."
                    all-config))))
 
 
+(defvar cmake-integration--target-type-cache (make-hash-table :test 'equal)
+  "Cache for target types. Maps target names to their types.")
+
+(defun cmake-integration-refresh-target-type-cache ()
+  "Clear the target type cache."
+  (interactive)
+  (clrhash cmake-integration--target-type-cache))
+
 (defun cmake-integration--add-type-field-to-target (target)
-  "Add a `type' field to a TARGET.
+  "Add a `type' field to a TARGET, using cache if available.
 
 This will modify TARGET.
 
-TARGET is a list containing the target name followend by many cons, with
+TARGET is a list containing the target name followed by many cons, with
 each cons having some information about the TARGET. Particularly, TARGET
 has a cons cell with a `jsonFile' car and a `\"someJsonFile.json\"'
 filename. This json file will be read to extract the type that should be
 added to TARGET."
-
-  ;; ("target-name" (directoryIndex . 2) (id . "Continuous::@a44f0ac069e85531cdee") (jsonFile . "target-Continuous-Debug-32dbfb99931b31bc9c8f.json") (name . #1#) (projectIndex . 0))
   (let ((target-name (car (split-string (car target) cmake-integration--multi-config-separator))))
     (unless (or (equal target-name "all") (equal target-name "clean") (equal target-name "install"))
-      (let* ((json-file (alist-get 'jsonFile target))
-             (json-full-filename (file-name-concat (cmake-integration--get-reply-folder) json-file))
-             (target-json-data (json-read-file json-full-filename)))
-        ;; Set the value from the json data to `type' field
-        (setf (alist-get 'type (cdr target)) (alist-get 'type target-json-data))))))
+      (if-let* ((target-type (when cmake-integration--target-type-cache (gethash target-name cmake-integration--target-type-cache))))
+          (setf (alist-get 'type (cdr target)) target-type)
+        (let* ((json-file (alist-get 'jsonFile target))
+               (json-full-filename (file-name-concat (cmake-integration--get-reply-folder) json-file))
+               (target-json-data (json-read-file json-full-filename)))
+
+          ;; Update the cache with the type of the target
+          (setq target-type (alist-get 'type target-json-data))
+          (when cmake-integration--target-type-cache
+            (puthash target-name target-type cmake-integration--target-type-cache))
+
+          ;; Set the value from the json data to `type' field
+          (setf (alist-get 'type (cdr target)) target-type))))))
 
 
 (defun cmake-integration--get-targets-from-codemodel-json-file-2 (&optional json-filename predicate)
