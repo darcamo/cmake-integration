@@ -5,17 +5,17 @@
 ;;; Code:
 
 
-(defun cmake-integration--get-system-presets-file ()
+(defun ci--get-system-presets-file ()
   "Get the path of the system presets file."
-  (file-name-concat (cmake-integration--get-project-root-folder) "CMakePresets.json"))
+  (file-name-concat (ci--get-project-root-folder) "CMakePresets.json"))
 
 
-(defun cmake-integration--get-user-presets-file ()
+(defun ci--get-user-presets-file ()
   "Get the path of the user presets file."
-  (file-name-concat (cmake-integration--get-project-root-folder) "CMakeUserPresets.json"))
+  (file-name-concat (ci--get-project-root-folder) "CMakeUserPresets.json"))
 
 
-(defun cmake-integration--expand-included-presets (json-filename)
+(defun ci--expand-included-presets (json-filename)
   "Return a list containing JSON-FILENAME and any included presets file.
 
 A CMake presets file can include other preset files, which can include
@@ -25,26 +25,26 @@ both JSON-FILENAME as well as any presets file included in it."
     (let* ((parent-folder (f-parent json-filename))
            (included-files (alist-get 'include (json-read-file json-filename)))
            (absolute-included-files (mapcar (lambda (filename)
-                                              (cmake-integration--change-to-absolute-filename filename parent-folder))
+                                              (ci--change-to-absolute-filename filename parent-folder))
                                             included-files)))
-      (append (-mapcat #'cmake-integration--expand-included-presets absolute-included-files)
+      (append (-mapcat #'ci--expand-included-presets absolute-included-files)
               (list json-filename)))))
 
 
-(defun cmake-integration--get-parent-preset-name (preset)
+(defun ci--get-parent-preset-name (preset)
   "Get the name in the `inherits' field of the preset PRESET."
   (alist-get 'inherits preset))
 
 
-(defun cmake-integration--get-all-preset-files ()
+(defun ci--get-all-preset-files ()
   "Get the system and user preset files, as well as included files."
-  (let ((system-presets-file (cmake-integration--get-system-presets-file))
-        (user-presets-file (cmake-integration--get-user-presets-file)))
-    (append (cmake-integration--expand-included-presets system-presets-file)
-            (cmake-integration--expand-included-presets user-presets-file))))
+  (let ((system-presets-file (ci--get-system-presets-file))
+        (user-presets-file (ci--get-user-presets-file)))
+    (append (ci--expand-included-presets system-presets-file)
+            (ci--expand-included-presets user-presets-file))))
 
 
-(defun cmake-integration--get-preset-name (preset)
+(defun ci--get-preset-name (preset)
   "Get the name of the preset PRESET.
 
 PRESET is an alist obtained from reading the cmake presets file
@@ -52,7 +52,7 @@ and getting one of the configure presets in it."
   (when preset (alist-get 'name preset)))
 
 
-(defun cmake-integration--is-preset-visible (preset)
+(defun ci--is-preset-visible (preset)
   "Returns t if the preset PRESET if not hidden.
 
 PRESET is an alist obtained from reading the cmake presets file
@@ -60,7 +60,7 @@ and getting one of the configure presets in it."
   (when preset (not (alist-get 'hidden preset))))
 
 
-(defun cmake-integration--get-presets-of-given-type (json-filename type)
+(defun ci--get-presets-of-given-type (json-filename type)
   "Get the list of presets in JSON-FILENAME of type TYPE.
 
 The TYPE of a preset is one of the possible presets type, such as:
@@ -75,26 +75,26 @@ Return nil if the file does not exist."
      nil)))
 
 
-(defun cmake-integration-get-all-presets-of-type (type)
+(defun ci-get-all-presets-of-type (type)
   "Get the presets of type TYPE from all preset files.
 
 Get the configure presets in both `CMakePresets.json' and
 `CMakeUserPresets.json' files, as well as any included file.."
-  (let* ((all-preset-files (cmake-integration--get-all-preset-files))
+  (let* ((all-preset-files (ci--get-all-preset-files))
          (all-configure-presets (-mapcat
-                                 #'(lambda (presets-file) (cmake-integration--get-presets-of-given-type presets-file type))
+                                 #'(lambda (presets-file) (ci--get-presets-of-given-type presets-file type))
                                  all-preset-files)))
-    (seq-filter 'cmake-integration--is-preset-visible all-configure-presets)))
+    (seq-filter 'ci--is-preset-visible all-configure-presets)))
 
 
-(defun cmake-integration--get-preset-by-name (name list-of-presets)
+(defun ci--get-preset-by-name (name list-of-presets)
   "Get the preset in LIST-OF-PRESETS with name NAME."
   (seq-find
    (lambda (preset) (equal name (alist-get 'name preset)))
    list-of-presets))
 
 
-(defun cmake-integration--prepare-for-completing-read (list-of-presets)
+(defun ci--prepare-for-completing-read (list-of-presets)
   "Transform LIST-OF-PRESETS to be used with `completing-read'.
 
 This will create a transformed list of presets which maps each preset in
@@ -103,7 +103,7 @@ It will also append the string \\='No Preset\\=' to this transformed
 list. This makes it suitable to be used as the collection argument in
 `completing-read'."
   (let ((transformed-list-of-presets (mapcar
-                                      (lambda (preset) (cons (cmake-integration--get-preset-name preset) preset))
+                                      (lambda (preset) (cons (ci--get-preset-name preset) preset))
                                       list-of-presets)))
     ;; Add a "No Preset" option to all-presets to allow a user to
     ;; remove the preset
@@ -112,33 +112,33 @@ list. This makes it suitable to be used as the collection argument in
 
 ;; TODO: Make it work when configurePreset is not present, and instead
 ;; its value should be taken from an inherited preset.
-(defun cmake-integration--get-associated-configure-preset (preset)
+(defun ci--get-associated-configure-preset (preset)
   "Get the associated configure-preset of a PRESET."
   (alist-get 'configurePreset preset))
 
 
-(defun cmake-integration--preset-has-matching-configure-preset-p (preset configure-preset)
+(defun ci--preset-has-matching-configure-preset-p (preset configure-preset)
   "Check if PRESET has a configure preset name matching CONFIGURE-PRESET."
-  (let* ((configure-preset-name (cmake-integration--get-preset-name configure-preset))
-         (associated-configure-preset-name (cmake-integration--get-associated-configure-preset preset)))
+  (let* ((configure-preset-name (ci--get-preset-name configure-preset))
+         (associated-configure-preset-name (ci--get-associated-configure-preset preset)))
     (equal configure-preset-name associated-configure-preset-name)))
 
 
-(defun cmake-integration-get-presets-of-type (type &optional configure-preset)
+(defun ci-get-presets-of-type (type &optional configure-preset)
   "Get the presets of type TYPE associated with CONFIGURE-PRESET.
 
 Get the presets in both `CMakePresets.json' and `CMakeUserPresets.json'
 files, as well as in any included files, whose configure preset is
 CONFIGURE-PRESET. If CONFIGURE-PRESET is not provided, then the value in
 the `cmake-integration-configure-preset' variable will be used."
-  (let ((configure-preset (or configure-preset cmake-integration-configure-preset))
-        (all-presets (cmake-integration-get-all-presets-of-type type)))
+  (let ((configure-preset (or configure-preset ci-configure-preset))
+        (all-presets (ci-get-all-presets-of-type type)))
     (seq-filter
-     #'(lambda (preset) (cmake-integration--preset-has-matching-configure-preset-p preset configure-preset))
+     #'(lambda (preset) (ci--preset-has-matching-configure-preset-p preset configure-preset))
      all-presets)))
 
 
-(defun cmake-integration--annotation-from-displayName-function (preset)
+(defun ci--annotation-from-displayName-function (preset)
   "Function that returns an annotation with the displayName field in a PRESET.
 
 This is used in `cmake-integration-select-*-preset' functions when
@@ -146,8 +146,8 @@ completing a preset name to generate an annotation for that preset. This
 annotation is shown during the completions if you are using the
 marginalia package, or in Emacs standard completion buffer."
 
-  (let* ((initial-spaces (cmake-integration--get-annotation-initial-spaces preset))
-         (no-preset-annotation (format "%sDon't use any preset. Current build folder: '%s'" initial-spaces cmake-integration-build-dir))
+  (let* ((initial-spaces (ci--get-annotation-initial-spaces preset))
+         (no-preset-annotation (format "%sDon't use any preset. Current build folder: '%s'" initial-spaces ci-build-dir))
          ;; Note that `minibuffer-completion-table' has the list of
          ;; completions currently in use, from which we know PRESET is
          ;; one of them
@@ -158,21 +158,25 @@ marginalia package, or in Emacs standard completion buffer."
       preset-annotation)))
 
 
-(defun cmake-integration-select-preset (all-presets prompt)
+(defun ci-select-preset (all-presets prompt)
   "Select a CMake preset from ALL-PRESETS using PROMPT for the message.
 
 ALL-PRESETS is the list of all available presets. PROMPT is the prompt
 string for the `completing-read' function. Returns the selected preset
 or nil if \\='No Preset\\=' is selected."
-  (let* ((collection (cmake-integration--prepare-for-completing-read all-presets))
-         (completion-extra-properties '(:annotation-function cmake-integration--annotation-from-displayName-function))
+  (let* ((collection (ci--prepare-for-completing-read all-presets))
+         (completion-extra-properties '(:annotation-function ci--annotation-from-displayName-function))
          (choice (completing-read prompt collection nil t)))
     (if (equal choice "No Preset")
         nil
-      (cmake-integration--get-preset-by-name choice all-presets))))
+      (ci--get-preset-by-name choice all-presets))))
 
 
 
 (provide 'cmake-integration-core-presets)
 
 ;;; cmake-integration-core-presets.el ends here
+
+;; Local Variables:
+;; read-symbol-shorthands: (("ci-" . "cmake-integration-"))
+;; End:

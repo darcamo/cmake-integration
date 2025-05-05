@@ -7,13 +7,13 @@
 (defgroup cmake-integration nil "Easily call cmake configure and run compiled targets." :group 'tools :prefix "cmake-integration-")
 
 
-(defcustom cmake-integration-build-dir "build"
+(defcustom ci-build-dir "build"
   "The build folder to use when no presets are used.
 
 If this is nil, then using presets is required." :type '(string) :group 'cmake-integration)
 
 
-(defcustom cmake-integration-install-prefix nil
+(defcustom ci-install-prefix nil
   "The install preffix to use when running cmake install.
 
 If this is nil, then no install preffix is used." :type '(string) :group 'cmake-integration)
@@ -22,17 +22,17 @@ If this is nil, then no install preffix is used." :type '(string) :group 'cmake-
 ;; TODO: Set all possible choices of generators for a better
 ;; customization interface (but still allow a free string as a
 ;; generator)
-(defcustom cmake-integration-generator nil
+(defcustom ci-generator nil
   "The generator to pass to cmake when no presets are used.
 
 If this is nil, then the generator is not explicitly set." :type '(string) :group 'cmake-integration)
 
 
-(defcustom cmake-integration-annotation-column 30
+(defcustom ci-annotation-column 30
   "Column where annotations should start during completion." :type '(integer) :group 'cmake-integration)
 
 
-(defcustom cmake-integration-include-subproject-targets-during-completion t
+(defcustom ci-include-subproject-targets-during-completion t
   "If t, include subproject targets when presenting target names for completion.
 
 When t (default) all targets are included during completion of
@@ -41,12 +41,12 @@ project are included (targets with projectIndex equal to zero)."
   :type 'boolean :safe #'booleanp :group 'cmake-integration)
 
 
-(defcustom cmake-integration-hide-utility-targets-during-completion nil
+(defcustom ci-hide-utility-targets-during-completion nil
   "If t, then utility targets are not included during completion."
   :type 'boolean :safe #'booleanp :group 'cmake-integration)
 
 
-(defcustom cmake-integration-hide-library-targets-during-completion nil
+(defcustom ci-hide-library-targets-during-completion nil
   "If t, then library targets are not included during completion."
   :type 'boolean :safe #'booleanp :group 'cmake-integration)
 
@@ -54,10 +54,10 @@ project are included (targets with projectIndex equal to zero)."
 ;; Tell the byte compile that
 ;; cmake-integration--run-working-directory-p is defined in the
 ;; "-core" file
-(declare-function cmake-integration--run-working-directory-p "cmake-integration-core.el")
+(declare-function ci--run-working-directory-p "cmake-integration-core.el")
 
 
-(defcustom cmake-integration-run-working-directory 'bin
+(defcustom ci-run-working-directory 'bin
   "Working directory when running a target executable.
 
 Possible values are the symbols `bin' (to run from the folder
@@ -66,28 +66,28 @@ and `root' (to run from the project root), as well as any string.
 In the case of a string, it should match an existing subfolder of
 the project root." :type '(choice symbol string)
   :group 'cmake-integration
-  :safe #'cmake-integration--run-working-directory-p
+  :safe #'ci--run-working-directory-p
   :local t)
 
 
-(defcustom cmake-integration-create-compile-commands-link t
+(defcustom ci-create-compile-commands-link t
   "If t, make a link of `compile_commands.json' to the project root.
 
 This helps lsp and clangd correctly parsing the project files."
   :type 'boolean :safe #'booleanp :group 'cmake-integration)
 
 
-(defcustom cmake-integration-use-dap-for-debug nil
+(defcustom ci-use-dap-for-debug nil
   "If t, use `dap-mode' with cpptools for debug.
 
 If nil, use standard gdb graphical interface (see Emacs manual)."
   :type 'boolean :safe #'booleanp :group 'cmake-integration)
 
 
-(defcustom cmake-integration-conan-arguments "--build missing" "Extra arguments to pass to conan." :type '(string) :group 'cmake-integration)
+(defcustom ci-conan-arguments "--build missing" "Extra arguments to pass to conan." :type '(string) :group 'cmake-integration)
 
 ;; TODO: Investigate if it is possible to get completions for the conan and cmake profiles in the custom interface
-(defcustom cmake-integration-conan-profile nil
+(defcustom ci-conan-profile nil
   "Conan profile to use, or an alist mapping cmake profiles to conan profiles."
   :type '(choice
           (const :tag "Don't use any Conan profile" nil)
@@ -99,7 +99,7 @@ If nil, use standard gdb graphical interface (see Emacs manual)."
   :group 'cmake-integration)
 
 
-(defcustom cmake-integration-include-conan-toolchain-file nil
+(defcustom ci-include-conan-toolchain-file nil
   "If t, pass '--toolchain conan_toolchain.cmake' to cmake.
 
 If you are using the `CMakeToolchain' generator, set this to true
@@ -107,17 +107,17 @@ in a directory local variable in your project."
   :type 'boolean :safe #'booleanp :group 'cmake-integration)
 
 
-(defcustom cmake-integration-docs-folder "${sourceDir}/docs"
+(defcustom ci-docs-folder "${sourceDir}/docs"
   "Folder containing the Doxyfile.
 
 If \"${sourceDir}/\" is in `cmake-integration-docs-folder' it
 will be replaced by the project root." :type 'string :group 'cmake-integration)
 
 
-(defvar cmake-integration-current-target nil "Name of the target that will be compiled and run.")
+(defvar ci-current-target nil "Name of the target that will be compiled and run.")
 
 
-(defvar cmake-integration-run-arguments "" "Command line arguments when running a target.")
+(defvar ci-run-arguments "" "Command line arguments when running a target.")
 
 
 ;; This an alist like
@@ -127,19 +127,19 @@ will be replaced by the project root." :type 'string :group 'cmake-integration)
 ;;    (cacheVariables (CMAKE_POLICY_DEFAULT_CMP0091 . "NEW"))
 ;;    (toolchainFile . "generators/conan_toolchain.cmake")
 ;;    (binaryDir . "/some/path/to/build/folder"))
-(defvar cmake-integration-configure-preset nil "Preset used for the configure step.")
+(defvar ci-configure-preset nil "Preset used for the configure step.")
 
 
-(defvar cmake-integration-build-preset nil "Preset used for the build step.")
+(defvar ci-build-preset nil "Preset used for the build step.")
 
 
-(defvar cmake-integration-test-preset nil "Preset used for the test step.")
+(defvar ci-test-preset nil "Preset used for the test step.")
 
 
-(defvar cmake-integration-package-preset nil "Preset used for the package step.")
+(defvar ci-package-preset nil "Preset used for the package step.")
 
 
-(defconst cmake-integration--multi-config-separator "/"
+(defconst ci--multi-config-separator "/"
   "Character used to separate target name from config name.
 
 In case of of multi-config generators, target names have the
@@ -155,3 +155,7 @@ https://cmake.org/cmake/help/latest/policy/CMP0037.html ).")
 (provide 'cmake-integration-variables)
 
 ;;; cmake-integration-variables.el ends here
+
+;; Local Variables:
+;; read-symbol-shorthands: (("ci-" . "cmake-integration-"))
+;; End:

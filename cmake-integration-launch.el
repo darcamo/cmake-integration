@@ -9,7 +9,7 @@
 ;; - Launch dired in build/target folder
 ;;
 
-(defun cmake-integration-get-target-executable-filename (&optional target)
+(defun ci-get-target-executable-filename (&optional target)
   "Get the executable filename for the target TARGET.
 
 The name is relative to the build folder. This is usually
@@ -23,7 +23,7 @@ If TARGET-NAME is not provided use the last target (saved in a
   ;; If both `target' and `cmake-integration-current-target' are nil,
   ;; throw an error asking the UE to select a target first by calling
   ;; `cmake-integration-save-and-compile'
-  (unless (or target cmake-integration-current-target)
+  (unless (or target ci-current-target)
     (error "Please select a target first `cmake-integration-save-and-compile' first"))
 
   ;; The `target-info' variable inside the `let' has the data from the
@@ -32,11 +32,11 @@ If TARGET-NAME is not provided use the last target (saved in a
   ;; file with more data about the target. We read this json file and
   ;; save the data in the `target-data' variable. From there we can
   ;; get the executable name from its `artifacts' field.
-  (let* ((target (or target cmake-integration-current-target))
-         (target-name (car (split-string target cmake-integration--multi-config-separator)))
+  (let* ((target (or target ci-current-target))
+         (target-name (car (split-string target ci--multi-config-separator)))
          (target-info (alist-get
                        target
-                       (cmake-integration--get-targets-from-codemodel-json-file)
+                       (ci--get-targets-from-codemodel-json-file)
                        nil nil 'equal)))
 
     (unless (cdr target-info)
@@ -45,7 +45,7 @@ If TARGET-NAME is not provided use the last target (saved in a
         (error "Unknown target: '%s'" target-name)))
 
     (let* ((target-json-file (file-name-concat
-                              (cmake-integration--get-reply-folder)
+                              (ci--get-reply-folder)
                               (alist-get 'jsonFile target-info)))
            (target-data (json-read-file target-json-file)))
 
@@ -59,145 +59,149 @@ If TARGET-NAME is not provided use the last target (saved in a
         (alist-get 'path (elt target-artifacts 0))))))
 
 
-(defun cmake-integration--get-working-directory (executable-filename)
+(defun ci--get-working-directory (executable-filename)
   "Get the working directory for to run EXECUTABLE-FILENAME."
-  (pcase cmake-integration-run-working-directory
-    ('root (cmake-integration--get-project-root-folder))
-    ('build (cmake-integration-get-build-folder))
-    ('bin (file-name-concat (cmake-integration-get-build-folder) (file-name-directory executable-filename)))
-    (_ (file-name-concat (cmake-integration--get-project-root-folder) cmake-integration-run-working-directory))))
+  (pcase ci-run-working-directory
+    ('root (ci--get-project-root-folder))
+    ('build (ci-get-build-folder))
+    ('bin (file-name-concat (ci-get-build-folder) (file-name-directory executable-filename)))
+    (_ (file-name-concat (ci--get-project-root-folder) ci-run-working-directory))))
 
 
-(defun cmake-integration-get-target-executable-full-path (executable-filename)
+(defun ci-get-target-executable-full-path (executable-filename)
   "Get the full path of EXECUTABLE-FILENAME."
-  (file-name-concat (cmake-integration-get-build-folder) executable-filename))
+  (file-name-concat (ci-get-build-folder) executable-filename))
 
 
-(defun cmake-integration--get-run-command-project-root-cwd (executable-filename)
+(defun ci--get-run-command-project-root-cwd (executable-filename)
   "Get the run command for EXECUTABLE-FILENAME from the project root folder."
   (format "cd %s && %s %s"
-          (cmake-integration--get-working-directory executable-filename)
-          (cmake-integration-get-target-executable-full-path executable-filename)
-          cmake-integration-run-arguments))
+          (ci--get-working-directory executable-filename)
+          (ci-get-target-executable-full-path executable-filename)
+          ci-run-arguments))
 
 
-(defun cmake-integration--get-run-command-build-folder-cwd (executable-filename)
+(defun ci--get-run-command-build-folder-cwd (executable-filename)
   "Get the run command for EXECUTABLE-FILENAME from the build folder."
   (format "cd %s && %s %s"
-          (cmake-integration--get-working-directory executable-filename)
+          (ci--get-working-directory executable-filename)
           executable-filename
-          cmake-integration-run-arguments))
+          ci-run-arguments))
 
 
-(defun cmake-integration--get-run-command-bin-folder-cwd (executable-filename)
+(defun ci--get-run-command-bin-folder-cwd (executable-filename)
   "Get the run command for EXECUTABLE-FILENAME from the binary folder.
 
 The binary folder is the folder containing the executable."
   (format "cd %s && ./%s %s"
-          (cmake-integration--get-working-directory executable-filename)
+          (ci--get-working-directory executable-filename)
           (file-name-nondirectory executable-filename)
-          cmake-integration-run-arguments))
+          ci-run-arguments))
 
 
-(defun cmake-integration--get-run-command-custom-cwd (executable-filename project-subfolder)
+(defun ci--get-run-command-custom-cwd (executable-filename project-subfolder)
   "Get the correct run command EXECUTABLE-FILENAME from a PROJECT-SUBFOLDER."
   (cl-assert (stringp project-subfolder))
   (format "cd %s && %s %s"
-          (cmake-integration--get-working-directory executable-filename)
-          (cmake-integration-get-target-executable-full-path executable-filename)
-          cmake-integration-run-arguments))
+          (ci--get-working-directory executable-filename)
+          (ci-get-target-executable-full-path executable-filename)
+          ci-run-arguments))
 
 
-(defun cmake-integration--get-run-command (executable-filename)
+(defun ci--get-run-command (executable-filename)
   "Get the correct run command for EXECUTABLE-FILENAME.
 
 Get the correct run command for EXECUTABLE-FILENAME respecting
 the value of the `cmake-integration-run-working-directory'
 variable."
-  (pcase cmake-integration-run-working-directory
-    ('root (cmake-integration--get-run-command-project-root-cwd executable-filename))
-    ('build (cmake-integration--get-run-command-build-folder-cwd executable-filename))
-    ('bin (cmake-integration--get-run-command-bin-folder-cwd executable-filename))
-    (_ (cmake-integration--get-run-command-custom-cwd executable-filename cmake-integration-run-working-directory))))
+  (pcase ci-run-working-directory
+    ('root (ci--get-run-command-project-root-cwd executable-filename))
+    ('build (ci--get-run-command-build-folder-cwd executable-filename))
+    ('bin (ci--get-run-command-bin-folder-cwd executable-filename))
+    (_ (ci--get-run-command-custom-cwd executable-filename ci-run-working-directory))))
 
 
 ;;;###autoload (autoload 'cmake-integration-run-last-target "cmake-integration")
-(defun cmake-integration-run-last-target ()
+(defun ci-run-last-target ()
   "Run the last compiled target."
   (interactive)
   (check-if-build-folder-exists-and-throws-if-not)
 
   ;; Run the target
-  (compile (cmake-integration--get-run-command (cmake-integration-get-target-executable-filename))))
+  (compile (ci--get-run-command (ci-get-target-executable-filename))))
 
 
-(defun cmake-integration--get-debug-command (executable-filename)
+(defun ci--get-debug-command (executable-filename)
   "Get the correct debug command for EXECUTABLE-FILENAME.
 
 Get the correct debug command for EXECUTABLE-FILENAME respecting
 the value of the `cmake-integration-run-working-directory'
 variable. This should be passed to gdb command in Emacs."
-  (let ((cwd (cmake-integration--get-working-directory executable-filename)))
+  (let ((cwd (ci--get-working-directory executable-filename)))
     (format
      "gdb -i=mi --cd=%s --args %s %s"
      cwd
-     (cmake-integration-get-target-executable-full-path executable-filename)
-     cmake-integration-run-arguments)))
+     (ci-get-target-executable-full-path executable-filename)
+     ci-run-arguments)))
 
 
-(defun cmake-integration--launch-gdb-with-last-target ()
+(defun ci--launch-gdb-with-last-target ()
   "Launch gdb inside Emacs to debug the last target."
-  (gdb (cmake-integration--get-debug-command (cmake-integration-get-target-executable-filename))))
+  (gdb (ci--get-debug-command (ci-get-target-executable-filename))))
 
 
 (declare-function dap-debug "dap-mode")
 
 
-(defun cmake-integration--launch-dap-debug-cpptools-last-target ()
+(defun ci--launch-dap-debug-cpptools-last-target ()
   "Launch `dap-debug' using cpptools to debug the last target."
   (require 'dap-mode)
-  (let ((executable-filename (cmake-integration-get-target-executable-filename)))
+  (let ((executable-filename (ci-get-target-executable-filename)))
 
-    (let ((program-path (expand-file-name (cmake-integration-get-target-executable-full-path executable-filename)))
-          (cwd (expand-file-name (cmake-integration--get-working-directory executable-filename))))
+    (let ((program-path (expand-file-name (ci-get-target-executable-full-path executable-filename)))
+          (cwd (expand-file-name (ci--get-working-directory executable-filename))))
 
       (dap-debug (list :type "cppdbg"
                        :request "launch"
                        :name "cmake-integration-target"
                        :MIMode "gdb"
                        :program program-path
-                       :arguments cmake-integration-run-arguments
+                       :arguments ci-run-arguments
                        :cwd cwd)))))
 
 
 ;;;###autoload (autoload 'cmake-integration-debug-last-target "cmake-integration")
-(defun cmake-integration-debug-last-target ()
+(defun ci-debug-last-target ()
   "Run the last compiled target."
   (interactive)
   (check-if-build-folder-exists-and-throws-if-not)
 
-  (if cmake-integration-use-dap-for-debug
-      (cmake-integration--launch-dap-debug-cpptools-last-target)
+  (if ci-use-dap-for-debug
+      (ci--launch-dap-debug-cpptools-last-target)
     ;; Run the target
-    (cmake-integration--launch-gdb-with-last-target)))
+    (ci--launch-gdb-with-last-target)))
 
 
-(defun cmake-integration--set-runtime-arguments (run-arguments)
+(defun ci--set-runtime-arguments (run-arguments)
   "Set arguments passed to the executable to RUN-ARGUMENTS."
   (interactive "sArguments: ")
-  (setq cmake-integration-run-arguments run-arguments)
+  (setq ci-run-arguments run-arguments)
   )
 
 
 ;;;###autoload (autoload 'cmake-integration-run-last-target-with-arguments "cmake-integration")
-(defun cmake-integration-run-last-target-with-arguments (run-arguments)
+(defun ci-run-last-target-with-arguments (run-arguments)
   "Run the last compiled target passing RUN-ARGUMENTS as arguments."
   (interactive "sArguments: ")
-  (setq cmake-integration-run-arguments run-arguments)
-  (cmake-integration-run-last-target))
+  (setq ci-run-arguments run-arguments)
+  (ci-run-last-target))
 
 
 
 (provide 'cmake-integration-launch)
 
 ;;; cmake-integration-launch.el ends here
+
+;; Local Variables:
+;; read-symbol-shorthands: (("ci-" . "cmake-integration-"))
+;; End:
