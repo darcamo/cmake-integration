@@ -114,6 +114,11 @@ If \"${sourceDir}/\" is in `cmake-integration-docs-folder' it
 will be replaced by the project root." :type 'string :group 'cmake-integration)
 
 
+(defcustom ci-use-separated-compilation-buffer-for-each-target nil
+  "If t, use a separate compilation buffer for each target."
+  :type 'boolean :safe #'booleanp :group 'cmake-integration)
+
+
 (defvar ci-current-target nil "Name of the target that will be compiled and run.")
 
 

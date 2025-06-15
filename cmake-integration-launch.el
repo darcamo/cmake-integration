@@ -108,6 +108,12 @@ The binary folder is the folder containing the executable."
           ci-run-arguments))
 
 
+(defun ci--compilation-buffer-name-function (name-of-mode)
+  "Get the compilation buffer name for NAME-OF-MODE current target name."
+  name-of-mode  ;; Avoid warning about unused argument
+  (format "*Running - %s*" cmake-integration-current-target))
+
+
 (defun ci--get-run-command (executable-filename)
   "Get the correct run command for EXECUTABLE-FILENAME.
 
@@ -127,8 +133,11 @@ variable."
   (interactive)
   (check-if-build-folder-exists-and-throws-if-not)
 
-  ;; Run the target
-  (compile (ci--get-run-command (ci-get-target-executable-filename))))
+  (let ((compilation-buffer-name-function (if ci-use-separated-compilation-buffer-for-each-target
+                                              'ci--compilation-buffer-name-function
+                                            compilation-buffer-name-function)))
+    ;; Run the target
+    (compile (ci--get-run-command (ci-get-target-executable-filename)))))
 
 
 (defun ci--get-debug-command (executable-filename)
