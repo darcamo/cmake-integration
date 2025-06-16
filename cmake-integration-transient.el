@@ -294,6 +294,16 @@ will be obtained from PRESET and this returns the string
   )
 
 
+(transient-define-prefix ci--doxygen-transient ()
+  "Perform actions related to doxygen."
+  ["Doxygen"
+   ("g" "Generate documentation" ci-generate-project-documentation :transient nil)
+   ("v" "View documentation" ci-view-project-documentation :transient nil)
+   ("e" "View documentation using eww" ci-view-project-documentation-in-eww :transient nil)
+   ]
+  )
+
+
 (transient-define-prefix ci-transient ()
   "Main transient menu, from where all other transient menus can be reached."
   [
@@ -324,6 +334,7 @@ will be obtained from PRESET and this returns the string
    [("ot" "Test" ci--test-transient)]
    [("oi" "Install" ci--install-transient)]
    [("op" "Package" ci--package-transient)]
+   [("od" "Doxygen" ci--doxygen-transient)]
    ;; [("w" "Workflow" ci--workflow-transient)]
    ]
   )

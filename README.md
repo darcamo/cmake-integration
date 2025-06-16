@@ -182,6 +182,14 @@ convenient method for setting this up is to create a directory variable and assi
 Conan profile name to the `cmake-integration-conan-profile` variable.
 
 
+# Transient support
+
+The cmake-integration package defines a transient menu (`cmake-integration-transient`) as a way to access most of the
+functions in the package. The main transient menu has quick access to setting presets and the target. From there there
+are subtransient menus for the different areas.
+
+![Main transient menu](images/transient-menu.png)
+
 
 <!-- Local Variables: -->
 <!-- fill-column: 120 -->
