@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 4.0)
+
 project(TestCmakeIntegration)
 
 add_library(somelib

@@ -1,5 +1,5 @@
 project(TestCmakeIntegration)
-cmake_minimum_required(VERSION 3.23)
+cmake_minimum_required(VERSION 4.0)
 
 # list(APPEND CMAKE_PREFIX_PATH "/home/darlan/git_files/cmake-integration/tests/test-project/build/")
 # list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
