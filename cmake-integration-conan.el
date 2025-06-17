@@ -58,17 +58,32 @@ in `tabulated-list-entries'."
           library-symbols))
 
 
-(defun ci--get-conan-list-as-tabulated-entries ()
-  "Get a list of library information of the installed conan packages.
+(defun ci--parsed-local-cache-has-error (local-cache)
+  "Check if the LOCAL-CACHE has an error."
+  (eq (caar local-cache) 'error))
+
+
+;; TODO This function is basically the same as if we used "conan search". Turn
+;; this function into a ci--get-conan-query-as-tabulated-entries. Then implement
+;; ci--get-conan-list-as-tabulated-entries and
+;; ci--get-conan-search-as-tabulated-entries as wrappers to it.
+(defun ci--get-conan-list-as-tabulated-entries (&optional pattern)
+  "Get installed conan packages that match PATTERN.
+
+If PATTERN is nil, return all packages in the conan cache.
 
 Each library information in the returned list is a list of 4 elements,
 in the form (NAME VERSION USER CHANNEL), being the library name, the
 library version, the user name and the channel name. If the user and
 channel names are not present, they are set to nil."
-  (let* ((json-string (shell-command-to-string "conan list -f json 2> /dev/null"))
+  (let* ((pattern (or pattern "*"))
+         (command (format "conan list -f json \"%s\" 2> /dev/null" pattern))
+         (json-string (shell-command-to-string command))
          (parsed-json (json-read-from-string json-string))
          (local-cache (alist-get 'Local\ Cache parsed-json)))
-    (ci--get-tabulated-entries-from-conan-local-cache local-cache)))
+
+    (unless (ci--parsed-local-cache-has-error local-cache)
+      (ci--get-tabulated-entries-from-conan-local-cache local-cache))))
 
 
 (defvar ci--conan-tabulated-list-columns
@@ -79,12 +94,22 @@ channel names are not present, they are set to nil."
   "Columns for the tabulated list.")
 
 
-(defun ci-view-conan-list-as-table ()
-  "Initialize the tabulated list mode."
+(defun ci-view-conan-list-as-table (&optional pattern)
+  "Show the list of packages in conan cache matching PATTERN.
+
+If PATTERN is nil, show all packages."
   (interactive)
-  (let ((buffer (get-buffer-create "*Conan List*")))
+
+  (when current-prefix-arg
+    (setq pattern (read-string "Enter a pattern to filter the conan list: ")))
+
+  (let ((buffer (get-buffer-create "*Conan List*"))
+        (func (if pattern
+                  (lambda () (ci--get-conan-list-as-tabulated-entries pattern))
+                (lambda () (ci--get-conan-list-as-tabulated-entries))))
+        )
     (with-current-buffer buffer
-      (setq tabulated-list-entries 'ci--get-conan-list-as-tabulated-entries)
+      (setq tabulated-list-entries func)
       (conan-list-view-mode)
       (tabulated-list-print t))
     (switch-to-buffer buffer)
