@@ -117,11 +117,40 @@ If PATTERN is nil, show all packages."
     ))
 
 
+(defun ci--conan-delete-itens (items)
+  "Delete the items in ITEMS.
+
+ITEMS is a list of conan library specifications. The function will
+delete the libraries from the conan cache.
+
+The output of the commands is added to a `*conan remove output*' buffer."
+  (mapc #'(lambda (item)
+            (call-process "conan" nil "*conan remove output*" nil "remove" "--confirm" item))
+        items))
+
+
+(defun ci--conan-tablist-operations-function (operation &optional args)
+  "Handles OPERATION on ARGS.
+
+This is a function for handling operations on the entries. The operation
+is indicated by OPERATION.
+
+See the variable `tablist-operations-function' for more."
+  (message (format "Operation is %s" operation))
+  (pcase operation
+    ('supported-operations '(refresh delete find-entry))
+    ('refresh (message "Refreshing the tablist..."))
+    ('delete (ci--conan-delete-itens args))
+    ('find-entry (message (format "Finding entry %s" args)))
+    (_ (message "Operation %s not implemented." operation)))
+  )
+
 
 (define-derived-mode conan-list-view-mode tablist-mode "Conan List"
   "Visualize the output of conan list in as a table."
   (setq tabulated-list-format ci--conan-tabulated-list-columns)
   (setq tabulated-list-padding 2)
+  (setq tablist-operations-function 'ci--conan-tablist-operations-function)
   (tabulated-list-init-header))
 
 ;; TODO Handle marked entries
