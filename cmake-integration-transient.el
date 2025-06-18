@@ -187,10 +187,10 @@ will be obtained from PRESET and this returns the string
 (transient-define-prefix ci--conan-list-prefix ()
   "List conan packages."
   ["Conan List"
-   ("l" "List all packages" ci-view-conan-list-as-table)
+   ("l" "List all packages" ci-conan-list-packages-in-local-cache)
    ("p" "List packages matching pattern" (lambda () (interactive)
                                            (let ((pattern (read-string "Pattern to match: ")))
-                                             (ci-view-conan-list-as-table pattern))))
+                                             (ci-conan-list-packages-in-local-cache pattern))))
    ("q" "Quit" (lambda () (interactive) (transient-quit-seq)))
    ]
   )
@@ -201,6 +201,7 @@ will be obtained from PRESET and this returns the string
   ["Conan"
    ("p" ci--set-conan-profile-sufix)
    ("l" "List Packages" ci--conan-list-prefix)
+   ("s" "Search in remote repositories" ci-conan-search)
    ("i" "Install" (lambda () (interactive) (ci-run-conan)))
    ]
   )

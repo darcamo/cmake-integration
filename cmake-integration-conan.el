@@ -6,6 +6,8 @@
 (require 'tablist)
 (require 'cmake-integration-build)
 
+(defvar ci--library-location "" "Library location that will be locally set.")
+
 (defun ci--get-conan-available-profiles ()
   "Get the available conan profiles."
   (let ((output (shell-command-to-string "conan profile list")))
@@ -36,6 +38,7 @@ are set to nil."
      (propertize version 'face 'font-lock-number-face)
      (propertize user 'face 'font-lock-variable-name-face)
      (propertize channel 'face 'font-lock-variable-name-face)
+     ci--library-location
      )))
 
 
@@ -63,10 +66,33 @@ in `tabulated-list-entries'."
   (eq (caar local-cache) 'error))
 
 
-;; TODO This function is basically the same as if we used "conan search". Turn
-;; this function into a ci--get-conan-query-as-tabulated-entries. Then implement
-;; ci--get-conan-list-as-tabulated-entries and
-;; ci--get-conan-search-as-tabulated-entries as wrappers to it.
+(defun ci--get-conan-command-result-as-tabulated-entries (conan-command)
+  "Run the CONAN-COMMAND and return the result as tabulated entries.
+
+CONNAN-COMMAND is a string with the conan command to be run. It should
+pass the flag to conan to output the result in json format, as well as
+redirect the error output
+
+A suitable command would be something like below.
+
+    `conan list -f json 2> /dev/null'"
+
+  (let* ((json-string (shell-command-to-string conan-command))
+         (parsed-json (json-read-from-string json-string))
+         (repositories (mapcar 'car parsed-json))
+         (tabulated-entries))
+
+    (dolist (repo repositories)
+      (let ((ci--library-location (symbol-name repo))
+            (libraries (alist-get repo parsed-json)))
+
+        (unless (ci--parsed-local-cache-has-error libraries)
+          (setq tabulated-entries
+                (append tabulated-entries
+                        (ci--get-tabulated-entries-from-conan-local-cache libraries))))))
+    tabulated-entries))
+
+
 (defun ci--get-conan-list-as-tabulated-entries (&optional pattern)
   "Get installed conan packages that match PATTERN.
 
@@ -77,24 +103,44 @@ in the form (NAME VERSION USER CHANNEL), being the library name, the
 library version, the user name and the channel name. If the user and
 channel names are not present, they are set to nil."
   (let* ((pattern (or pattern "*"))
-         (command (format "conan list -f json \"%s\" 2> /dev/null" pattern))
-         (json-string (shell-command-to-string command))
-         (parsed-json (json-read-from-string json-string))
-         (local-cache (alist-get 'Local\ Cache parsed-json)))
+         (command (format "conan list -f json \"%s\" 2> /dev/null" pattern)))
+    (ci--get-conan-command-result-as-tabulated-entries command)))
 
-    (unless (ci--parsed-local-cache-has-error local-cache)
-      (ci--get-tabulated-entries-from-conan-local-cache local-cache))))
+
+(defun ci--conan-search-as-tabulated-entries (pattern)
+  "Search for PATTERN in the remote repositories.
+
+The result is returned as tabulated entries."
+  (let ((command (format "conan search -f json \"%s\" 2> /dev/null" pattern)))
+    (ci--get-conan-command-result-as-tabulated-entries command)))
 
 
 (defvar ci--conan-tabulated-list-columns
   [("Name" 30 t)
    ("Version" 14 t)
    ("User" 10 t)
-   ("Channel" 15 t)]
+   ("Channel" 15 t)
+   ("Location" 15 t)
+   ]
   "Columns for the tabulated list.")
 
 
-(defun ci-view-conan-list-as-table (&optional pattern)
+
+(defun ci--show-in-tabulated-mode (buffer tabulated-list-entries-func)
+  "Compute entries with TABULATED-LIST-ENTRIES-FUNC and shown them in BUFFER.
+
+The entries are shown using `conan-list-view-mode' and
+TABULATED-LIST-ENTRIES-FUNC should return entries in the format
+specified by `ci--conan-tabulated-list-columns'."
+  (with-current-buffer buffer
+    (setq tabulated-list-entries tabulated-list-entries-func)
+    (conan-list-view-mode)
+    (tabulated-list-print t))
+  (switch-to-buffer buffer)
+  (tablist-minor-mode 1))
+
+
+(defun ci-conan-list-packages-in-local-cache (&optional pattern)
   "Show the list of packages in conan cache matching PATTERN.
 
 If PATTERN is nil, show all packages."
@@ -106,15 +152,20 @@ If PATTERN is nil, show all packages."
   (let ((buffer (get-buffer-create "*Conan List*"))
         (func (if pattern
                   (lambda () (ci--get-conan-list-as-tabulated-entries pattern))
-                (lambda () (ci--get-conan-list-as-tabulated-entries))))
-        )
-    (with-current-buffer buffer
-      (setq tabulated-list-entries func)
-      (conan-list-view-mode)
-      (tabulated-list-print t))
-    (switch-to-buffer buffer)
-    (tablist-minor-mode 1)
-    ))
+                (lambda () (ci--get-conan-list-as-tabulated-entries)))))
+    (ci--show-in-tabulated-mode buffer func)))
+
+
+(defun ci-conan-search (&optional pattern)
+  "Search for PATTERN in the remote repositories."
+  (interactive)
+
+  (unless pattern
+    (setq pattern (read-string "Enter a pattern to search in conan remote repositories: ")))
+
+  (let ((buffer (get-buffer-create (format "*Conan Search: \"%s\"*" pattern)))
+        (func (lambda () (ci--conan-search-as-tabulated-entries pattern))))
+    (ci--show-in-tabulated-mode buffer func)))
 
 
 (defun ci--conan-delete-itens (items)
@@ -148,6 +199,7 @@ See the variable `tablist-operations-function' for more."
 
 (define-derived-mode conan-list-view-mode tablist-mode "Conan List"
   "Visualize the output of conan list in as a table."
+  :interactive nil
   (setq tabulated-list-format ci--conan-tabulated-list-columns)
   (setq tabulated-list-padding 2)
   (setq tablist-operations-function 'ci--conan-tablist-operations-function)
