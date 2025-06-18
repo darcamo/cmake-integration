@@ -93,7 +93,7 @@ will be obtained from PRESET and this returns the string
   (let* ((profile-is-string (stringp ci-conan-profile))
          (profile-name (if profile-is-string ci-conan-profile ""))
          (command-line (format "--profile=%s" profile-name)))
-    (format "Select conan profile (%s)" (ci--get-command-line-arg-with-face command-line profile-is-string))))
+    (format "Select Conan profile (%s)" (ci--get-command-line-arg-with-face command-line profile-is-string))))
 
 
 (defun ci--describe-install-prefix ()
@@ -184,12 +184,23 @@ will be obtained from PRESET and this returns the string
   )
 
 
+(transient-define-prefix ci--conan-list-prefix ()
+  "List conan packages."
+  ["Conan List"
+   ("l" "List all packages" ci-view-conan-list-as-table)
+   ("p" "List packages matching pattern" (lambda () (interactive)
+                                           (let ((pattern (read-string "Pattern to match: ")))
+                                             (ci-view-conan-list-as-table pattern))))
+   ("q" "Quit" (lambda () (interactive) (transient-quit-seq)))
+   ]
+  )
+
+
 (transient-define-prefix ci--conan-transient ()
   "Perform actions related to the conan package manager."
   ["Conan"
    ("p" ci--set-conan-profile-sufix)
-   ;; ("l" "List installed packages" ci-run-conan-list)
-   ("l" "List installed packages" ci-view-conan-list-as-table)
+   ("l" "List Packages" ci--conan-list-prefix)
    ("i" "Install" (lambda () (interactive) (ci-run-conan)))
    ]
   )
