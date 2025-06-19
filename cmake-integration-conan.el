@@ -14,6 +14,19 @@
     (cdr (split-string output "\n" t))))
 
 
+(defun ci--get-conan-remote-repositories-names ()
+  "Get the list of Conan remote names."
+  (interactive)
+  (let* ((command-output (shell-command-to-string "conan remote list -f json"))
+         (parsed-json (json-read-from-string command-output)))
+    (seq-filter
+     #'identity
+     (mapcar (lambda (remote)
+               (when (eq (alist-get 'enabled remote) t) ;; Check if 'enabled' is true (t)
+                 (alist-get 'name remote))) ;; Extract name if enabled
+             parsed-json))))
+
+
 ;;;###autoload (autoload 'cmake-integration-select-conan-profile "cmake-integration")
 (defun ci-select-conan-profile ()
   "Select one of the available conan profiles and return the chosen one."
@@ -108,11 +121,16 @@ channel names are not present, they are set to nil."
     (ci--get-conan-command-result-as-tabulated-entries command)))
 
 
-(defun ci--conan-search-as-tabulated-entries (pattern)
-  "Search for PATTERN in the remote repositories.
+(defun ci--conan-search-as-tabulated-entries (pattern &optional remote)
+  "Search for PATTERN in the REMOTE repository.
+
+If REMOTE is nil, search in all remotes.
 
 The result is returned as tabulated entries."
-  (let ((command (format "conan search -f json \"%s\" 2> /dev/null" pattern)))
+  (let* ((remote-string (if remote
+                            (format "--remote %s" remote)
+                          ""))
+         (command (format "conan search -f json \"%s\" %s 2> /dev/null" pattern remote-string)))
     (ci--get-conan-command-result-as-tabulated-entries command)))
 
 
@@ -159,15 +177,17 @@ If PATTERN is nil, show all packages."
 
 
 ;;;###autoload (autoload 'cmake-integration-conan-search "cmake-integration")
-(defun ci-conan-search (&optional pattern)
-  "Search for PATTERN in the remote repositories."
+(defun ci-conan-search (&optional pattern remote)
+  "Search for PATTERN in the REMOTE repository.
+
+If REMOTE is nil, search in all remotes."
   (interactive)
 
   (unless pattern
     (setq pattern (read-string "Enter a pattern to search in conan remote repositories: ")))
 
   (let ((buffer (get-buffer-create (format "*Conan Search: \"%s\"*" pattern)))
-        (func (lambda () (ci--conan-search-as-tabulated-entries pattern))))
+        (func (lambda () (ci--conan-search-as-tabulated-entries pattern remote))))
     (ci--show-in-tabulated-mode buffer func)))
 
 
