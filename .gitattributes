@@ -1,0 +1,2 @@
+CMakeLists.txt linguist-detectable=false
+CMakePresets.json linguist-detectable=false

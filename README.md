@@ -181,10 +181,19 @@ It's worth noting that when utilizing Conan’s new toolchains, it is recommende
 convenient method for setting this up is to create a directory variable and assign it a value of the project-specific
 Conan profile name to the `cmake-integration-conan-profile` variable.
 
+## Display conan cache and searches in repositories
+
+The `cmake-integration-conan-list-packages-in-local-cache` function lists locally installed libraries, while the `cmake-integration-conan-search` function searches for libraries across all Conan repositories. Both functions display the results in a tabulated list buffer, offering convenient operations for interaction.
+
+![Searching boost library](images/conan_search_boost.png)
+
+From the tabulated list, you can leverage standard functionality such as filtering, deleting items (which triggers Conan
+to uninstall the marked libraries from its cache), copying selected items to the kill ring (`w` key) for yanking into
+`conanfile.txt`, and more.
 
 # Transient support
 
-The cmake-integration package defines a transient menu (`cmake-integration-transient`) as a way to access most of the
+The `cmake-integration` package defines a transient menu (`cmake-integration-transient`) as a way to access most of the
 functions in the package. The main transient menu has quick access to setting presets and the target. From there there
 are subtransient menus for the different areas.
 
