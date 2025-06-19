@@ -4,10 +4,6 @@
 
 ;;; Code:
 
-;; TODO: Add functions to:
-;; - Launch terminal in build/target folder
-;; - Launch dired in build/target folder
-;;
 
 (defun ci-get-target-executable-filename (&optional target)
   "Get the executable filename for the target TARGET.

@@ -8,6 +8,7 @@
 (defun ci-open-shell-in-build-folder ()
   "Open eshell in the build folder."
   (interactive)
+  (check-if-build-folder-exists-and-throws-if-not)
   (let ((default-directory (ci-get-build-folder)))
     (eshell)))
 
@@ -16,6 +17,7 @@
 (defun ci-open-dired-in-build-folder ()
   "Open Dired in the buiild folder."
   (interactive)
+  (check-if-build-folder-exists-and-throws-if-not)
   (dired (ci-get-build-folder)))
 
 
