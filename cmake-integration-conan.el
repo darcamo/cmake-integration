@@ -52,7 +52,7 @@ are set to nil."
      (propertize version 'face 'font-lock-number-face)
      (propertize user 'face 'font-lock-variable-name-face)
      (propertize channel 'face 'font-lock-variable-name-face)
-     ci--library-location
+     (propertize ci--library-location 'face 'font-lock-builtin-face)
      )))
 
 
