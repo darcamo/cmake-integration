@@ -8,9 +8,6 @@
 (require 'cmake-integration-cpack)
 (require 'cmake-integration-ctest)
 
-;; TODO: Change function names with "sufix" to suffix
-
-;; TODO: Add a transient for doxygen commands
 
 
 ;; (defun ci--display-configure-preset ()
@@ -105,7 +102,7 @@ will be obtained from PRESET and this returns the string
             (ci--get-command-line-arg-with-face command-line has-value))))
 
 
-(transient-define-suffix ci--set-configure-preset-sufix ()
+(transient-define-suffix ci--set-configure-preset-suffix ()
   "Set configure preset."
   :transient 'transient--do-call
   :description #'ci--describe-configure-preset-command-line
@@ -115,7 +112,7 @@ will be obtained from PRESET and this returns the string
     (ci-select-configure-preset)))
 
 
-(transient-define-suffix ci--set-build-preset-sufix ()
+(transient-define-suffix ci--set-build-preset-suffix ()
   "Set build preset."
   :transient 'transient--do-call
   :description #'ci--describe-build-preset-command-line
@@ -125,7 +122,7 @@ will be obtained from PRESET and this returns the string
     (ci-select-build-preset)))
 
 
-(transient-define-suffix ci--set-test-preset-sufix ()
+(transient-define-suffix ci--set-test-preset-suffix ()
   "Set test preset."
   :transient 'transient--do-call
   :description #'ci--describe-test-preset-command-line
@@ -135,7 +132,7 @@ will be obtained from PRESET and this returns the string
     (ci-select-test-preset)))
 
 
-(transient-define-suffix ci--set-package-preset-sufix ()
+(transient-define-suffix ci--set-package-preset-suffix ()
   "Set package preset."
   :transient 'transient--do-call
   :description #'ci--describe-package-preset-command-line
@@ -145,7 +142,7 @@ will be obtained from PRESET and this returns the string
     (ci-select-package-preset)))
 
 
-(transient-define-suffix ci--set-build-target-sufix ()
+(transient-define-suffix ci--set-build-target-suffix ()
   :transient 'transient--do-call
   :description 'ci--describe-build-target
   (interactive)
@@ -154,7 +151,7 @@ will be obtained from PRESET and this returns the string
     (ci--select-build-target)))
 
 
-(transient-define-suffix ci--set-conan-profile-sufix ()
+(transient-define-suffix ci--set-conan-profile-suffix ()
   :transient 'transient--do-call
   :description 'ci--describe-conan-profile
   (interactive)
@@ -163,7 +160,7 @@ will be obtained from PRESET and this returns the string
     (ci-select-conan-profile)))
 
 
-(transient-define-suffix ci--set-install-prefix-sufix ()
+(transient-define-suffix ci--set-install-prefix-suffix ()
   :transient 'transient--do-call
   :description 'ci--describe-install-prefix
   (interactive)
@@ -175,10 +172,10 @@ will be obtained from PRESET and this returns the string
 (transient-define-prefix ci--all-presetts-transient ()
   "Easily set any o the possible cmake presets."
   ["Set Presets"
-   ("sc" ci--set-configure-preset-sufix)
-   ("sb" ci--set-build-preset-sufix)
-   ("st" ci--set-test-preset-sufix)
-   ("sp" ci--set-package-preset-sufix)
+   ("sc" ci--set-configure-preset-suffix)
+   ("sb" ci--set-build-preset-suffix)
+   ("st" ci--set-test-preset-suffix)
+   ("sp" ci--set-package-preset-suffix)
    ("q" "Quit" (lambda () (interactive) (transient-quit-seq)))
    ]
   )
@@ -199,7 +196,7 @@ will be obtained from PRESET and this returns the string
 (transient-define-prefix ci--conan-transient ()
   "Perform actions related to the conan package manager."
   ["Conan"
-   ("p" ci--set-conan-profile-sufix)
+   ("p" ci--set-conan-profile-suffix)
    ("l" "List Packages" ci--conan-list-prefix)
    ("s" "Search in remote repositories" ci-conan-search)
    ("i" "Install" (lambda () (interactive) (ci-run-conan)))
@@ -213,7 +210,7 @@ will be obtained from PRESET and this returns the string
   ["Configure"
    :pad-keys t
    ("f" "Removing existing cache" "--fresh" :transient t)
-   ("p" ci--set-configure-preset-sufix)
+   ("p" ci--set-configure-preset-suffix)
    ;; ("b" "Select the build folder" (lambda ()
    ;;             (interactive)
    ;;             (message "Build folder %s selected"
@@ -233,8 +230,8 @@ will be obtained from PRESET and this returns the string
 (transient-define-prefix ci--build-transient ()
   "Performe actions related to building a target."
   ["Build"
-   ("p" ci--set-build-preset-sufix)
-   ("t" ci--set-build-target-sufix)
+   ("p" ci--set-build-preset-suffix)
+   ("t" ci--set-build-target-suffix)
    ("j" "Number of concurrent processes to use" "--jobs=" :transient t)
    ;; ("c" "Select the configuration (only for ninja multi-config)" (lambda () (interactive) (message "Implement-me")) :transient nil)
    ("C" "Clean first" "--clean-first" :transient t)
@@ -249,7 +246,7 @@ will be obtained from PRESET and this returns the string
 (transient-define-prefix ci--test-transient ()
   "Perform actions related to running ctest."
   ["Test"
-   ("p" ci--set-test-preset-sufix)
+   ("p" ci--set-test-preset-suffix)
    ;; ("d" "Select test directory" ci-select-configure-preset :transient nil)
    ("f" "Run only previously failed tests" "--rerun-failed" :transient t)
    ("o" "Output anything if the test should fail." "--output-on-failure" :transient t)
@@ -269,7 +266,7 @@ will be obtained from PRESET and this returns the string
   "Perform actions related to installing wih cmake."
   ["Install"
    ;; ("c" "Select the configuration (only for ninja multi-config)" (lambda () (interactive) (message "Implement-me")) :transient nil)
-   ("p" ci--set-install-prefix-sufix)
+   ("p" ci--set-install-prefix-suffix)
    ("s" "Strip before installing" "--strip")
    ("C" "Component" "--component=")
    ("i" "Install" (lambda () (interactive)
@@ -285,7 +282,7 @@ will be obtained from PRESET and this returns the string
 (transient-define-prefix ci--package-transient ()
   "Perform actions related to running cpack."
   ["Package"
-   ("p" ci--set-package-preset-sufix)
+   ("p" ci--set-package-preset-suffix)
    ;; ("G" "Select the generator" (lambda () (interactive)(message "Set Generator")) :transient t)
    ("c" "Create package" ci-run-cpack :transient t)
    ("q" "Quit" transient-quit-one)
@@ -297,7 +294,7 @@ will be obtained from PRESET and this returns the string
   "Perform actions related to running or debugging an executable target."
   ["Run and Debug"
    ("a" "Set runtime arguments" ci--set-runtime-arguments :transient t)
-   ("t" ci--set-build-target-sufix)
+   ("t" ci--set-build-target-suffix)
    ("r" "Run last target" ci-run-last-target)
    ("d" "Debug with gdb" ci-debug-last-target)
    ("q" "Quit" transient-quit-one)
@@ -333,10 +330,10 @@ will be obtained from PRESET and this returns the string
     ;; (:info #'ci--display-build-preset :format " %d")
     ;; (:info #'ci--display-test-preset :format " %d")
     ;; (:info #'ci--display-package-preset :format " %d")
-    ("sc" ci--set-configure-preset-sufix)
-    ("sb" ci--set-build-preset-sufix)
-    ("st" ci--set-test-preset-sufix)
-    ("sp" ci--set-package-preset-sufix)
+    ("sc" ci--set-configure-preset-suffix)
+    ("sb" ci--set-build-preset-suffix)
+    ("st" ci--set-test-preset-suffix)
+    ("sp" ci--set-package-preset-suffix)
     ;; ("s" "Set any of the presets" ci--all-presetts-transient)
     ]
    ["Util"
@@ -346,7 +343,7 @@ will be obtained from PRESET and this returns the string
     ("q" "Quit" transient-quit-one)
     ]
    ["Target"
-    ("t" ci--set-build-target-sufix)
+    ("t" ci--set-build-target-suffix)
     ]
    ]
   ["Operations"
