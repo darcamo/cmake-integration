@@ -191,7 +191,7 @@ will be obtained from PRESET and this returns the string
    ("p" "List packages matching pattern" (lambda () (interactive)
                                            (let ((pattern (read-string "Pattern to match: ")))
                                              (ci-conan-list-packages-in-local-cache pattern))))
-   ("q" "Quit" (lambda () (interactive) (transient-quit-seq)))
+   ("q" "Quit" transient-quit-one)
    ]
   )
 
@@ -203,6 +203,7 @@ will be obtained from PRESET and this returns the string
    ("l" "List Packages" ci--conan-list-prefix)
    ("s" "Search in remote repositories" ci-conan-search)
    ("i" "Install" (lambda () (interactive) (ci-run-conan)))
+   ("q" "Quit" transient-quit-one)
    ]
   )
 
@@ -224,6 +225,7 @@ will be obtained from PRESET and this returns the string
                       (let ((extra-args (transient-args (oref transient-current-prefix command))))
                         (ci-cmake-reconfigure extra-args)))
     :transient nil)
+   ("q" "Quit" transient-quit-one)
    ]
   )
 
@@ -239,6 +241,7 @@ will be obtained from PRESET and this returns the string
    ("b" "Build" (lambda () (interactive)
                   (let ((extra-args (transient-args (oref transient-current-prefix command))))
                     (ci-save-and-compile-last-target extra-args))) :transient nil)
+   ("q" "Quit" transient-quit-one)
    ]
   )
 
@@ -252,11 +255,12 @@ will be obtained from PRESET and this returns the string
    ("o" "Output anything if the test should fail." "--output-on-failure" :transient t)
    ;; ("j" "Number of test in parallel" ci-select-configure-preset :transient nil)
    ("P" "Show progress" "--progress")
-   ("q" "Quiet" "--quiet" :transient t)
+   ("Q" "Quiet" "--quiet" :transient t)
    ("t" "Run tests" (lambda () (interactive)
                       (let ((extra-args (transient-args (oref transient-current-prefix command))))
                         (ci-run-ctest extra-args)))
     :transient nil)
+   ("q" "Quit" transient-quit-one)
    ]
   )
 
@@ -272,6 +276,7 @@ will be obtained from PRESET and this returns the string
                     (let ((extra-args (transient-args (oref transient-current-prefix command))))
                       (ci-run-cmake-install extra-args)))
     :transient nil)
+   ("q" "Quit" transient-quit-one)
    ]
   )
 
@@ -283,6 +288,7 @@ will be obtained from PRESET and this returns the string
    ("p" ci--set-package-preset-sufix)
    ;; ("G" "Select the generator" (lambda () (interactive)(message "Set Generator")) :transient t)
    ("c" "Create package" ci-run-cpack :transient t)
+   ("q" "Quit" transient-quit-one)
    ]
   )
 
@@ -294,6 +300,7 @@ will be obtained from PRESET and this returns the string
    ("t" ci--set-build-target-sufix)
    ("r" "Run last target" ci-run-last-target)
    ("d" "Debug with gdb" ci-debug-last-target)
+   ("q" "Quit" transient-quit-one)
    ]
   )
 
@@ -302,7 +309,8 @@ will be obtained from PRESET and this returns the string
   "Perform actions related to running a workflow."
   ["Workflow"
    ;; choose preset -> Implement-me
-   ("w" "Run workflow" (lambda () (interactive) (message "Implement-me")) :transient nil)]
+   ("w" "Run workflow" (lambda () (interactive) (message "Implement-me")) :transient nil)
+   ("q" "Quit" transient-quit-one)]
   )
 
 
@@ -312,6 +320,7 @@ will be obtained from PRESET and this returns the string
    ("g" "Generate documentation" ci-generate-project-documentation :transient nil)
    ("v" "View documentation" ci-view-project-documentation :transient nil)
    ("e" "View documentation using eww" ci-view-project-documentation-in-eww :transient nil)
+   ("q" "Quit" transient-quit-one)
    ]
   )
 
@@ -333,7 +342,9 @@ will be obtained from PRESET and this returns the string
    ["Util"
     ("ud" "Dired in build folder" ci-open-dired-in-build-folder)
     ("us" "Shell in build folder" ci-open-shell-in-build-folder)
-    ("ur" "Remove the build folder" ci-delete-build-folder :transient transient--do-call)]
+    ("ur" "Remove the build folder" ci-delete-build-folder :transient transient--do-call)
+    ("q" "Quit" transient-quit-one)
+    ]
    ["Target"
     ("t" ci--set-build-target-sufix)
     ]
