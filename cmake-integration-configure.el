@@ -7,7 +7,6 @@
 (require 'cmake-integration-core-presets)
 
 
-(declare-function ci-get-conan-run-command "cmake-integration-conan.el")
 (declare-function ci--prepend-conan-command "cmake-integration-conan.el")
 
 

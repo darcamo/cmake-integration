@@ -14,6 +14,7 @@
     (cdr (split-string output "\n" t))))
 
 
+;;;###autoload (autoload 'cmake-integration-select-conan-profile "cmake-integration")
 (defun ci-select-conan-profile ()
   "Select one of the available conan profiles and return the chosen one."
   (interactive)
@@ -140,6 +141,7 @@ specified by `ci--conan-tabulated-list-columns'."
   (tablist-minor-mode 1))
 
 
+;;;###autoload (autoload 'cmake-integration-conan-list-packages-in-local-cache "cmake-integration")
 (defun ci-conan-list-packages-in-local-cache (&optional pattern)
   "Show the list of packages in conan cache matching PATTERN.
 
@@ -156,6 +158,7 @@ If PATTERN is nil, show all packages."
     (ci--show-in-tabulated-mode buffer func)))
 
 
+;;;###autoload (autoload 'cmake-integration-conan-search "cmake-integration")
 (defun ci-conan-search (&optional pattern)
   "Search for PATTERN in the remote repositories."
   (interactive)
@@ -197,45 +200,28 @@ See the variable `tablist-operations-function' for more."
   )
 
 
-(define-derived-mode conan-list-view-mode tablist-mode "Conan List"
+(define-derived-mode conan-list-view-mode tablist-mode "Conan"
   "Visualize the output of conan list in as a table."
   :interactive nil
   (setq tabulated-list-format ci--conan-tabulated-list-columns)
   (setq tabulated-list-padding 2)
   (setq tablist-operations-function 'ci--conan-tablist-operations-function)
-  (tabulated-list-init-header))
+  (tabulated-list-init-header)
+
+  ;; Add a keymap for the mode
+  (use-local-map (let ((map (make-sparse-keymap)))
+                   (set-keymap-parent map tablist-mode-map)
+                   (define-key map "o" 'ci--conan-transient)
+                   (define-key map "c" 'ci--conan-transient)
+                   (define-key map "l" 'ci-conan-list-packages-in-local-cache)
+                   (define-key map "S" 'ci-conan-search)
+                   ;; (define-key map "f" 'tablist-find-entry)
+                   ;; (define-key map "r" 'tablist-refresh)
+                   map))
+  )
 
 ;; TODO Handle marked entries
-;; TODO Handle items marked for deletion
 
-
-
-
-
-;; (defun ci-run-conan-list ()
-;;   "Run `conan list` to list installed packages.
-
-;; The result is displayed in a `Conan List` buffer."
-;;   (interactive)
-;;   (let* ((output (shell-command-to-string "conan list"))
-;;          (buffer (get-buffer-create "*Conan List*")))
-;;     (with-current-buffer buffer
-;;       (erase-buffer)
-;;       (insert output))
-;;     (display-buffer buffer)))
-
-
-;; (defun ci-run-conan-list-2 ()
-;;   "Run `conan list` to list installed packages.
-
-;; The result is displayed in a `Conan List` buffer."
-;;   (interactive)
-;;   (let ((json-output (shell-command-to-string "conan list -f json 2> /dev/null"))
-;;         (buffer (get-buffer-create "*Conan List*")))
-;;     (with-current-buffer buffer
-;;       (erase-buffer)
-;;       (insert json-output))
-;;     (display-buffer buffer)))
 
 
 (defun ci--get-conan-run-command (&optional profile)
