@@ -176,6 +176,11 @@ If PATTERN is nil, show all packages."
     (ci--show-in-tabulated-mode buffer func)))
 
 
+(defun ci--get-conan-search-buffer-name (pattern)
+  "Return the name of the buffer for searching conan packages with PATTERN."
+  (format "*Conan Search: \"%s\"*" pattern))
+
+
 ;;;###autoload (autoload 'cmake-integration-conan-search "cmake-integration")
 (defun ci-conan-search (&optional pattern remote)
   "Search for PATTERN in the REMOTE repository.
@@ -186,7 +191,7 @@ If REMOTE is nil, search in all remotes."
   (unless pattern
     (setq pattern (read-string "Enter a pattern to search in conan remote repositories: ")))
 
-  (let ((buffer (get-buffer-create (format "*Conan Search: \"%s\"*" pattern)))
+  (let ((buffer (get-buffer-create (ci--get-conan-search-buffer-name pattern)))
         (func (lambda () (ci--conan-search-as-tabulated-entries pattern remote))))
     (ci--show-in-tabulated-mode buffer func)))
 
@@ -203,6 +208,16 @@ The output of the commands is added to a `*conan remove output*' buffer."
         items))
 
 
+(defun ci--conan-find-item (library-spec)
+  "Get only the library name from the LIBRARY-SPEC."
+  (let* ((library-name (car (split-string library-spec "/")))
+         (buffer-name (ci--get-conan-search-buffer-name library-name))
+         (buffer-exists (bufferp (get-buffer buffer-name))))
+    (if buffer-exists
+        (switch-to-buffer buffer-name)
+      (ci-conan-search library-name))))
+
+
 (defun ci--conan-tablist-operations-function (operation &optional args)
   "Handles OPERATION on ARGS.
 
@@ -213,9 +228,9 @@ See the variable `tablist-operations-function' for more."
   (message (format "Operation is %s" operation))
   (pcase operation
     ('supported-operations '(refresh delete find-entry))
-    ('refresh (message "Refreshing the tablist..."))
+    ('refresh (message "Refreshing the tablist... Not implemented yet"))
     ('delete (ci--conan-delete-itens args))
-    ('find-entry (message (format "Finding entry %s" args)))
+    ('find-entry (ci--conan-find-item args))
     (_ (message "Operation %s not implemented." operation)))
   )
 
