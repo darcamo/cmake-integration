@@ -218,6 +218,23 @@ The output of the commands is added to a `*conan remove output*' buffer."
       (ci-conan-search library-name))))
 
 
+(defun ci--tablist-get-marked-items ()
+  "Get the library specifiacations of the marked items."
+  (let ((marked-items (tablist-get-marked-items)))
+    (mapcar 'car marked-items)))
+
+
+(defun ci--conan-marked-items-export-to-kill-ring ()
+  "Get the current marked items and export them to the kill ring."
+  (interactive)
+  (let ((marked-items (ci--tablist-get-marked-items)))
+    (if marked-items
+        (progn
+          (kill-new (mapconcat 'identity marked-items "\n"))
+          (message "Marked items exported to kill ring."))
+      (message "No marked items to export."))))
+
+
 (defun ci--conan-tablist-operations-function (operation &optional args)
   "Handles OPERATION on ARGS.
 
@@ -250,6 +267,7 @@ See the variable `tablist-operations-function' for more."
                    (define-key map "c" 'ci--conan-transient)
                    (define-key map "l" 'ci-conan-list-packages-in-local-cache)
                    (define-key map "S" 'ci-conan-search)
+                   (define-key map "w" 'ci--conan-marked-items-export-to-kill-ring)
                    ;; (define-key map "f" 'tablist-find-entry)
                    ;; (define-key map "r" 'tablist-refresh)
                    map))
