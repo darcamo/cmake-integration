@@ -5,8 +5,10 @@
 ;;; Code:
 (require 'tablist)
 (require 'cmake-integration-build)
+(require 'cmake-integration-conanfile)
 
 (defvar ci--library-location "" "Library location that will be locally set.")
+(defvar ci-addition-marker-char ?+ "Character used to mark items for addition.")
 
 (defun ci--get-conan-available-profiles ()
   "Get the available conan profiles."
@@ -218,6 +220,14 @@ The output of the commands is added to a `*conan remove output*' buffer."
       (ci-conan-search library-name))))
 
 
+(defun ci--conan-extract-library-spects-from-marked-items (marked-items)
+  "Convert the list of MARKED-ITEMS into a list of library specifications.
+
+This will map what `tablist-get-marked-items' returns into a list of
+library specifications."
+  (mapcar 'car marked-items))
+
+
 (defun ci--tablist-get-marked-items ()
   "Get the library specifiacations of the marked items."
   (let ((marked-items (tablist-get-marked-items)))
@@ -235,6 +245,51 @@ The output of the commands is added to a `*conan remove output*' buffer."
       (message "No marked items to export."))))
 
 
+(defun ci--conan-mark-entries-for-addition ()
+  "Mark the current item with a `+' mark."
+  (interactive)
+  ;; Temporarily change the marker character such that tablist command use our
+  ;; custom mark
+  (let ((tablist-marker-char ci-addition-marker-char))
+    (tablist-mark-forward)))
+
+
+(defun ci--get-items-flagged-for-addition ()
+  "Return items marked with `+' in the tablist."
+  ;; Temporarily change the marker character such that tablist command use our
+  ;; custom mark
+  (let ((tablist-marker-char ci-addition-marker-char))
+    (tablist-get-marked-items)))
+
+
+(defun ci-conan-tablist-do-addition ()
+  "Perform the addition operation on the items marked with `+'.
+
+The addition operation adds the marked libraries to the conanfile in the
+project root."
+  (interactive)
+  (let ((items (ci--get-items-flagged-for-addition)))
+    (when (tablist-yes-or-no-p 'addition nil items)
+      (funcall tablist-operations-function
+               'addition (mapcar 'car items))
+      ))
+  )
+
+
+(defun ci--conan-add-marked-items-to-conanfile-txt (&optional marked-items)
+  "Add the MARKED-ITEMS to the conanfile.txt in the project root."
+  (interactive)
+  (if-let* ((conanfile (cmake-integration--find-conanfile))
+            (marked-items (or marked-items (ci--tablist-get-marked-items))))
+      (if marked-items
+          (progn
+            (dolist (item marked-items)
+              (ci-add-requirement-to-project-conanfile-txt item))
+            (message "Marked items added to conanfile.txt."))
+        (message "No marked items to add."))
+    (message "No conanfile.txt found in the project root at %s." (cmake-integration--get-project-root-folder))))
+
+
 (defun ci--conan-tablist-operations-function (operation &optional args)
   "Handles OPERATION on ARGS.
 
@@ -248,6 +303,7 @@ See the variable `tablist-operations-function' for more."
     ('refresh (message "Refreshing the tablist... Not implemented yet"))
     ('delete (ci--conan-delete-itens args))
     ('find-entry (ci--conan-find-item args))
+    ('addition (ci--conan-add-marked-items-to-conanfile-txt args))
     (_ (message "Operation %s not implemented." operation)))
   )
 
@@ -268,13 +324,11 @@ See the variable `tablist-operations-function' for more."
                    (define-key map "l" 'ci-conan-list-packages-in-local-cache)
                    (define-key map "S" 'ci-conan-search)
                    (define-key map "w" 'ci--conan-marked-items-export-to-kill-ring)
+                   (define-key map "i" 'ci-conan-tablist-do-addition)
+                   (define-key map "+" 'ci--conan-mark-entries-for-addition)
                    ;; (define-key map "f" 'tablist-find-entry)
                    ;; (define-key map "r" 'tablist-refresh)
-                   map))
-  )
-
-;; TODO Handle marked entries
-
+                   map)))
 
 
 (defun ci--get-conan-run-command (&optional profile)

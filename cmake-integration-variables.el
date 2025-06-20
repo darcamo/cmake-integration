@@ -19,9 +19,6 @@ If this is nil, then using presets is required." :type '(string) :group 'cmake-i
 If this is nil, then no install preffix is used." :type '(string) :group 'cmake-integration)
 
 
-;; TODO: Set all possible choices of generators for a better
-;; customization interface (but still allow a free string as a
-;; generator)
 (defcustom ci-generator nil
   "The generator to pass to cmake when no presets are used.
 
