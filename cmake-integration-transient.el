@@ -8,6 +8,8 @@
 (require 'cmake-integration-cpack)
 (require 'cmake-integration-ctest)
 
+(declare-function ci--set-runtime-arguments "cmake-integration-launch.el")
+
 
 
 ;; (defun ci--display-configure-preset ()
@@ -82,7 +84,7 @@ will be obtained from PRESET and this returns the string
   "Describe the command line argument to set the build target."
   (let* ((target-name (if ci-current-target ci-current-target ""))
          (command-line (format "--target=%s" target-name)))
-    (format "Build target (%s)" (ci--get-command-line-arg-with-face command-line ci-current-target))))
+    (format "Set Target (%s)" (ci--get-command-line-arg-with-face command-line ci-current-target))))
 
 
 (defun ci--describe-conan-profile ()
@@ -100,6 +102,15 @@ will be obtained from PRESET and this returns the string
          (command-line (format "--prefix=%s" install-prefix)))
     (format "Select install prefix (%s)"
             (ci--get-command-line-arg-with-face command-line has-value))))
+
+
+(defun ci--describe-current-conanfile ()
+  "Show the current conanfile, if any."
+  (let* ((conanfile (cmake-integration--find-conanfile))
+         (propertized-conanfile (if conanfile
+                                    (ci--get-command-line-arg-with-face conanfile t)
+                                  (ci--get-command-line-arg-with-face "Not found" nil))))
+    (format (propertize "Conan file: %s" 'face 'font-lock-warning-face) propertized-conanfile)))
 
 
 (transient-define-suffix ci--set-configure-preset-suffix ()
@@ -169,6 +180,25 @@ will be obtained from PRESET and this returns the string
     (ci-set-install-prefix)))
 
 
+
+(transient-define-suffix ci--set-runtime-arguments-suffix ()
+  :transient 'transient--do-call
+  ;; :description 'ci--describe-install-prefix
+  :description (lambda () (format "Set runtime arguments (%s)"
+                             (if ci-run-arguments
+                                 (ci--get-command-line-arg-with-face
+                                  ci-run-arguments
+                                  t)
+                               (ci--get-command-line-arg-with-face "No arguments set" nil))))
+  (interactive)
+  (let ((run-arguments (read-string "Arguments to pass to the executable: ")))
+    ;; If the user didn't provide any arguments, we set it to nil
+    (if (string= run-arguments "")
+        (setq run-arguments nil))
+    (ci--set-runtime-arguments run-arguments)))
+
+
+
 (transient-define-prefix ci--all-presetts-transient ()
   "Easily set any o the possible cmake presets."
   ["Set Presets"
@@ -216,6 +246,7 @@ will be obtained from PRESET and this returns the string
 (transient-define-prefix ci--conan-transient ()
   "Perform actions related to the conan package manager."
   ["Conan"
+   (:info #'ci--describe-current-conanfile)
    ("p" ci--set-conan-profile-suffix)
    ("l" "List Packages" ci--conan-list-prefix)
    ("s" "Search packages" ci--conan-search-prefix)
@@ -314,10 +345,10 @@ will be obtained from PRESET and this returns the string
 (transient-define-prefix ci--launch-transient ()
   "Perform actions related to running or debugging an executable target."
   ["Run and Debug"
-   ("a" "Set runtime arguments" ci--set-runtime-arguments :transient t)
+   ("a" ci--set-runtime-arguments-suffix)
    ("t" ci--set-build-target-suffix)
-   ("r" "Run last target" ci-run-last-target)
-   ("d" "Debug with gdb" ci-debug-last-target)
+   ("r" "Run" ci-run-last-target)
+   ("d" "Debug (gdb)" ci-debug-last-target)
    ("q" "Quit" transient-quit-one)
    ]
   )

@@ -190,8 +190,7 @@ variable. This should be passed to gdb command in Emacs."
 (defun ci--set-runtime-arguments (run-arguments)
   "Set arguments passed to the executable to RUN-ARGUMENTS."
   (interactive "sArguments: ")
-  (setq ci-run-arguments run-arguments)
-  )
+  (setq ci-run-arguments run-arguments))
 
 
 ;;;###autoload (autoload 'cmake-integration-run-last-target-with-arguments "cmake-integration")
