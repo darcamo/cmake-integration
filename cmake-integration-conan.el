@@ -39,6 +39,117 @@
     (mapcar #'ci--get-remote-name repositories)))
 
 
+(defun ci--get-conan-remote-tabulated-entry (conan-remote)
+  "Create an entry for a tabulated list for a CONAN-REMOTE.
+
+CONAN-REMOTE is an alist with the remote information, as returned by
+`ci--get-conan-remote-repositories'. The entry is a list with the remote
+name and a vector with the remote name, url, verify_ssl and enabled."
+  (let* ((name (ci--get-remote-name conan-remote))
+         (url (alist-get 'url conan-remote))
+         (verify-ssl (eq t (alist-get 'verify_ssl conan-remote)))
+         (enabled (alist-get 'enabled conan-remote))
+         (remote-data (vector
+                       (propertize name 'face 'font-lock-property-name-face)
+                       (propertize url 'face 'font-lock-preprocessor-face)
+                       (propertize (if verify-ssl "yes" "no") 'face 'font-lock-constant-face)
+                       (propertize (if enabled "yes" "no") 'face 'font-lock-constant-face))))
+    (list name remote-data)))
+
+
+(defun ci--get-tabulated-entries-from-conan-remote-repositories (&optional conan-remote-repositories)
+  "Map a list of CONAN-REMOTE-REPOSITORIES into entries for a tabulated list."
+  (let ((remotes (or conan-remote-repositories (ci--get-conan-remote-repositories))))
+    (mapcar #'ci--get-conan-remote-tabulated-entry remotes)))
+
+
+(defun ci--conan-remotes-tablist-operations-function (operation &optional args)
+  "Handles OPERATION on ARGS.
+
+This is a function for handling operations on the entries. The operation
+is indicated by OPERATION.
+
+See the variable `tablist-operations-function' for more."
+  (message (format "Operation is %s" operation))
+  (pcase operation
+    ('supported-operations '(refresh delete find-entry))
+    ('refresh (message "Refreshing the tablist... Not implemented yet"))
+    ('delete (ci--conan-delete-remotes args))
+    ('find-entry (ci--conan-toggle-enable args))
+    ;; ('addition (message (format "Implement-me: Addition operation: %s" args)))
+    ;; ('remove (message (format "Implement-me: Remove operation: %s" args)))
+    (_ (message "Operation %s not implemented." operation)))
+  )
+
+
+(defun ci--conan-delete-remotes (remote-names)
+  "Delete the Conan remote with name REMOTE-NAMES."
+  (mapc #'(lambda (item)
+            (call-process "conan" nil "*conan remove output*" nil "remote" "remove" item))
+        remote-names))
+
+
+(defun ci--conan-toggle-enable (args)
+  "Toggle the remotes in ARGS."
+  ;; TODO: Implement-me
+  (error (format "Not implemented yet\n args: %s" args))
+  )
+
+
+(defun ci-conan-add-remote ()
+  "Ask for a conan remote name and URL and add it to the list of remotes."
+  (interactive)
+  (let* ((remote-name (read-string "Enter the remote name: "))
+         (remote-url (read-string "Enter the remote URL: "))
+         (verify-ssl (y-or-n-p "Verify SSL? "))
+         (command (format "conan remote add %s %s %s"
+                          remote-name remote-url (if verify-ssl "" "--insecure"))))
+    (call-process-shell-command command)
+    (when (eq major-mode 'conan-remotes-view-mode)
+      (tablist-revert))))
+
+
+;;;###autoload (autoload 'cmake-integration-conan-manage-remotes "cmake-integration")
+(defun ci-conan-manage-remotes ()
+  "View and manage Conan remotes."
+  (interactive)
+  (let* ((tabulated-list-entries-func #'ci--get-tabulated-entries-from-conan-remote-repositories)
+         (buffer (get-buffer-create "*Conan Remotes*")))
+    (with-current-buffer buffer
+      (setq tabulated-list-entries tabulated-list-entries-func)
+      (conan-remotes-view-mode)
+      (tabulated-list-print t))
+    (switch-to-buffer buffer)))
+
+
+(define-derived-mode conan-remotes-view-mode tablist-mode "Conan Remotes"
+  "View and manage Conan remotes."
+  :interactive nil
+  (setq tabulated-list-format
+        [("Name" 15 t)
+         ("URL" 63 t)
+         ("Verify SSL" 12 t)
+         ("Enabled" 7 t)])
+  (setq tabulated-list-padding 2)
+  (setq tablist-operations-function 'ci--conan-remotes-tablist-operations-function)
+  (tabulated-list-init-header)
+
+  ;; Add a keymap for the mode
+  (use-local-map (let ((map (make-sparse-keymap)))
+                   (set-keymap-parent map tablist-mode-map)
+                   ;; (define-key map "x" 'ci--conan-do-flagged-items)
+                   (define-key map "a" 'ci-conan-add-remote)
+                   (define-key map "+" 'ci-conan-add-remote)
+                   (define-key map "o" 'ci--conan-transient)
+                   (define-key map "c" 'ci--conan-transient)
+                   ;; (define-key map "l" 'ci-conan-list-packages-in-local-cache)
+                   ;; (define-key map "S" 'ci-conan-search)
+                   ;; (define-key map "w" 'ci--conan-marked-items-export-to-kill-ring)
+                   ;; (define-key map "I" 'ci-conan-do-addition)
+                   ;; (define-key map "i" 'ci--conan-flag-forward-addition)
+                   map)))
+
+
 ;;;###autoload (autoload 'cmake-integration-select-conan-profile "cmake-integration")
 (defun ci-select-conan-profile ()
   "Select one of the available conan profiles and return the chosen one."
@@ -320,7 +431,7 @@ is indicated by OPERATION.
 See the variable `tablist-operations-function' for more."
   (message (format "Operation is %s" operation))
   (pcase operation
-    ('supported-operations '(refresh delete find-entry))
+    ('supported-operations '(refresh delete find-entry addition))
     ('refresh (message "Refreshing the tablist... Not implemented yet"))
     ('delete (ci--conan-delete-itens args))
     ('find-entry (ci--conan-find-item args))

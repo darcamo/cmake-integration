@@ -9,13 +9,14 @@
 
 (defun ci--find-conanfile ()
   "Return the path to the conanfile.txt or conanfile.py in the project root."
-  (let ((conanfile-txt (f-join (ci--get-project-root-folder) "conanfile.txt"))
-        (conanfile-py (f-join (ci--get-project-root-folder) "conanfile.py")))
-    (cond
-     ((f-exists? conanfile-txt) conanfile-txt)
-     ((f-exists? conanfile-py) conanfile-py)
-     (t nil)))
-  )
+  (if-let* ((project-root (ci--get-project-root-folder)))
+      (let* ((conanfile-txt (f-join (ci--get-project-root-folder) "conanfile.txt"))
+             (conanfile-py (f-join (ci--get-project-root-folder) "conanfile.py")))
+        (cond
+         ((f-exists? conanfile-txt) conanfile-txt)
+         ((f-exists? conanfile-py) conanfile-py)
+         (t nil)))
+    nil))  ;; No project root found
 
 
 (defun ci--add-requirement-to-conanfile-txt (filepath package)

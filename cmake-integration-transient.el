@@ -226,7 +226,7 @@ will be obtained from PRESET and this returns the string
 (transient-define-prefix ci--conan-search-prefix ()
   "List conan packages."
   ["Conan Search"
-   ("r" "Search in remote repository" "--remote=" :choices ci--get-conan-remote-repositories-names)
+   ("r" "Search in remote repository" "--remote=" :choices ci--get-conan-enabled-remote-repositories-names)
    ("s" "Search in remote repositories"
     (lambda () (interactive)
       (if-let* ((extra-args (transient-args (oref transient-current-prefix command)))
@@ -251,7 +251,7 @@ will be obtained from PRESET and this returns the string
    ("l" "List Packages" ci--conan-list-prefix)
    ("s" "Search packages" ci--conan-search-prefix)
    ("i" "Install" (lambda () (interactive) (ci-run-conan)))
-   ("r" "Manage Remotes" (lambda () (interactive) (error "Not implemented yet")))
+   ("r" "Manage Remotes" ci-conan-manage-remotes)
    ("q" "Quit" transient-quit-one)
    ]
   )
