@@ -16,17 +16,27 @@
     (cdr (split-string output "\n" t))))
 
 
-(defun ci--get-conan-remote-repositories-names ()
+(defun ci--get-remote-name (remote)
+  "Get the name of a remote repository REMOTE."
+  (alist-get 'name remote))
+
+
+(defun ci--get-conan-remote-repositories (&optional only-enabled)
+  "Get all Conan remote repositories, or ONLY-ENABLED ones."
+  (let* ((command-output (shell-command-to-string "conan remote list -f json"))
+         (parsed-json (json-read-from-string command-output))
+         ;; Filter function to get only enabled remotes
+         (filter-func (lambda (remote) (eq (alist-get 'enabled remote) t))))
+    (if only-enabled
+        (seq-filter filter-func parsed-json)
+      parsed-json)))
+
+
+(defun ci--get-conan-enabled-remote-repositories-names ()
   "Get the list of Conan remote names."
   (interactive)
-  (let* ((command-output (shell-command-to-string "conan remote list -f json"))
-         (parsed-json (json-read-from-string command-output)))
-    (seq-filter
-     #'identity
-     (mapcar (lambda (remote)
-               (when (eq (alist-get 'enabled remote) t) ;; Check if 'enabled' is true (t)
-                 (alist-get 'name remote))) ;; Extract name if enabled
-             parsed-json))))
+  (let* ((repositories (ci--get-conan-remote-repositories t)))
+    (mapcar #'ci--get-remote-name repositories)))
 
 
 ;;;###autoload (autoload 'cmake-integration-select-conan-profile "cmake-integration")

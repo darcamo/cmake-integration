@@ -90,7 +90,7 @@ Get the configure presets in both `CMakePresets.json' and
 (defun ci--get-preset-by-name (name list-of-presets)
   "Get the preset in LIST-OF-PRESETS with name NAME."
   (seq-find
-   (lambda (preset) (equal name (alist-get 'name preset)))
+   (lambda (preset) (equal name (ci--get-preset-name preset)))
    list-of-presets))
 
 
