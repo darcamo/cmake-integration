@@ -238,6 +238,7 @@ will be obtained from PRESET and this returns the string
         (ci-conan-search)
         ))
     )
+   ("c" "Search in Conan Center" ci-search-in-conan-center)
    ("q" "Quit" transient-quit-one)
    ]
   )
@@ -252,6 +253,7 @@ will be obtained from PRESET and this returns the string
    ("s" "Search packages" ci--conan-search-prefix)
    ("i" "Install" (lambda () (interactive) (ci-run-conan)))
    ("r" "Manage Remotes" ci-conan-manage-remotes)
+   ("c" "Browse Conan Center" ci-browse-conan-center)
    ("q" "Quit" transient-quit-one)
    ]
   )

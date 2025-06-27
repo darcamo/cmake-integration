@@ -138,6 +138,7 @@ See the variable `tablist-operations-function' for more."
   (use-local-map (let ((map (make-sparse-keymap)))
                    (set-keymap-parent map tablist-mode-map)
                    ;; (define-key map "x" 'ci--conan-do-flagged-items)
+                   (define-key map "b" 'ci-browse-conan-center)
                    (define-key map "a" 'ci-conan-add-remote)
                    (define-key map "+" 'ci-conan-add-remote)
                    (define-key map "o" 'ci--conan-transient)
@@ -440,6 +441,14 @@ See the variable `tablist-operations-function' for more."
   )
 
 
+(defun ci--browse-conan-center-current-entry ()
+  "Browser the Conan Center for the current entry."
+  (interactive)
+  (let* ((entry (tabulated-list-get-id))
+         (name (car (split-string entry "/"))))
+    (ci-browse-conan-center name)))
+
+
 (define-derived-mode conan-list-view-mode tablist-mode "Conan"
   "Visualize the output of conan list in as a table."
   :interactive nil
@@ -451,6 +460,7 @@ See the variable `tablist-operations-function' for more."
   ;; Add a keymap for the mode
   (use-local-map (let ((map (make-sparse-keymap)))
                    (set-keymap-parent map tablist-mode-map)
+                   (define-key map "b" 'ci--browse-conan-center-current-entry)
                    (define-key map "x" 'ci--conan-do-flagged-items)
                    (define-key map "o" 'ci--conan-transient)
                    (define-key map "c" 'ci--conan-transient)
@@ -513,6 +523,22 @@ The output can be passed to compile,"
     (if ci-include-conan-toolchain-file
         (format "%s%s --toolchain conan_toolchain.cmake" conan-command cmake-command)
       (format "%s%s" conan-command cmake-command))))
+
+
+(defun ci-browse-conan-center (&optional search-term)
+  "Browse the Conan Center website and search for SEARCH-TERM."
+  (interactive)
+  (let ((url (if search-term
+                 (format "https://conan.io/center/recipes?value=%s" (url-hexify-string search-term))
+               "https://conan.io/center/")))
+    (browse-url url)))
+
+
+(defun ci-search-in-conan-center ()
+  "Search for a package in the Conan Center."
+  (interactive)
+  (let ((search-term (read-string "Enter a package name to search in Conan Center: ")))
+    (ci-browse-conan-center search-term)))
 
 
 (provide 'cmake-integration-conan)
