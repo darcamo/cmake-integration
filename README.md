@@ -43,12 +43,12 @@ this, you won't receive completions for compile targets.
 By default, `cmake-integration` assumes the build folder to be named "build". If your project uses a different build
 folder, adjust the value of the `cmake-integration-build-dir` variable accordingly.
 
-For projects utilizing CMake presets, use the `cmake-integration-cmake-configure-with-preset` function. This function
-reads the presets file, listing all available configure presets and prompting you to select one (with completions). It
-then uses the "binaryDir" field from the chosen preset as the build folder (ignoring any value set for
-`cmake-integration-build-dir`). If the chosen preset doesn't specify a "binaryDir" but inherits from another preset, it
-will use the "binaryDir" of the parent preset. Additionally, if a preset includes a "displayName," it will be displayed
-during completions as an annotation.
+For projects utilizing CMake presets (suggested approach), use the `cmake-integration-cmake-configure-with-preset`
+function. This function reads the presets file, listing all available configure presets and prompting you to select one
+(with completions). It then uses the "binaryDir" field from the chosen preset as the build folder (ignoring any value
+set for `cmake-integration-build-dir`). If the chosen preset doesn't specify a "binaryDir" but inherits from another
+preset, it will use the "binaryDir" of the parent preset. Additionally, if a preset includes a "displayName," it will be
+displayed during completions as an annotation.
 
 
 ## Different types of presets
@@ -63,20 +63,81 @@ configure preset is the chosen configure preset. You can also manually set the o
 
 # Example Keybindings
 
-All you need is binding the relevant functions to desired keys. The example below demonstrates bindings for configuring,
-compiling, and running targets, with both querying and non-querying actions available:
+The `cmake-integration` package does not define keybindings, since each user has its own preferences. The example below
+demonstrates bindings for configuring, compiling, running targets, among others, with both querying and non-querying
+actions available:
 
 ```emacs-lisp
 (use-package cmake-integration
   :bind (:map c++-mode-map
+              ([f5] . cmake-integration-transient)                         ;; Open main transient menu
               ([M-f9] . cmake-integration-save-and-compile)                ;; Ask for the target name and compile it
               ([f9] . cmake-integration-save-and-compile-last-target)      ;; Recompile the last target
-              ([M-f10] . cmake-integration-run-last-target-with-arguments) ;; Ask for command line parameters to run the target
+              ([C-f9] . cmake-integration-run-ctest)                       ;; Run CTest
               ([f10] . cmake-integration-run-last-target)                  ;; Run the target (using any previously set command line parameters)
-              ([M-f8] . cmake-integration-cmake-configure-with-preset)     ;; Ask for a preset name and call CMake to configure the project
+              ([S-f10] . kill-compilation)
+              ([C-f10] . cmake-integration-debug-last-target)              ;; Debug the target (using any previously set command line parameters)
+              ([M-f10] . cmake-integration-run-last-target-with-arguments) ;; Ask for command line parameters to run the target
+              ([M-f8] . cmake-integration-select-configure-preset)         ;; Ask for a preset name and call CMake to configure the project
               ([f8] . cmake-integration-cmake-reconfigure)                 ;; Call CMake to configure the project using the last chosen preset
               ))
 ```
+
+However, the keybindings will only be set in `c++-mode`. You might want the keybindings in ther modes, such as in
+`c++-ts-mode`, in the compilation buffer, in dired buffers, etc. Hence, a better alternative is to define a minor mode
+and just activate the minor mode when desired.
+
+```emacs-lisp
+(define-minor-mode cmake-integration-keybindings-mode
+  "A minor-mode for adding keybindings to compile C++ code using cmake-integration package."
+  nil
+  "cmake"
+  '(
+    ([f5] . cmake-integration-transient)                         ;; Open main transient menu
+    ([M-f9] . cmake-integration-save-and-compile)                ;; Ask for the target name and compile it
+    ([f9] . cmake-integration-save-and-compile-last-target)      ;; Recompile the last target
+    ([C-f9] . cmake-integration-run-ctest)                       ;; Run CTest
+    ([f10] . cmake-integration-run-last-target)                  ;; Run the target (using any previously set command line parameters)
+    ([S-f10] . kill-compilation)
+    ([C-f10] . cmake-integration-debug-last-target)              ;; Debug the target (using any previously set command line parameters)
+    ([M-f10] . cmake-integration-run-last-target-with-arguments) ;; Ask for command line parameters to run the target
+    ([M-f8] . cmake-integration-select-configure-preset)         ;; Ask for a preset name and call CMake to configure the project
+    ([f8] . cmake-integration-cmake-reconfigure)                 ;; Call CMake to configure the project using the last chosen preset
+    )
+  )
+```
+
+Now you can just activate `cmake-integration-keybindings-mode` in any mode hook you want. If you always want the
+keybindings available when working in CMake projects, you can use the configuration below in addition to defining
+`cmake-integration-keybindings-mode`.
+
+```emacs-lisp
+(defun is-cmake-project? ()
+  "Determine if the current directory is a CMake project."
+  (interactive)
+  (if-let* ((project (project-current))
+            (project-root (project-root project))
+            (cmakelist-path (expand-file-name "CMakeLists.txt" project-root)))
+      (file-exists-p cmakelist-path)))
+
+
+(defun cmake-integration-keybindings-mode-turn-on-in-cmake-projects ()
+  "Turn on `cmake-integration-keybindings-mode' in CMake projects."
+  (when (is-cmake-project?)
+    (cmake-integration-keybindings-mode 1)))
+
+
+(define-globalized-minor-mode global-cmake-integration-keybindings-mode
+  cmake-integration-keybindings-mode cmake-integration-keybindings-mode-turn-on-in-cmake-projects)
+
+
+(global-cmake-integration-keybindings-mode)
+```
+
+This defines a function (`cmake-integration-keybindings-mode-turn-on-in-cmake-projects`) that checks if the current
+directory of a buffer is in a CMake project. Then it defines and activates a global minor mode that uses that function
+to turn one `cmake-integration-keybindings-mode` in any buffers which are in a CMake project, regardless of the buffer
+major mode.
 
 # Project Configuration
 
