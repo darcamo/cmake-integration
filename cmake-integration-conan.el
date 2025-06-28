@@ -21,12 +21,17 @@
   (alist-get 'name remote))
 
 
+(defun ci--conan-is-remote-enabled (remote)
+  "Check if remote repository REMOTE is enabled."
+  (eq (alist-get 'enabled remote) t))
+
+
 (defun ci--get-conan-remote-repositories (&optional only-enabled)
   "Get all Conan remote repositories, or ONLY-ENABLED ones."
   (let* ((command-output (shell-command-to-string "conan remote list -f json"))
          (parsed-json (json-read-from-string command-output))
          ;; Filter function to get only enabled remotes
-         (filter-func (lambda (remote) (eq (alist-get 'enabled remote) t))))
+         (filter-func 'ci--conan-is-remote-enabled))
     (if only-enabled
         (seq-filter filter-func parsed-json)
       parsed-json)))
@@ -47,7 +52,7 @@ CONAN-REMOTE is an alist with the remote information, as returned by
 name and a vector with the remote name, url, verify_ssl and enabled."
   (let* ((name (ci--get-remote-name conan-remote))
          (url (alist-get 'url conan-remote))
-         (verify-ssl (eq t (alist-get 'verify_ssl conan-remote)))
+         (verify-ssl (ci--conan-is-remote-enabled conan-remote))
          (enabled (alist-get 'enabled conan-remote))
          (remote-data (vector
                        (propertize name 'face 'font-lock-property-name-face)
