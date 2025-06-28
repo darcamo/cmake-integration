@@ -26,6 +26,11 @@
   (eq (alist-get 'enabled remote) t))
 
 
+(defun ci--conan-does-remote-verify-ssl (remote)
+  "Check if remote repository REMOTE is enabled."
+  (eq (alist-get 'verify_ssl remote) t))
+
+
 (defun ci--get-conan-remote-repositories (&optional only-enabled)
   "Get all Conan remote repositories, or ONLY-ENABLED ones."
   (let* ((command-output (shell-command-to-string "conan remote list -f json"))
@@ -35,6 +40,12 @@
     (if only-enabled
         (seq-filter filter-func parsed-json)
       parsed-json)))
+
+(defun ci--get-remote-by-name (remote-name)
+  "Get a Conan remote by its REMOTE-NAME.
+Returns the remote alist or nil if not found."
+  (seq-find (lambda (remote) (equal (alist-get 'name remote) remote-name))
+            (ci--get-conan-remote-repositories)))
 
 
 (defun ci--get-conan-enabled-remote-repositories-names ()
@@ -52,10 +63,13 @@ CONAN-REMOTE is an alist with the remote information, as returned by
 name and a vector with the remote name, url, verify_ssl and enabled."
   (let* ((name (ci--get-remote-name conan-remote))
          (url (alist-get 'url conan-remote))
-         (verify-ssl (ci--conan-is-remote-enabled conan-remote))
-         (enabled (alist-get 'enabled conan-remote))
+         (enabled (ci--conan-is-remote-enabled conan-remote))
+         (verify-ssl (ci--conan-does-remote-verify-ssl conan-remote))
+         (remote-name-face (if enabled
+                               (if verify-ssl 'font-lock-property-name-face 'dired-flagged)
+                             'font-lock-comment-face))
          (remote-data (vector
-                       (propertize name 'face 'font-lock-property-name-face)
+                       (propertize name 'face remote-name-face)
                        (propertize url 'face 'font-lock-preprocessor-face)
                        (propertize (if verify-ssl "yes" "no") 'face 'font-lock-constant-face)
                        (propertize (if enabled "yes" "no") 'face 'font-lock-constant-face))))
@@ -94,11 +108,36 @@ See the variable `tablist-operations-function' for more."
         remote-names))
 
 
-(defun ci--conan-toggle-enable (args)
-  "Toggle the remotes in ARGS."
-  ;; TODO: Implement-me
-  (error (format "Not implemented yet\n args: %s" args))
-  )
+(defun ci--conan-toggle-enable (remote-name)
+  "Toggle the enable/disably of REMOTE-NAME.
+
+This queries the remote from its name with `ci--get-remote-by-name' and
+checks if the remote is enabled or not. Then it calls the
+`conan remote enable/disable <remote name>' accordingly."
+  (let* ((remote (ci--get-remote-by-name remote-name))
+         (currently-enabled (ci--conan-is-remote-enabled remote))
+         (command (if currently-enabled "disable" "enable")))
+    (when remote
+      (call-process "conan" nil nil nil "remote" command remote-name)
+      (when (eq major-mode 'conan-remotes-view-mode)
+        (tablist-revert)))))
+
+
+(defun ci--conan-toggle-verify-ssl (&optional remote-name)
+  "Toggle the SSL verification of REMOTE-NAME.
+
+This queries the remote from its name with `ci--get-remote-by-name' and
+checks if the remote performs SSL verification of not. Then it calls the
+`conan remote update --secure/--insecure <remote name>' accordingly."
+  (interactive)
+  (let* ((remote-name (or remote-name (tabulated-list-get-id)))
+         (remote (ci--get-remote-by-name remote-name))
+         (perform-verification (ci--conan-does-remote-verify-ssl remote))
+         (command (if perform-verification "--insecure" "--secure")))
+    (when remote
+      (call-process "conan" nil nil nil "remote" "update" command remote-name)
+      (when (eq major-mode 'conan-remotes-view-mode)
+        (tablist-revert)))))
 
 
 (defun ci-conan-add-remote ()
@@ -148,6 +187,7 @@ See the variable `tablist-operations-function' for more."
                    (define-key map "+" 'ci-conan-add-remote)
                    (define-key map "o" 'ci--conan-transient)
                    (define-key map "c" 'ci--conan-transient)
+                   (define-key map "v" 'ci--conan-toggle-verify-ssl)
                    ;; (define-key map "l" 'ci-conan-list-packages-in-local-cache)
                    ;; (define-key map "S" 'ci-conan-search)
                    ;; (define-key map "w" 'ci--conan-marked-items-export-to-kill-ring)
