@@ -215,7 +215,7 @@ Note that targets "all" and "clean" are always included, and the target type (ex
 annotation.
 
 
-# Integration with the conan package manager
+# Integration with the Conan package manager
 
 When using either `cmake-integration-cmake-configure-with-preset` or `cmake-integration-cmake-reconfigure`, passing a
 prefix argument will trigger the execution of the `conan install` command within the build directory before invoking
@@ -225,14 +225,14 @@ Additionally, you can invoke `cmake-integration-run-conan` at any time. This com
 last used build folder.
 
 
-## Passing parameters to conan
+## Passing parameters to Conan
 
 To pass parameters to Conan, set the `cmake-integration-conan-arguments` variable. Its default value is `--build
 missing`. However, to avoid setting a Conan profile directly through `cmake-integration-conan-arguments`, use the
 `cmake-integration-conan-profile` variable instead.
 
 
-## Setting a conan profile
+## Setting a Conan profile
 
 The `cmake-integration-conan-profile` variable can be configured in two ways: either by setting it to a string
 containing the desired Conan profile name or by using an alist that maps CMake profile names to corresponding Conan
@@ -242,7 +242,7 @@ It's worth noting that when utilizing Conan’s new toolchains, it is recommende
 convenient method for setting this up is to create a directory variable and assign it a value of the project-specific
 Conan profile name to the `cmake-integration-conan-profile` variable.
 
-## Display conan cache and searches in repositories
+## Display Conan cache and searches in repositories
 
 The `cmake-integration-conan-list-packages-in-local-cache` function lists locally installed libraries, while the `cmake-integration-conan-search` function searches for libraries across all Conan repositories. Both functions display the results in a tabulated list buffer, offering convenient operations for interaction.
 
@@ -251,6 +251,15 @@ The `cmake-integration-conan-list-packages-in-local-cache` function lists locall
 From the tabulated list, you can leverage standard functionality such as filtering, deleting items (which triggers Conan
 to uninstall the marked libraries from its cache), copying selected items to the kill ring (`w` key) for yanking into
 `conanfile.txt`, and more.
+
+## Manage Conan remotes
+
+The `cmake-integration-conan-manage-remotes` can be used to easily manage Conan remotes. From there, remotes can be
+added, deleted, enabled/disabled and SSL verification can be toggled. In the tabulated list view displaying the Conan
+remotes, you can delete remotes by pressing `D` (you can also mark remotes first with `m` to delete multiple remotes).
+To add a remote, press `a` or `+` and it will ask for the remote name and URL. To toggle a remote, press `<RET>` or `f`,
+and to change SSL verification press `v`. From there, you can also directly access the transient with Conan commands
+with `c`.
 
 # Transient support
 
