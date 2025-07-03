@@ -98,7 +98,8 @@ complain in that case."
 
 See the documentation of `cmake-integration-get-build-command' for the
 EXTRA-ARGS parameter."
-  (save-buffer 0)
+  (if (buffer-file-name)
+      (save-buffer 0))
   (let ((compile-command (ci-get-build-command target extra-args)))
     (compile compile-command)))
 
