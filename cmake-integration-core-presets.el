@@ -75,16 +75,19 @@ Return nil if the file does not exist."
      nil)))
 
 
-(defun ci-get-all-presets-of-type (type)
+(defun ci-get-all-presets-of-type (type &optional show-hidden)
   "Get the presets of type TYPE from all preset files.
 
 Get the configure presets in both `CMakePresets.json' and
-`CMakeUserPresets.json' files, as well as any included file.."
+`CMakeUserPresets.json' files, as well as any included file. If
+SHOW-HIDDEN is t, include hidden presets."
   (let* ((all-preset-files (ci--get-all-preset-files))
          (all-configure-presets (-mapcat
                                  #'(lambda (presets-file) (ci--get-presets-of-given-type presets-file type))
                                  all-preset-files)))
-    (seq-filter 'ci--is-preset-visible all-configure-presets)))
+    (if show-hidden
+        all-configure-presets
+      (seq-filter 'ci--is-preset-visible all-configure-presets))))
 
 
 (defun ci--get-preset-by-name (name list-of-presets)

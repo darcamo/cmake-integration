@@ -51,16 +51,18 @@ If not available, get the binaryDir or a parent preset."
 
 (defun ci--get-configure-preset-by-name (preset-name)
   "Get the preset from the list of presets with name PRESET-NAME."
-  (let ((list-of-presets (ci-get-configure-presets)))
+  (let ((list-of-presets (ci-get-configure-presets t)))
     (ci--get-preset-by-name preset-name list-of-presets)))
 
 
-(defun ci-get-configure-presets ()
-  "Get all the non-hidden configure presets.
+(defun ci-get-configure-presets (&optional show-hidden)
+  "Get all the configure presets.
+
+If SHOW-HIDDEN is t, include hidden presets.
 
 Get the configure presets in both `CMakePresets.json' and
 `CMakeUserPresets.json' files as well as in any included files."
-  (ci-get-all-presets-of-type 'configurePresets))
+  (ci-get-all-presets-of-type 'configurePresets show-hidden))
 
 
 (defun ci--get-configure-parent-preset (preset)
