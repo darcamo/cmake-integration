@@ -140,8 +140,10 @@ Get the name of all targets for completion, respecting the value
 of the `*-targets-during-completion' variables.
 
 If a prefix argument is provided, then the value of
-`cmake-integration-include-subproject-targets-during-completion'
-will be ignored."
+`cmake-integration-include-subproject-targets-during-completion' is
+temporarily considered as t.
+
+If two prefix arguments are provided, then all targets are included."
   (let* ((include-subprojects (or current-prefix-arg ci-include-subproject-targets-during-completion))
          (list-of-targets (if include-subprojects
                               (ci--get-targets-from-codemodel-json-file-2
@@ -152,6 +154,9 @@ will be ignored."
 
     ;; Filter the list of targets
     (cond
+     ;; If two C-u are passed, include all targets
+     ((equal current-prefix-arg '(16)) list-of-targets)
+
      ;; Do not include utility and library targets
      ((and ci-hide-utility-targets-during-completion
            ci-hide-library-targets-during-completion)

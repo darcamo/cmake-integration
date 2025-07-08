@@ -164,6 +164,23 @@ be added in the future, if necessary.
 folders for different presets.
 
 
+## Hiding some targets during completion
+
+When invoking `cmake-integration-save-and-compile`, a list of targets is presented, allowing the user to select one for
+compilation. In many cases, you may only be interested in a specific subset of targets, such as executable targets. To
+streamline this process, several variables can be used to filter the targets displayed during completion. These
+variables are:
+
+- `cmake-integration-include-subproject-targets-during-completion`
+- `cmake-integration-hide-library-targets-during-completion`
+- `cmake-integration-hide-utility-targets-during-completion`
+
+By default, subprojects are included, and no targets are hidden. You only need to configure these variables if you want
+to reduce the number of targets shown during completion, which can be useful for improving performance in large projects
+(mainly during the initial run, as the target list is cached thereafter). Additionally, even if these variables are set
+to filter the target list, you can temporarily override them and display all targets by pressing `C-u C-u` before
+executing `cmake-integration-save-and-compile`.
+
 ## Project Configuration (Non-Version Controlled Projects)
 
 `cmake-integration` relies on Emacs's `project` infrastructure to find the project root. For Git repositories, this
