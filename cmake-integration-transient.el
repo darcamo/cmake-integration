@@ -286,7 +286,7 @@ will be obtained from PRESET and this returns the string
   ["Build"
    ("p" ci--set-build-preset-suffix)
    ("t" ci--set-build-target-suffix)
-   ("j" "Number of concurrent processes to use" "--jobs=" :transient t)
+   ("j" "Number of concurrent processes to use" "--parallel=" :transient t)
    ;; ("c" "Select the configuration (only for ninja multi-config)" (lambda () (interactive) (message "Implement-me")) :transient nil)
    ("C" "Clean first" "--clean-first" :transient t)
    ("b" "Build" (lambda () (interactive)
