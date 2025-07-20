@@ -153,6 +153,17 @@ a valid component of a CMake target name (see
 https://cmake.org/cmake/help/latest/policy/CMP0037.html ).")
 
 
+(defvar ci--ctest-label-include-regexp nil
+  "Regexp to pass to ctest for label inclusion.
+
+This is a list of strings, each one representing a label to include.")
+
+
+(defvar ci--ctest-label-exclude-regexp nil
+  "Regexp to pass to ctest for label exclusion.
+
+This is a list of strings, each one representing a label to include.")
+
 
 (provide 'cmake-integration-variables)
 

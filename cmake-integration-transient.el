@@ -113,6 +113,23 @@ will be obtained from PRESET and this returns the string
     (format (propertize "Conan file: %s" 'face 'font-lock-warning-face) propertized-conanfile)))
 
 
+(defun ci--describe-ctest-label-include-regexp ( )
+  "Describe command line argument to set the configure preset."
+  (if (not ci--ctest-label-include-regexp)
+      (format "Select labels to include (%s)" (ci--get-command-line-arg-with-face "-L <label-regexp> -L <other-label-regexp> ..." nil))
+    (let ((command-line-options (ci--ctest-get-include-labels-command-line-string)))
+      (format "Select labels to include (%s)" (ci--get-command-line-arg-with-face command-line-options t)))))
+
+
+
+(defun ci--describe-ctest-label-exclude-regexp ( )
+  "Describe command line argument to set the configure preset."
+  (if (not ci--ctest-label-exclude-regexp)
+      (format "Select labels to exclude (%s)" (ci--get-command-line-arg-with-face "-LE <label-regexp> -LE <other-label-regexp> ..." nil))
+    (let ((command-line-options (ci--ctest-get-exclude-labels-command-line-string)))
+      (format "Select labels to exclude (%s)" (ci--get-command-line-arg-with-face command-line-options t)))))
+
+
 (transient-define-suffix ci--set-configure-preset-suffix ()
   "Set configure preset."
   :transient 'transient--do-call
@@ -197,6 +214,25 @@ will be obtained from PRESET and this returns the string
         (setq run-arguments nil))
     (ci--set-runtime-arguments run-arguments)))
 
+
+(transient-define-suffix ci--set-ctest-label-include-regexp-suffix ()
+  "Set configure preset."
+  :transient 'transient--do-call
+  :description #'ci--describe-ctest-label-include-regexp
+  (interactive)
+  (if ci--ctest-label-include-regexp
+      (setq ci--ctest-label-include-regexp nil)
+    (ci-select-ctest-labels-to-include)))
+
+
+(transient-define-suffix ci--set-ctest-label-exclude-regexp-suffix ()
+  "Set configure preset."
+  :transient 'transient--do-call
+  :description #'ci--describe-ctest-label-exclude-regexp
+  (interactive)
+  (if ci--ctest-label-exclude-regexp
+      (setq ci--ctest-label-exclude-regexp nil)
+    (ci-select-ctest-labels-to-exclude)))
 
 
 (transient-define-prefix ci--all-presetts-transient ()
@@ -304,7 +340,11 @@ will be obtained from PRESET and this returns the string
    ;; ("d" "Select test directory" ci-select-configure-preset :transient nil)
    ("f" "Run only previously failed tests" "--rerun-failed" :transient t)
    ("o" "Output anything if the test should fail." "--output-on-failure" :transient t)
-   ;; ("j" "Number of test in parallel" ci-select-configure-preset :transient nil)
+   ("j" "Number of test in parallel" "-j=")
+   ("LI" ci--set-ctest-label-include-regexp-suffix)
+   ("LE" ci--set-ctest-label-exclude-regexp-suffix)
+   ("LP" "Print test labels" ci-print-ctest-labels
+    :transient nil)
    ("P" "Show progress" "--progress")
    ("Q" "Quiet" "--quiet" :transient t)
    ("t" "Run tests" (lambda () (interactive)

@@ -37,6 +37,14 @@ cmake command."
   (when current-prefix-arg
     (push "--output-on-failure" extra-args)
     (push "--rerun-failed" extra-args))
+
+  ;; Append the result of calling ci--ctest-get-include-labels-command-line-string and ci--ctest-get-exclude-labels-command-line-string to extra-args list
+    (let ((include-labels (ci--ctest-get-include-labels-command-line-string))
+            (exclude-labels (ci--ctest-get-exclude-labels-command-line-string)))
+        (when (not (string-empty-p include-labels))
+        (push include-labels extra-args))
+        (when (not (string-empty-p exclude-labels))
+        (push exclude-labels extra-args)))
   
   (compile (ci--get-ctest-command extra-args)))
 
@@ -78,6 +86,68 @@ This function is added to `cmake-integration-after-set-configure-preset-hook'."
             (setq ci-test-preset (car presets))
           (setq ci-test-preset nil)))
     (setq ci-test-preset nil)))
+
+
+(defun ci-print-ctest-labels ()
+  "Get all the test labels from the current CMake project."
+  (interactive)
+  (ci-run-ctest '("--print-labels")))
+
+
+(defun ci--get-all-ctest-labels ()
+  "Get all the test labels from the current CMake project."
+  (let* ((build-folder (ci-get-build-folder))
+         (command (format "cd %s && ctest --print-labels" build-folder))
+         (output (shell-command-to-string command))
+         (labels (nthcdr 2 (split-string output "\n" t))))
+    (mapcar #'string-trim-left (mapcar #'string-trim-right labels))))
+
+
+(defun ci--select-ctest-labels ()
+  "Select and returns one or more ctest labels."
+  (let* ((labels (ci--get-all-ctest-labels))
+         (selected-labels (completing-read-multiple
+                           "Select labels to include (separated by comma): "
+                           labels nil t)))
+    (delete-dups selected-labels)))
+
+
+(defun ci-select-ctest-labels-to-include ()
+  "Select one or more labels to include in the ctest run."
+  (interactive)
+  (if current-prefix-arg
+      (progn
+        (setq ci--ctest-label-include-regexp nil)
+        (message "Cleared ctest label include regexp."))
+    (setq ci--ctest-label-include-regexp (ci--select-ctest-labels))))
+
+
+(defun ci-select-ctest-labels-to-exclude ()
+  "Select one or more labels to exclude from the ctest run."
+  (interactive)
+  (if current-prefix-arg
+      (progn
+        (setq ci--ctest-label-exclude-regexp nil)
+        (message "Cleared ctest label exclude regexp."))
+    (setq ci--ctest-label-exclude-regexp (ci--select-ctest-labels))))
+
+
+(defun ci--ctest-get-include-labels-command-line-string ()
+  "Get the command line options specifying the test labels to include."
+  (if ci--ctest-label-include-regexp
+      (s-join " " (mapcar
+                   #'(lambda (s) (format "-L %s" s))
+                   ci--ctest-label-include-regexp))
+    ""))
+
+
+(defun ci--ctest-get-exclude-labels-command-line-string ()
+  "Get the command line options specifying the test labels to exclude."
+  (if ci--ctest-label-exclude-regexp
+      (s-join " " (mapcar
+                   #'(lambda (s) (format "-LE %s" s))
+                   ci--ctest-label-exclude-regexp))
+    ""))
 
 
 (add-hook 'ci-after-set-configure-preset-hook 'ci--adjust-test-preset)
