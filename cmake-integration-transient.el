@@ -121,7 +121,6 @@ will be obtained from PRESET and this returns the string
       (format "Select labels to include (%s)" (ci--get-command-line-arg-with-face command-line-options t)))))
 
 
-
 (defun ci--describe-ctest-label-exclude-regexp ( )
   "Describe command line argument to set the configure preset."
   (if (not ci--ctest-label-exclude-regexp)
@@ -333,6 +332,25 @@ will be obtained from PRESET and this returns the string
   )
 
 
+(transient-define-prefix ci--test-labels-prefix ()
+  "Prefix for selecting ctest labels."
+  ["Labels"
+   ("c" "Clear all labels" (lambda () (interactive)
+                             (setq ci--ctest-label-include-regexp nil
+                                   ci--ctest-label-exclude-regexp nil)
+                             (message "Cleared all ctest labels."))
+    :transient t)
+   ("i" ci--set-ctest-label-include-regexp-suffix)
+   ("e" ci--set-ctest-label-exclude-regexp-suffix)
+   ("p" "Print test labels" (lambda () (interactive)
+                              (message "Available test labels:\n%s"
+                                       (s-join ", " (ci--get-all-ctest-labels))))
+    :transient t)
+   ("q" "Back" transient-quit-one)
+   ]
+  )
+
+
 (transient-define-prefix ci--test-transient ()
   "Perform actions related to running ctest."
   ["Test"
@@ -341,10 +359,8 @@ will be obtained from PRESET and this returns the string
    ("f" "Run only previously failed tests" "--rerun-failed" :transient t)
    ("o" "Output anything if the test should fail." "--output-on-failure" :transient t)
    ("j" "Number of test in parallel" "-j=")
-   ("LI" ci--set-ctest-label-include-regexp-suffix)
-   ("LE" ci--set-ctest-label-exclude-regexp-suffix)
-   ("LP" "Print test labels" ci-print-ctest-labels
-    :transient nil)
+   ("l" "Select test labels" ci--test-labels-prefix
+    :transient t)
    ("P" "Show progress" "--progress")
    ("Q" "Quiet" "--quiet" :transient t)
    ("t" "Run tests" (lambda () (interactive)
