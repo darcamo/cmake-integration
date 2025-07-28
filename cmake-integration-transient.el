@@ -175,7 +175,7 @@ will be obtained from PRESET and this returns the string
   (interactive)
   (if ci-current-target
       (setq ci-current-target nil)
-    (ci--select-build-target)))
+    (ci-select-current-target)))
 
 
 (transient-define-suffix ci--set-conan-profile-suffix ()

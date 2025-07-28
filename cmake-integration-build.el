@@ -178,10 +178,11 @@ If two prefix arguments are provided, then all targets are included."
      (t list-of-targets))))
 
 
-(defun ci--select-build-target ()
+(defun ci-select-current-target ()
   "Ask for a target to build and return the target name."
 
   ;; If the build folder is missing we should stop with an error
+  (interactive)
   (check-if-build-folder-exists-and-throws-if-not)
 
   (if-let* ((json-filename (ci--get-codemodel-reply-json-filename))
@@ -211,7 +212,7 @@ completions."
   ;; Ask the user for a target and set the
   ;; cmake-integration-current-target variable with the chosen target
   ;; name
-  (ci--select-build-target)
+  (ci-select-current-target)
 
   (ci--save-and-compile-no-completion ci-current-target))
 
