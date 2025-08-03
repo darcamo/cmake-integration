@@ -524,10 +524,13 @@ The command is run from the build folder of the current cmake
 configuration."
   (if profile
       (format "%s --profile %s" (ci--get-conan-run-command) profile)
-    (format "cd %s && conan install %s %s"
-            (ci-get-build-folder)
-            (ci--get-project-root-folder)
-            ci-conan-arguments)))
+    (let ((build-folder (ci-get-build-folder)))
+      (unless (file-directory-p build-folder)
+        (make-directory build-folder))
+      (format "cd %s && conan install %s %s"
+              build-folder
+              (ci--get-project-root-folder)
+              ci-conan-arguments))))
 
 
 (defun ci-get-conan-run-command ()
