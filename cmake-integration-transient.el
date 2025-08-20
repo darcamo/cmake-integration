@@ -394,7 +394,7 @@ will be obtained from PRESET and this returns the string
   ["Package"
    ("p" ci--set-package-preset-suffix)
    ;; ("G" "Select the generator" (lambda () (interactive)(message "Set Generator")) :transient t)
-   ("c" "Create package" ci-run-cpack :transient t)
+   ("c" "Create package" ci-run-cpack :transient nil)
    ("q" "Quit" transient-quit-one)
    ]
   )
