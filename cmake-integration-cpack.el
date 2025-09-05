@@ -44,21 +44,22 @@ cmake command."
   (compile (ci--get-install-command extra-args)))
 
 
-(defun ci--get-cpack-command ()
-  "Get the command to run cpack."
+(defun ci--get-cpack-command (&optional extra-args)
+  "Get the command to run cpack passing EXTRA-ARGS."
   (let* ((preset-name (ci-get-last-package-preset-name))
          (project-folder (ci--get-project-root-folder))
-         (build-folder (ci-get-build-folder)))
+         (build-folder (ci-get-build-folder))
+         (extra-args-string (string-join extra-args " ")))
     (if preset-name
-        (format "cd %s && cpack --preset %s" project-folder preset-name)
-      (format "cd %s && cpack ." build-folder))))
+        (format "cd %s && cpack --preset %s %s" project-folder preset-name extra-args-string)
+      (format "cd %s && cpack . %s" build-folder extra-args-string))))
 
 
 ;;;###autoload (autoload 'cmake-integration-run-cpack "cmake-integration")
-(defun ci-run-cpack ()
-  "Run cpack."
+(defun ci-run-cpack (&optional extra-args)
+  "Run cpack passing EXTRA-ARGS."
   (interactive)
-  (compile (ci--get-cpack-command)))
+  (compile (ci--get-cpack-command extra-args)))
 
 
 ;;;###autoload (autoload 'cmake-integration-get-package-presets "cmake-integration")

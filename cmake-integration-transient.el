@@ -393,8 +393,11 @@ will be obtained from PRESET and this returns the string
   "Perform actions related to running cpack."
   ["Package"
    ("p" ci--set-package-preset-suffix)
-   ;; ("G" "Select the generator" (lambda () (interactive)(message "Set Generator")) :transient t)
-   ("c" "Create package" ci-run-cpack :transient nil)
+   ("g" "Select the generator" "-G=" :transient t)
+   ;; ("c" "Create package" ci-run-cpack :transient nil)
+   ("c" "Create package" (lambda () (interactive)
+                           (let ((extra-args (transient-args (oref transient-current-prefix command))))
+                             (ci-run-cpack extra-args))))
    ("q" "Quit" transient-quit-one)
    ]
   )
