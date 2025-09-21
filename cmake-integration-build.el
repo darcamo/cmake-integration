@@ -100,8 +100,10 @@ See the documentation of `cmake-integration-get-build-command' for the
 EXTRA-ARGS parameter."
   (if (buffer-file-name)
       (save-buffer 0))
-  (let ((compile-command (ci-get-build-command target extra-args)))
-    (compile compile-command)))
+  (pcase-let* ((`(,run-dir ,cmd)
+                (ci-get-build-command target extra-args)))
+    (let ((default-directory run-dir))
+      (compile cmd))))
 
 
 (defun ci--get-target-type-from-name (target-name all-targets)
@@ -232,6 +234,10 @@ EXTRA-ARGS parameter."
 (defun ci-get-build-command (target &optional extra-args)
   "Get the command to compile target TARGET passing EXTRA-ARGS to cmake.
 
+Return a list (RUN-DIR COMMAND), where RUN-DIR is the directory from
+which the command must be executed, and COMMAND is the command line
+string to run.
+
 EXTRA-ARGS is a list of strings, which will be joined with a space as
 separation and then passed to cmake command to build the target."
   (pcase-let* ((`(,target-name ,config-name)
@@ -251,7 +257,8 @@ separation and then passed to cmake command to build the target."
     ;; Add build folder or preset part
     (push preset-arg-or-build-folder build-args)
 
-    (format "cd %s && cmake --build %s" project-root (string-join build-args " "))))
+    ;; Return (run-dir command)
+    (list project-root (format "cmake --build %s" (string-join build-args " ")))))
 
 
 ;; See CMake file API documentation for what projectIndex is

@@ -7,9 +7,6 @@
 (require 'cmake-integration-core-presets)
 
 
-(declare-function ci--prepend-conan-command "cmake-integration-conan.el")
-
-
 (defvar ci-after-set-configure-preset-hook nil "A hook run after changing the configure preset.")
 
 
@@ -88,25 +85,33 @@ a vector of presets is returned."
 
 
 (defun ci--get-configure-command-with-preset (preset)
-  "Get the command to configure with CMake using the preset PRESET."
-  (format "cd %s && cmake . -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --preset %s"
-          (ci--get-project-root-folder)
-          (ci--get-preset-name preset)))
+  "Get the directory and command to configure with CMake using the preset PRESET.
+
+Return a list (RUN-DIR COMMAND), where RUN-DIR is the directory from
+which the command must be executed, and COMMAND is the command line
+string to run (without any `cd`)."
+  (list (ci--get-project-root-folder)
+        (format "cmake . -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --preset %s"
+                (ci--get-preset-name preset))))
 
 
 (defun ci--get-configure-command-without-preset ()
-  "Get the command to configure with CMake when presets are not used."
+  "Get the directory and command to configure with CMake when presets are not used.
+
+Return a list (RUN-DIR COMMAND), where RUN-DIR is the directory from
+which the command must be executed, and COMMAND is the command line
+string to run (without any `cd`)."
   (if ci-generator
       ;; case with generator set
-      (format "cd %s && cmake -G \"%s\" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON %s"
-              (ci-get-build-folder)
-              ci-generator
-              (ci--get-project-root-folder))
+      (list (ci-get-build-folder)
+            (format "cmake -G \"%s\" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON %s"
+                    ci-generator
+                    (ci--get-project-root-folder)))
 
     ;; case without generator set
-    (format "cd %s && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON %s"
-            (ci-get-build-folder)
-            (ci--get-project-root-folder))))
+    (list (ci-get-build-folder)
+          (format "cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON %s"
+                  (ci--get-project-root-folder)))))
 
 
 ;;;###autoload (autoload 'cmake-integration-select-configure-preset "cmake-integration")
@@ -156,7 +161,11 @@ This will only create the link if
 
 
 (defun ci--get-reconfigure-command ()
-  "Get the cmake command to configure the project."
+  "Get the directory and command to configure the project.
+
+Return a list (RUN-DIR COMMAND), where RUN-DIR is the directory from
+which the command must be executed, and COMMAND is the command line
+string to run (without any `cd`)."
   (if ci-configure-preset
       (ci--get-configure-command-with-preset
        ci-configure-preset)
@@ -177,14 +186,11 @@ passed to cmake."
 
   (ci--create-empty-codemodel-file)
 
-  (let* ((cmake-command (ci--get-reconfigure-command))
-         (extra-args-string (string-join extra-args " "))
-         (cmake-command-with-extra-args (format "%s %s" cmake-command extra-args-string))
-         ;; If a prefix argument was passed we will call conan before cmake
-         (cmake-and-conan-command (if current-prefix-arg
-                                      (ci--prepend-conan-command cmake-command-with-extra-args)
-                                    cmake-command-with-extra-args)))
-    (compile cmake-and-conan-command))
+  (pcase-let* ((`(,run-dir ,cmake-command) (ci--get-reconfigure-command))
+               (extra-args-string (string-join extra-args " "))
+               (cmake-command-with-extra-args (format "%s %s" cmake-command extra-args-string)))
+    (let ((default-directory run-dir))
+      (compile cmake-command-with-extra-args)))
 
   ;; Make a link of the compile_commands.json file to the project root
   (ci--create-link-to-compile-commands))

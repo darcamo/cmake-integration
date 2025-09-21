@@ -10,6 +10,7 @@
 (defvar ci--library-location "" "Library location that will be locally set.")
 (defvar ci-addition-marker-char ?i "Character used to mark items for addition.")
 
+
 (defun ci--get-conan-available-profiles ()
   "Get the available conan profiles."
   (let ((output (shell-command-to-string "conan profile list")))
@@ -518,27 +519,20 @@ See the variable `tablist-operations-function' for more."
 
 
 (defun ci--get-conan-run-command (&optional profile)
-  "Get the command to run `conan install' using PROFILE.
-
-The command is run from the build folder of the current cmake
-configuration."
-  (if profile
-      (format "%s --profile %s" (ci--get-conan-run-command) profile)
-    (let ((build-folder (ci-get-build-folder)))
-      (unless (file-directory-p build-folder)
-        (make-directory build-folder))
-      (format "cd %s && conan install %s %s"
-              build-folder
-              (ci--get-project-root-folder)
-              ci-conan-arguments))))
+  "Get the `conan install' command to run using PROFILE."
+  (let* ((base (format "conan install %s %s"
+                       (ci--get-project-root-folder)
+                       ci-conan-arguments)))
+    (if profile
+        (format "%s --profile %s" base profile)
+      base)))
 
 
 (defun ci-get-conan-run-command ()
-  "Get the command to run `conan install'.
+  "Get the `conan install' command to run.
 
-The command is run from the build folder of the current cmake
-configuration and the profile passed to conan is taken from the
-`cmake-integration-conan-profile' variable."
+Return the `conan install' command line. The profile passed to conan is
+taken from the `cmake-integration-conan-profile' variable."
   (if ci-conan-profile
       ;; If cmake-integration-conan-profile is set, it can be either a string
       ;; with a single profile, or an alist mapping cmake profile names to conan
@@ -549,7 +543,7 @@ configuration and the profile passed to conan is taken from the
         (let* ((cmake-profile-name (alist-get 'name ci-configure-preset))
                (conan-profile-name (alist-get cmake-profile-name ci-conan-profile nil nil 'equal)))
           ;; Note that if we have no conan profile name in the alist
-          ;; for the current cmake profile nane, then
+          ;; for the current cmake profile name, then
           ;; `conan-profile-name' is nil and no profile will be used
           (ci--get-conan-run-command conan-profile-name)))
 
@@ -560,17 +554,14 @@ configuration and the profile passed to conan is taken from the
 ;;;###autoload (autoload 'cmake-integration-run-conan "cmake-integration")
 (defun ci-run-conan ()
   "Run conan install in the current build folder."
-  (compile (ci-get-conan-run-command)))
+  (let* ((run-dir (ci-get-build-folder))
+         (cmd (ci-get-conan-run-command)))
 
+    (unless (file-directory-p run-dir)
+      (make-directory run-dir t))
 
-(defun ci-prepend-conan-command (cmake-command)
-  "Prepend the CMAKE-COMMAND with the conan command.
-
-The output can be passed to compile,"
-  (let* ((conan-command (format "%s && " (ci-get-conan-run-command))))
-    (if ci-include-conan-toolchain-file
-        (format "%s%s --toolchain conan_toolchain.cmake" conan-command cmake-command)
-      (format "%s%s" conan-command cmake-command))))
+    (let ((default-directory run-dir))
+      (compile cmd))))
 
 
 (defun ci-browse-conan-center (&optional search-term)
