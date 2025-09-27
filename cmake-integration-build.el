@@ -146,6 +146,9 @@ If a prefix argument is provided, then the value of
 temporarily considered as t.
 
 If two prefix arguments are provided, then all targets are included."
+  (when (or (null json-filename) (not (file-exists-p json-filename)))
+    (error "Could not find the CMake codemodel reply file. Please run either `cmake-integration-cmake-reconfigure' or `cmake-integration-cmake-configure-with-preset'"))
+
   (let* ((include-subprojects (or current-prefix-arg ci-include-subproject-targets-during-completion))
          (list-of-targets (if include-subprojects
                               (ci--get-targets-from-codemodel-json-file-2
