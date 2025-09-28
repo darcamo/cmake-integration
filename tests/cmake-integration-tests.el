@@ -337,11 +337,12 @@ test code from inside a 'test project'."
      (let ((cmake-integration-run-arguments "arg1 arg2 arg3")
            (cmake-integration-run-working-directory 'root))
        (let* ((expected-run-dir (cmake-integration--get-project-root-folder))
-              (expected-cmd (format "%s %s"
-                                    (cmake-integration-get-target-executable-full-path "bin/myexec")
+              (expected-cmd (format "./%s %s"
+                                    (file-relative-name (cmake-integration-get-target-executable-full-path "bin/myexec") expected-run-dir)
                                     cmake-integration-run-arguments)))
-         (should (equal (cmake-integration--get-run-command "bin/myexec")
-                        (list expected-run-dir expected-cmd))))))))
+         (pcase-let* ((`(,dir ,command) (cmake-integration--get-run-command "bin/myexec")))
+           (should (filepath-equal-p dir expected-run-dir))
+           (should (equal command expected-cmd))))))))
 
 (ert-deftest test-cmake-integration--get-run-command--build-folder ()
   (test-fixture-setup
@@ -350,9 +351,11 @@ test code from inside a 'test project'."
      (let ((cmake-integration-run-arguments "arg1 arg2 arg3")
            (cmake-integration-run-working-directory 'build))
        (let* ((expected-run-dir (cmake-integration-get-build-folder))
-              (expected-cmd (format "%s %s" "bin/myexec" cmake-integration-run-arguments)))
-         (should (equal (cmake-integration--get-run-command "bin/myexec")
-                        (list expected-run-dir expected-cmd))))))))
+              (expected-cmd (format "./%s %s" "bin/myexec" cmake-integration-run-arguments)))
+
+         (pcase-let* ((`(,dir ,command) (cmake-integration--get-run-command "bin/myexec")))
+           (should (filepath-equal-p dir expected-run-dir))
+           (should (equal command expected-cmd))))))))
 
 (ert-deftest test-cmake-integration--get-run-command--bin-folder ()
   (test-fixture-setup
@@ -362,8 +365,10 @@ test code from inside a 'test project'."
            (cmake-integration-run-working-directory 'bin))
        (let* ((expected-run-dir (file-name-concat (cmake-integration-get-build-folder) "bin/"))
               (expected-cmd (format "./%s %s" "myexec" cmake-integration-run-arguments)))
-         (should (equal (cmake-integration--get-run-command "bin/myexec")
-                        (list expected-run-dir expected-cmd))))))))
+
+         (pcase-let* ((`(,dir ,command) (cmake-integration--get-run-command "bin/myexec")))
+           (should (filepath-equal-p dir expected-run-dir))
+           (should (equal command expected-cmd))))))))
 
 (ert-deftest test-cmake-integration--get-run-command--custom-folder ()
   (test-fixture-setup
@@ -372,13 +377,13 @@ test code from inside a 'test project'."
      (let ((cmake-integration-run-arguments "arg1 arg2 arg3")
            (cmake-integration-run-working-directory "subfolder"))
        (let* ((expected-run-dir (file-name-concat (cmake-integration--get-project-root-folder) "subfolder"))
-              (expected-cmd (format "%s %s"
-                                    (cmake-integration-get-target-executable-full-path "bin/myexec")
+              (expected-cmd (format "./%s %s"
+                                    (file-relative-name (cmake-integration-get-target-executable-full-path "bin/myexec") expected-run-dir)
                                     cmake-integration-run-arguments)))
-         (should (equal (cmake-integration--get-run-command "bin/myexec")
-                        (list expected-run-dir expected-cmd))))))))
 
-
+         (pcase-let* ((`(,dir ,command) (cmake-integration--get-run-command "bin/myexec")))
+           (should (filepath-equal-p dir expected-run-dir))
+           (should (equal command expected-cmd))))))))
 
 (ert-deftest test-cmake-integration--get-debug-command--root-folder ()
   (test-fixture-setup

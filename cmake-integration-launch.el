@@ -69,35 +69,6 @@ If TARGET-NAME is not provided use the last target (saved in a
   (file-name-concat (ci-get-build-folder) executable-filename))
 
 
-(defun ci--get-run-command-project-root-cwd (executable-filename)
-  "Get the run command string for EXECUTABLE-FILENAME from the project root folder."
-  (format "%s %s"
-          (ci-get-target-executable-full-path executable-filename)
-          ci-run-arguments))
-
-
-(defun ci--get-run-command-build-folder-cwd (executable-filename)
-  "Get the run command string for EXECUTABLE-FILENAME from the build folder."
-  (format "%s %s" executable-filename ci-run-arguments))
-
-
-(defun ci--get-run-command-bin-folder-cwd (executable-filename)
-  "Get the run command string for EXECUTABLE-FILENAME from the binary folder.
-
-The binary folder is the folder containing the executable."
-  (format "./%s %s"
-          (file-name-nondirectory executable-filename)
-          ci-run-arguments))
-
-
-(defun ci--get-run-command-custom-cwd (executable-filename project-subfolder)
-  "Get run command string for EXECUTABLE-FILENAME from PROJECT-SUBFOLDER."
-  (cl-assert (stringp project-subfolder))
-  (format "%s %s"
-          (ci-get-target-executable-full-path executable-filename)
-          ci-run-arguments))
-
-
 (defun ci--compilation-buffer-name-function (name-of-mode)
   "Get the compilation buffer name for NAME-OF-MODE current target name."
   name-of-mode  ;; Avoid warning about unused argument
@@ -110,14 +81,11 @@ The binary folder is the folder containing the executable."
 Return a list (RUN-DIR COMMAND), where RUN-DIR is the directory from
 which the command must be executed, and COMMAND is the command line
 string to run."
-  (let ((run-dir (ci--get-working-directory executable-filename)))
+  (let* ((run-dir (ci--get-working-directory executable-filename))
+         (executable-path (file-relative-name (ci-get-target-executable-full-path executable-filename) run-dir)))
     (list
      run-dir
-     (pcase ci-run-working-directory
-       ('root (ci--get-run-command-project-root-cwd executable-filename))
-       ('build (ci--get-run-command-build-folder-cwd executable-filename))
-       ('bin (ci--get-run-command-bin-folder-cwd executable-filename))
-       (_ (ci--get-run-command-custom-cwd executable-filename ci-run-working-directory))))))
+     (format "./%s %s" executable-path ci-run-arguments))))
 
 
 ;;;###autoload (autoload 'cmake-integration-run-last-target "cmake-integration")
