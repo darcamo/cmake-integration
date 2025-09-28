@@ -73,9 +73,9 @@ Otherwise return it unchanged."
   (unless (file-exists-p (ci--get-path-of-codemodel-query-file))
     ;; Create the folder if it does not exists yet
     (unless (file-exists-p (ci--get-query-folder))
-      (shell-command (concat "mkdir -p " (ci--get-query-folder))))
+      (make-directory (ci--get-query-folder) t))
     ;; Create the codemodel file
-    (shell-command (concat "touch " (ci--get-path-of-codemodel-query-file)))))
+    (make-empty-file (ci--get-path-of-codemodel-query-file))))
 
 
 (defun ci-get-build-folder ()

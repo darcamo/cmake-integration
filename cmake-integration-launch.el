@@ -69,41 +69,6 @@ If TARGET-NAME is not provided use the last target (saved in a
   (file-name-concat (ci-get-build-folder) executable-filename))
 
 
-(defun ci--get-run-command-project-root-cwd (executable-filename)
-  "Get the run command for EXECUTABLE-FILENAME from the project root folder."
-  (format "cd %s && %s %s"
-          (ci--get-working-directory executable-filename)
-          (ci-get-target-executable-full-path executable-filename)
-          ci-run-arguments))
-
-
-(defun ci--get-run-command-build-folder-cwd (executable-filename)
-  "Get the run command for EXECUTABLE-FILENAME from the build folder."
-  (format "cd %s && %s %s"
-          (ci--get-working-directory executable-filename)
-          executable-filename
-          ci-run-arguments))
-
-
-(defun ci--get-run-command-bin-folder-cwd (executable-filename)
-  "Get the run command for EXECUTABLE-FILENAME from the binary folder.
-
-The binary folder is the folder containing the executable."
-  (format "cd %s && ./%s %s"
-          (ci--get-working-directory executable-filename)
-          (file-name-nondirectory executable-filename)
-          ci-run-arguments))
-
-
-(defun ci--get-run-command-custom-cwd (executable-filename project-subfolder)
-  "Get the correct run command EXECUTABLE-FILENAME from a PROJECT-SUBFOLDER."
-  (cl-assert (stringp project-subfolder))
-  (format "cd %s && %s %s"
-          (ci--get-working-directory executable-filename)
-          (ci-get-target-executable-full-path executable-filename)
-          ci-run-arguments))
-
-
 (defun ci--compilation-buffer-name-function (name-of-mode)
   "Get the compilation buffer name for NAME-OF-MODE current target name."
   name-of-mode  ;; Avoid warning about unused argument
@@ -111,16 +76,16 @@ The binary folder is the folder containing the executable."
 
 
 (defun ci--get-run-command (executable-filename)
-  "Get the correct run command for EXECUTABLE-FILENAME.
+  "Get the directory and the run command for EXECUTABLE-FILENAME.
 
-Get the correct run command for EXECUTABLE-FILENAME respecting
-the value of the `cmake-integration-run-working-directory'
-variable."
-  (pcase ci-run-working-directory
-    ('root (ci--get-run-command-project-root-cwd executable-filename))
-    ('build (ci--get-run-command-build-folder-cwd executable-filename))
-    ('bin (ci--get-run-command-bin-folder-cwd executable-filename))
-    (_ (ci--get-run-command-custom-cwd executable-filename ci-run-working-directory))))
+Return a list (RUN-DIR COMMAND), where RUN-DIR is the directory from
+which the command must be executed, and COMMAND is the command line
+string to run."
+  (let* ((run-dir (ci--get-working-directory executable-filename))
+         (executable-path (file-relative-name (ci-get-target-executable-full-path executable-filename) run-dir)))
+    (list
+     run-dir
+     (format "./%s %s" executable-path ci-run-arguments))))
 
 
 ;;;###autoload (autoload 'cmake-integration-run-last-target "cmake-integration")
@@ -132,27 +97,31 @@ variable."
   (let ((compilation-buffer-name-function (if ci-use-separated-compilation-buffer-for-each-target
                                               'ci--compilation-buffer-name-function
                                             compilation-buffer-name-function)))
-    ;; Run the target
-    (compile (ci--get-run-command (ci-get-target-executable-filename)))))
+    (pcase-let* ((`(,run-dir ,cmd) (ci--get-run-command (ci-get-target-executable-filename))))
+      (let ((default-directory run-dir))
+        ;; Run the target
+        (compile cmd)))))
 
 
 (defun ci--get-debug-command (executable-filename)
-  "Get the correct debug command for EXECUTABLE-FILENAME.
+  "Get the directory and the debug command for EXECUTABLE-FILENAME.
 
-Get the correct debug command for EXECUTABLE-FILENAME respecting
-the value of the `cmake-integration-run-working-directory'
-variable. This should be passed to gdb command in Emacs."
-  (let ((cwd (ci--get-working-directory executable-filename)))
-    (format
-     "gdb -i=mi --cd=%s --args %s %s"
-     cwd
-     (ci-get-target-executable-full-path executable-filename)
-     ci-run-arguments)))
+Return a list (RUN-DIR COMMAND), where RUN-DIR is the directory from
+which the command must be executed, and COMMAND is the command line
+string to run (`gdb' invocation)."
+  (let ((cwd (ci--get-working-directory executable-filename))
+        (gdb-command (format
+                      "gdb -i=mi --args %s %s"
+                      (ci-get-target-executable-full-path executable-filename)
+                      ci-run-arguments)))
+    (list cwd gdb-command)))
 
 
 (defun ci--launch-gdb-with-last-target ()
   "Launch gdb inside Emacs to debug the last target."
-  (gdb (ci--get-debug-command (ci-get-target-executable-filename))))
+  (pcase-let* ((`(,run-dir ,cmd) (ci--get-debug-command (ci-get-target-executable-filename))))
+    (let ((default-directory run-dir))
+      (gdb cmd))))
 
 
 (declare-function dap-debug "dap-mode")
