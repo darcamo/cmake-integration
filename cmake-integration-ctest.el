@@ -11,18 +11,24 @@
 
 
 (defun ci--get-ctest-command (&optional extra-args)
-  "Get the command to run the tests passing EXTRA-ARGS.
+  "Get the run directory and ctest command to run the tests.
 
 EXTRA-ARGS must be a list of strings. These strings will be concatenated
-with a space as separator and the result string will be appended to the
-cmake command."
+with a space as separator and appended to the ctest command.
+
+Returns a list: (RUN-DIR CMD-STRING) where:
+- RUN-DIR is the directory where ctest should be executed.
+- CMD-STRING is the full ctest command to run."
   (let* ((preset-name (ci-get-last-test-preset-name))
          (project-root (ci--get-project-root-folder))
          (build-folder (ci-get-build-folder))
-         (extra-args-string (string-join extra-args " ")))
-    (if preset-name
-        (format "cd %s && ctest --preset %s %s" project-root preset-name extra-args-string)
-      (format "cd %s && ctest . %s" build-folder extra-args-string))))
+         (run-dir (if preset-name project-root build-folder))
+         (extra-args (or extra-args '()))
+         (extra-args-string (string-join extra-args " "))
+         (cmd (if preset-name
+                  (format "ctest --preset %s %s" preset-name extra-args-string)
+                (format "ctest . %s" extra-args-string))))
+    (list run-dir cmd)))
 
 
 ;;;###autoload (autoload 'cmake-integration-run-ctest "cmake-integration")
@@ -31,7 +37,7 @@ cmake command."
 
 EXTRA-ARGS must be a list of strings. These strings will be concatenated
 with a space as separator and the result string will be appended to the
-cmake command."
+ctest command."
   (interactive)
 
   (when current-prefix-arg
@@ -39,14 +45,16 @@ cmake command."
     (push "--rerun-failed" extra-args))
 
   ;; Append the result of calling ci--ctest-get-include-labels-command-line-string and ci--ctest-get-exclude-labels-command-line-string to extra-args list
-    (let ((include-labels (ci--ctest-get-include-labels-command-line-string))
-            (exclude-labels (ci--ctest-get-exclude-labels-command-line-string)))
-        (when (not (string-empty-p include-labels))
-        (push include-labels extra-args))
-        (when (not (string-empty-p exclude-labels))
-        (push exclude-labels extra-args)))
-  
-  (compile (ci--get-ctest-command extra-args)))
+  (let ((include-labels (ci--ctest-get-include-labels-command-line-string))
+        (exclude-labels (ci--ctest-get-exclude-labels-command-line-string)))
+    (when (not (string-empty-p include-labels))
+      (push include-labels extra-args))
+    (when (not (string-empty-p exclude-labels))
+      (push exclude-labels extra-args)))
+
+  (pcase-let* ((`(,run-dir ,cmd) (ci--get-ctest-command extra-args)))
+    (let ((default-directory run-dir))
+      (compile cmd))))
 
 
 ;;;###autoload (autoload 'cmake-integration-get-test-presets "cmake-integration")
@@ -74,6 +82,7 @@ variable will be used."
           (ci-select-preset all-presets "Test preset: "))))
 
 
+
 (defun ci--adjust-test-preset ()
   "Adjust the test preset when changing the configure preset.
 
@@ -97,8 +106,8 @@ This function is added to `cmake-integration-after-set-configure-preset-hook'."
 (defun ci--get-all-ctest-labels ()
   "Get all the test labels from the current CMake project."
   (let* ((build-folder (ci-get-build-folder))
-         (command (format "cd %s && ctest --print-labels" build-folder))
-         (output (shell-command-to-string command))
+         (default-directory build-folder)
+         (output (shell-command-to-string "ctest --print-labels"))
          (labels (nthcdr 2 (split-string output "\n" t))))
     (mapcar #'string-trim-left (mapcar #'string-trim-right labels))))
 
