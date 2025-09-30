@@ -16,8 +16,13 @@
 This assume that there is a `doc' folder in the project root,
 from where the doxygen command will be run."
   (interactive)
-  (let ((default-directory (expand-file-name (ci--get-docs-folder))))
-    (compile "doxygen")))
+  (let ((docs-folder (expand-file-name (ci--get-docs-folder))))
+    (unless (file-directory-p docs-folder)
+      (user-error "Documentation folder does not exist: %s" docs-folder))
+    (unless (file-exists-p (expand-file-name "Doxyfile" docs-folder))
+      (user-error "No Doxyfile found in %s" docs-folder))
+    (let ((default-directory docs-folder))
+      (compile "doxygen"))))
 
 
 ;;;###autoload (autoload 'cmake-integration-view-project-documentation "cmake-integration")
