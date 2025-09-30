@@ -45,21 +45,28 @@ cmake command."
 
 
 (defun ci--get-cpack-command (&optional extra-args)
-  "Get the command to run cpack passing EXTRA-ARGS."
+  "Return a list (RUN-DIR CMD) to run cpack with EXTRA-ARGS.
+
+RUN-DIR is the directory where the command should be executed. CMD is
+the cpack command string to be executed in RUN-DIR."
   (let* ((preset-name (ci-get-last-package-preset-name))
          (project-folder (ci--get-project-root-folder))
          (build-folder (ci-get-build-folder))
-         (extra-args-string (string-join extra-args " ")))
-    (if preset-name
-        (format "cd %s && cpack --preset %s %s" project-folder preset-name extra-args-string)
-      (format "cd %s && cpack . %s" build-folder extra-args-string))))
+         (run-dir (if preset-name project-folder build-folder))
+         (extra-args-string (string-join extra-args " "))
+         (cmd (if preset-name
+                  (format "cpack --preset %s %s" preset-name extra-args-string)
+                (format "cpack . %s" extra-args-string))))
+    (list run-dir cmd)))
 
 
 ;;;###autoload (autoload 'cmake-integration-run-cpack "cmake-integration")
 (defun ci-run-cpack (&optional extra-args)
   "Run cpack passing EXTRA-ARGS."
   (interactive)
-  (compile (ci--get-cpack-command extra-args)))
+  (pcase-let ((`(,run-dir ,cmd) (ci--get-cpack-command extra-args)))
+    (let ((default-directory run-dir))
+      (compile cmd))))
 
 
 ;;;###autoload (autoload 'cmake-integration-get-package-presets "cmake-integration")
