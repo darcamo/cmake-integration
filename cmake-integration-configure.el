@@ -101,17 +101,13 @@ string to run (without any `cd`)."
 Return a list (RUN-DIR COMMAND), where RUN-DIR is the directory from
 which the command must be executed, and COMMAND is the command line
 string to run (without any `cd`)."
-  (if ci-generator
-      ;; case with generator set
-      (list (ci-get-build-folder)
-            (format "cmake -G \"%s\" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON %s"
-                    ci-generator
-                    (ci--get-project-root-folder)))
-
-    ;; case without generator set
-    (list (ci-get-build-folder)
-          (format "cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON %s"
-                  (ci--get-project-root-folder)))))
+  (let* ((build-folder (ci-get-build-folder))
+         (cmakelists-location (file-relative-name (ci--get-project-root-folder) build-folder))
+         (cmd (format "cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON %s" cmakelists-location))
+         (final-cmd (if ci-generator
+                        (format "%s -G \"%s\"" cmd ci-generator)
+                      cmd)))
+    (list build-folder final-cmd)))
 
 
 ;;;###autoload (autoload 'cmake-integration-select-configure-preset "cmake-integration")
