@@ -1,4 +1,4 @@
-;;; cmake-integration-launch.el --- Retrieve targets -*- lexical-binding: t -*-
+;;; cmake-integration-launch.el --- Run a target (with or without debugging) -*- lexical-binding: t -*-
 
 ;;; Commentary:
 

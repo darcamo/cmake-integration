@@ -1,4 +1,4 @@
-;;; cmake-integration-doxygen.el --- Retrieve targets -*- lexical-binding: t -*-
+;;; cmake-integration-doxygen.el --- Doxygen related commands -*- lexical-binding: t -*-
 
 ;;; Commentary:
 

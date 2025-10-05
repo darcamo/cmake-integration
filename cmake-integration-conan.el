@@ -1,4 +1,4 @@
-;;; cmake-integration-conan.el --- Retrieve targets -*- lexical-binding: t -*-
+;;; cmake-integration-conan.el --- Interact with conan -*- lexical-binding: t -*-
 
 ;;; Commentary:
 

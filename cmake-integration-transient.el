@@ -1,4 +1,4 @@
-;;; cmake-integration-transient.el --- Retrieve targets -*- lexical-binding: t -*-
+;;; cmake-integration-transient.el --- Transient definitions -*- lexical-binding: t -*-
 
 ;;; Commentary:
 

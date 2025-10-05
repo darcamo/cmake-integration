@@ -1,4 +1,4 @@
-;;; cmake-integration-core-presets.el --- Retrieve targets -*- lexical-binding: t -*-
+;;; cmake-integration-core-presets.el --- Core functions to work with presets -*- lexical-binding: t -*-
 
 ;;; Commentary:
 

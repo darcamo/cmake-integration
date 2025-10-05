@@ -1,4 +1,4 @@
-;;; cmake-integration-extra.el --- Retrieve targets -*- lexical-binding: t -*-
+;;; cmake-integration-extra.el --- Extra miscellaneous functionality -*- lexical-binding: t -*-
 
 ;;; Commentary:
 

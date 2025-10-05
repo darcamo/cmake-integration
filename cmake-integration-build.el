@@ -1,4 +1,4 @@
-;;; cmake-integration-build.el --- Retrieve targets -*- lexical-binding: t -*-
+;;; cmake-integration-build.el --- Build targets -*- lexical-binding: t -*-
 
 ;;; Commentary:
 

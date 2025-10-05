@@ -1,4 +1,4 @@
-;;; cmake-integration-ctest.el --- Retrieve targets -*- lexical-binding: t -*-
+;;; cmake-integration-ctest.el --- CTest functionality -*- lexical-binding: t -*-
 
 ;;; Commentary:
 

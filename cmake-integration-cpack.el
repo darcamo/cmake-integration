@@ -1,4 +1,4 @@
-;;; cmake-integration-cpack.el --- Retrieve targets -*- lexical-binding: t -*-
+;;; cmake-integration-cpack.el --- CPack functionality -*- lexical-binding: t -*-
 
 ;;; Commentary:
 
