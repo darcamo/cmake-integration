@@ -82,10 +82,9 @@ Return a list (RUN-DIR COMMAND), where RUN-DIR is the directory from
 which the command must be executed, and COMMAND is the command line
 string to run."
   (let* ((run-dir (ci--get-working-directory executable-filename))
-         (executable-path (file-relative-name (ci-get-target-executable-full-path executable-filename) run-dir)))
-    (list
-     run-dir
-     (format "./%s %s" executable-path ci-run-arguments))))
+         (executable-path (file-relative-name (ci-get-target-executable-full-path executable-filename) run-dir))
+         (run-command (format "./%s %s" executable-path ci-run-arguments)))
+    (list run-dir run-command)))
 
 
 ;;;###autoload (autoload 'cmake-integration-run-last-target "cmake-integration")
@@ -109,19 +108,18 @@ string to run."
 Return a list (RUN-DIR COMMAND), where RUN-DIR is the directory from
 which the command must be executed, and COMMAND is the command line
 string to run (`gdb' invocation)."
-  (let ((cwd (ci--get-working-directory executable-filename))
-        (gdb-command (format
-                      "gdb -i=mi --args %s %s"
-                      (ci-get-target-executable-full-path executable-filename)
-                      ci-run-arguments)))
-    (list cwd gdb-command)))
+  (let* ((run-dir (ci--get-working-directory executable-filename))
+         (executable-path (file-relative-name (ci-get-target-executable-full-path executable-filename) run-dir))
+         (gdb-command (format "gdb -i=mi --args %s %s" executable-path ci-run-arguments)))
+    (list run-dir gdb-command)))
 
 
 (defun ci--launch-gdb-with-last-target ()
   "Launch gdb inside Emacs to debug the last target."
   (pcase-let* ((`(,run-dir ,cmd) (ci--get-debug-command (ci-get-target-executable-filename))))
     (let ((default-directory run-dir))
-      (gdb cmd))))
+      (gdb cmd)
+      )))
 
 
 (declare-function dap-debug "dap-mode")
