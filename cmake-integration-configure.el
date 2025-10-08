@@ -36,18 +36,32 @@ If not available, get the binaryDir or a parent preset."
           (ci--get-binaryDir parents))))))
 
 
-;; TODO Make it work conan presets over TRAMP. Note that the binaryDir that
-;; comes from conan preset over TRAMP will be an absolute path in the remote
-;; machine without any part from TRAMP. We need to figure-out a way to handle
-;; that.
+(defun ci--extract-remote-prefix (path)
+  "Extrtact a tramp remote prefix from PATH."
+  (if (string-match "^\\(/[^:]+:[^:]+:\\)" path)
+      (match-string 1 path)))
+
+
+(defun ci--add-remote-prefix-to-path (path)
+  "Add the TRAMP remote prefix from `default-directory' to PATH.
+
+Returns PATH unchanged if `default-directory' is not remote or if PATH
+is already remote."
+  (if (and (file-remote-p default-directory)
+           (not (file-remote-p path)))
+      (let ((remote-prefix (ci--extract-remote-prefix default-directory)))
+        (concat remote-prefix path))
+    path))
+
+
 (defun ci--get-binaryDir-with-replacements (preset)
   "Get the `binaryDir' field of a preset PRESET, and also perform the replacements."
   (if-let* ((binaryDir (ci--get-binaryDir preset))
             (project-root (ci--get-project-root-folder))
             (preset-name (ci--get-preset-name preset))
             (binaryDir-with-replacements (ci--perform-binaryDir-replacements binaryDir project-root preset-name)))
-      binaryDir-with-replacements
-    ))
+      ;; Make sure to add the TRAMP prefix if needed
+      (ci--add-remote-prefix-to-path binaryDir-with-replacements)))
 
 
 (defun ci--get-configure-preset-by-name (preset-name)
