@@ -7,6 +7,7 @@
 (require 'cmake-integration-conan)
 (require 'cmake-integration-cpack)
 (require 'cmake-integration-ctest)
+(require 'cmake-integration-extra)
 
 (declare-function ci--set-runtime-arguments "cmake-integration-launch.el")
 
@@ -181,6 +182,13 @@ will be obtained from PRESET and this returns the string
   :description "Clear build target"
   (interactive)
   (setq ci-current-target nil))
+
+
+(transient-define-suffix ci--open-dired-in-target-folder-sufix ()
+  :transient nil
+  :description "Open target folder in dired"
+  (interactive)
+  (ci-open-dired-in-target-folder))
 
 
 (transient-define-suffix ci--set-conan-profile-suffix ()
@@ -451,6 +459,7 @@ will be obtained from PRESET and this returns the string
    ["Target"
     ("tt" ci--set-build-target-suffix)
     ("tc" ci--clear-build-target-suffix)
+    ("td" ci--open-dired-in-target-folder-sufix)
     ]
    ]
   ["Operations"

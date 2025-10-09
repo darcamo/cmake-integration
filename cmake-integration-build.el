@@ -86,6 +86,7 @@ complain in that case."
       (message "Build folder was not deleted"))))
 
 
+;; TODO Rename to ci--check-if-build-folder-exists-and-throws-if-not
 (defun check-if-build-folder-exists-and-throws-if-not ()
   "Check that the build folder exists and throws an error if not."
   (unless (file-exists-p (ci-get-build-folder))

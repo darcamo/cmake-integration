@@ -64,9 +64,15 @@ If TARGET-NAME is not provided use the last target (saved in a
     (_ (file-name-concat (ci--get-project-root-folder) ci-run-working-directory))))
 
 
-(defun ci-get-target-executable-full-path (executable-filename)
-  "Get the full path of EXECUTABLE-FILENAME."
-  (file-name-concat (ci-get-build-folder) executable-filename))
+(defun ci-get-target-executable-full-path (&optional executable-filename)
+  "Get the full path of EXECUTABLE-FILENAME.
+
+EXECUTABLE-FILENAME must be relative to the build folder.
+
+If it is not provided the executable for the target in
+`cmake-integration-current-target' is used."
+  (let ((executable-filename (or executable-filename (ci-get-target-executable-filename))))
+    (file-name-concat (ci-get-build-folder) executable-filename)))
 
 
 (defun ci--compilation-buffer-name-function (name-of-mode)
@@ -77,6 +83,8 @@ If TARGET-NAME is not provided use the last target (saved in a
 
 (defun ci--get-run-command (executable-filename)
   "Get the directory and the run command for EXECUTABLE-FILENAME.
+
+Note: EXECUTABLE-FILENAME must be relative to the build folder.
 
 Return a list (RUN-DIR COMMAND), where RUN-DIR is the directory from
 which the command must be executed, and COMMAND is the command line
