@@ -10,7 +10,7 @@
 
 (declare-function ci--set-runtime-arguments "cmake-integration-launch.el")
 
-
+;; TODO: Add an option in the configure transient to set CMAKE_BUILD_TYPE
 
 ;; (defun ci--display-configure-preset ()
 ;;   "Return a string with the configure preset name."
@@ -173,9 +173,14 @@ will be obtained from PRESET and this returns the string
   :transient 'transient--do-call
   :description 'ci--describe-build-target
   (interactive)
-  (if ci-current-target
-      (setq ci-current-target nil)
-    (ci-select-current-target)))
+  (ci-select-current-target))
+
+
+(transient-define-suffix ci--clear-build-target-suffix ()
+  :transient 'transient--do-call
+  :description "Clear build target"
+  (interactive)
+  (setq ci-current-target nil))
 
 
 (transient-define-suffix ci--set-conan-profile-suffix ()
@@ -234,18 +239,6 @@ will be obtained from PRESET and this returns the string
     (ci-select-ctest-labels-to-exclude)))
 
 
-(transient-define-prefix ci--all-presetts-transient ()
-  "Easily set any o the possible cmake presets."
-  ["Set Presets"
-   ("sc" ci--set-configure-preset-suffix)
-   ("sb" ci--set-build-preset-suffix)
-   ("st" ci--set-test-preset-suffix)
-   ("sp" ci--set-package-preset-suffix)
-   ("q" "Quit" (lambda () (interactive) (transient-quit-seq)))
-   ]
-  )
-
-
 (transient-define-prefix ci--conan-list-prefix ()
   "List conan packages."
   ["Conan List"
@@ -262,7 +255,7 @@ will be obtained from PRESET and this returns the string
   "List conan packages."
   ["Conan Search"
    ("r" "Search in remote repository" "--remote=" :choices ci--get-conan-enabled-remote-repositories-names)
-   ("s" "Search in remote repositories"
+   ("s" "Search in all remote repositories"
     (lambda () (interactive)
       (if-let* ((extra-args (transient-args (oref transient-current-prefix command)))
                 (remote-arg (car extra-args))
@@ -284,7 +277,7 @@ will be obtained from PRESET and this returns the string
   ["Conan"
    (:info #'ci--describe-current-conanfile)
    ("p" ci--set-conan-profile-suffix)
-   ("l" "List Packages" ci--conan-list-prefix)
+   ("l" "List Packages in Conan cache" ci--conan-list-prefix)
    ("s" "Search packages" ci--conan-search-prefix)
    ("i" "Install" (lambda () (interactive) (ci-run-conan)))
    ("r" "Manage Remotes" ci-conan-manage-remotes)
@@ -443,20 +436,21 @@ will be obtained from PRESET and this returns the string
     ;; (:info #'ci--display-build-preset :format " %d")
     ;; (:info #'ci--display-test-preset :format " %d")
     ;; (:info #'ci--display-package-preset :format " %d")
-    ("sc" ci--set-configure-preset-suffix)
-    ("sb" ci--set-build-preset-suffix)
-    ("st" ci--set-test-preset-suffix)
-    ("sp" ci--set-package-preset-suffix)
+    ("pc" ci--set-configure-preset-suffix)
+    ("pb" ci--set-build-preset-suffix)
+    ("pt" ci--set-test-preset-suffix)
+    ("pp" ci--set-package-preset-suffix)
     ;; ("s" "Set any of the presets" ci--all-presetts-transient)
     ]
    ["Util"
-    ("ud" "Dired in build folder" ci-open-dired-in-build-folder)
-    ("us" "Shell in build folder" ci-open-shell-in-build-folder)
-    ("ur" "Remove the build folder" ci-delete-build-folder :transient transient--do-call)
-    ("q" "Quit" transient-quit-one)
+    ("ud" "Open build folder (dired)" ci-open-dired-in-build-folder)
+    ("us" "Open build folder (eshell)" ci-open-shell-in-build-folder)
+    ("ur" "Delete build folder" ci-delete-build-folder :transient transient--do-call)
+    ("q" " Quit" transient-quit-one)
     ]
    ["Target"
-    ("t" ci--set-build-target-suffix)
+    ("tt" ci--set-build-target-suffix)
+    ("tc" ci--clear-build-target-suffix)
     ]
    ]
   ["Operations"
