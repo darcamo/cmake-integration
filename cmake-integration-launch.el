@@ -20,7 +20,7 @@ If TARGET-NAME is not provided use the last target (saved in a
   ;; throw an error asking the UE to select a target first by calling
   ;; `cmake-integration-save-and-compile'
   (unless (or target ci-current-target)
-    (error "Please select a target first `cmake-integration-save-and-compile' first"))
+    (error "Please select a target first by calling `cmake-integration-select-current-target`"))
 
   ;; The `target-info' variable inside the `let' has the data from the
   ;; codemodel json file for TARGET-NAME. This data is an alist and
