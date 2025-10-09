@@ -117,7 +117,8 @@ string to run (`gdb' invocation)."
 (defun ci--launch-gdb-with-last-target ()
   "Launch gdb inside Emacs to debug the last target."
   (pcase-let* ((`(,run-dir ,cmd) (ci--get-debug-command (ci-get-target-executable-filename))))
-    ;; GDB seems to not be respecting default-directory
+    ;; TODO GDB seems to not be respecting default-directory. It's probably
+    ;; necessary to pass the `--cd' argument to gdb.
     (let ((default-directory run-dir))
       (gdb cmd))))
 

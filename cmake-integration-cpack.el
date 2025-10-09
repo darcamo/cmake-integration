@@ -5,6 +5,11 @@
 ;;; Code:
 (require 'tramp)
 
+;; TODO: Add option to specify components -> use completing-read-multiple
+
+;; TODO: Allow specifying other arguments to "cmake --install", such as
+;; "--config", "--component" and "--strip".
+
 (defun ci-get-last-package-preset-name ()
   "Get the `name' field of the last preset used for package."
   (ci--get-preset-name ci-package-preset))
@@ -30,8 +35,6 @@ cmake command."
     (setq ci-install-prefix (tramp-file-local-name dir))))
 
 
-;; TODO: Allow specifying other arguments to "cmake --install", such
-;; as "--config", "--component" and "--strip".
 ;;;###autoload (autoload 'cmake-integration-run-cmake-install "cmake-integration")
 (defun ci-run-cmake-install (&optional extra-args)
   "Run `cmake --install' in the current build folder passing EXTRA-ARGS.

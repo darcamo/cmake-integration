@@ -75,14 +75,9 @@ Otherwise return it unchanged."
     (unless (file-exists-p query-file)
       ;; Create the folder if it does not exists yet
       (unless (file-exists-p query-folder)
-        ;; TODO Make the path relative such that if works even when in TRAMP
         (make-directory query-folder t))
       ;; Create the codemodel file
-      (make-empty-file query-file))
-
-
-    )
-  )
+      (make-empty-file query-file))))
 
 
 (defun ci-get-build-folder ()
