@@ -29,14 +29,18 @@ from where the doxygen command will be run."
 (defun ci-view-project-documentation ()
   "Open generated doxygen documentation."
   (interactive)
-  (browse-url-of-file (file-name-concat (expand-file-name (ci--get-docs-folder)) "html/index.html")))
+  (let ((uri (file-name-concat (expand-file-name (ci--get-docs-folder)) "html/index.html")))
+    (if (file-remote-p uri)
+        (error "Cannot view remote documentation using a local browser")
+      (browse-url-of-file uri))))
 
 
 ;;;###autoload (autoload 'cmake-integration-view-project-documentation-in-eww "cmake-integration")
 (defun ci-view-project-documentation-in-eww ()
   "Open generated doxygen documentation in eww."
   (interactive)
-  (eww-open-file (file-name-concat (expand-file-name (ci--get-docs-folder)) "html/index.html")))
+  (let ((uri (file-name-concat (expand-file-name (ci--get-docs-folder)) "html/index.html")))
+    (eww-open-file uri)))
 
 
 (provide 'cmake-integration-doxygen)

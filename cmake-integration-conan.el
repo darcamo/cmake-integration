@@ -520,8 +520,10 @@ See the variable `tablist-operations-function' for more."
 
 (defun ci--get-conan-run-command (&optional profile)
   "Get the `conan install' command to run using PROFILE."
-  (let* ((base (format "conan install %s %s"
-                       (ci--get-project-root-folder)
+  (let* ((conanfile-location (file-relative-name (ci--get-project-root-folder)
+                                                 (ci-get-build-folder)))
+         (base (format "conan install %s %s"
+                       conanfile-location
                        ci-conan-arguments)))
     (if profile
         (format "%s --profile %s" base profile)

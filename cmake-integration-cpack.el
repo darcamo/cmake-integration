@@ -3,7 +3,12 @@
 ;;; Commentary:
 
 ;;; Code:
+(require 'tramp)
 
+;; TODO: Add option to specify components -> use completing-read-multiple
+
+;; TODO: Allow specifying other arguments to "cmake --install", such as
+;; "--config", "--component" and "--strip".
 
 (defun ci-get-last-package-preset-name ()
   "Get the `name' field of the last preset used for package."
@@ -18,17 +23,18 @@ with a space as separator and the result string will be appended to the
 cmake command."
   (let ((build-folder (ci-get-build-folder))
         (extra-args-string (string-join extra-args " ")))
-    (format "cmake --install %s %s" build-folder extra-args-string)))
+    (format "cmake --install %s %s" (tramp-file-local-name build-folder) extra-args-string)))
 
 
 (defun ci-set-install-prefix ()
   "Ask the user for a install prefix."
   (interactive)
-  (setq ci-install-prefix (read-directory-name "Enter install prefix directory: ")))
+  (let ((dir (read-directory-name "Enter install prefix directory: ")))
+    ;; If we are in a TRAMP buffer, convert the directory to a local path, since
+    ;; that's what we will need to pass to cmake.
+    (setq ci-install-prefix (tramp-file-local-name dir))))
 
 
-;; TODO: Allow specifying other arguments to "cmake --install", such
-;; as "--config", "--component" and "--strip".
 ;;;###autoload (autoload 'cmake-integration-run-cmake-install "cmake-integration")
 (defun ci-run-cmake-install (&optional extra-args)
   "Run `cmake --install' in the current build folder passing EXTRA-ARGS.

@@ -70,12 +70,14 @@ Otherwise return it unchanged."
 (defun ci--create-empty-codemodel-file ()
   "Create an empty codemodel query file for CMake's file API."
   ;; Only do something if the file does not exist
-  (unless (file-exists-p (ci--get-path-of-codemodel-query-file))
-    ;; Create the folder if it does not exists yet
-    (unless (file-exists-p (ci--get-query-folder))
-      (make-directory (ci--get-query-folder) t))
-    ;; Create the codemodel file
-    (make-empty-file (ci--get-path-of-codemodel-query-file))))
+  (let ((query-folder (ci--get-query-folder))
+        (query-file (ci--get-path-of-codemodel-query-file)))
+    (unless (file-exists-p query-file)
+      ;; Create the folder if it does not exists yet
+      (unless (file-exists-p query-folder)
+        (make-directory query-folder t))
+      ;; Create the codemodel file
+      (make-empty-file query-file))))
 
 
 (defun ci-get-build-folder ()
