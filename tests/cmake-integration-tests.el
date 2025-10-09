@@ -27,9 +27,6 @@
 (require 'cmake-integration)
 
 
-;; TODO: Test cmake-integration-get-target-executable-filename
-
-
 ;; NOTE: Trailling backslash matters
 (defun filepath-equal-p (filepath1 filepath2)
   "Check that two file paths FILEPATH1 and FILEPATH2 are equal.
@@ -37,8 +34,7 @@
 This is similar to `file-equal-p', but does not require
 file/folder to exist."
   (equal (expand-file-name filepath1)
-         (expand-file-name filepath2))
-  )
+         (expand-file-name filepath2)))
 
 
 (defun test-fixture-setup (subfolder body)
@@ -681,7 +677,6 @@ test code from inside a 'test project'."
     (should-not (cmake-integration--preset-has-matching-configure-preset-p preset2 configurePreset1))))
 
 
-
 (ert-deftest test-cmake-integration-get-build-presets ()
   (test-fixture-setup
    "./test-project-with-presets"
@@ -721,17 +716,6 @@ test code from inside a 'test project'."
 
        (should (equal (length all-build-presets) 3))
        (should (equal build-presets expected-build-presets))))))
-
-
-
-(ert-deftest test-name ()
-    (test-fixture-setup
-   "./test-project-with-presets"
-   (lambda ()
-     (cmake-integration-get-build-presets)
-     ))
-  )
-
 
 
 
