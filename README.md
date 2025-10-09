@@ -293,16 +293,15 @@ completion UIs.
     The targets "all" and "clean" are always available.
 
 
-# Remote execution with TRAMP
+# Remote Execution with TRAMP
 
-The `cmake-integration` package supports working in remote connections with TRAMP. While the process is mostly
-transparent, you may need to adjust your `tramp-remote-path` variable to ensure executables are accessible on the remote
-system.
+The `cmake-integration` package supports remote connections using TRAMP, allowing for seamless integration. However, you
+might need to modify your `tramp-remote-path` variable to ensure executables are accessible on the remote system.
 
-For example, when using =cmake-integration= with Docker and TRAMP, if Conan is located in the =/home/ubuntu/.local/bin=
-directory within your Docker container, you should add the following line to your Emacs configuration:
+For instance, when using `cmake-integration` with Docker and TRAMP, if Conan is located in the `/home/ubuntu/.local/bin`
+directory within your Docker container, add the following line to your Emacs configuration:
 
-```lisp
+```
 (add-to-list 'tramp-remote-path "/home/ubuntu/.local/bin")
 ```
 
