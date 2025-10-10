@@ -16,8 +16,10 @@ information. It simplifies common development tasks such as:
   build configurations, and presets. This allows for dynamic and accurate introspection of your project.
 - **CMake Presets:** CMake presets provide a standardized way to configure build environments. This package allows you
   to select and apply these presets efficiently.
+- Make the common operations when working with C++ simpler, such as configuring a project, compiling a target, running
+  an executable, etc..
 
-# Installation
+## Installation
 
 The package is available on GitHub. You can install it using your preferred Emacs package manager:
 
@@ -42,14 +44,13 @@ The package is available on GitHub. You can install it using your preferred Emac
                 :rev :newest))
     ```
 
-# Usage
+## Usage
 
-The package offers a transient menu (`cmake-integration-transient`) for quick access to most of its functions, but you
-probably want to bind some of the most common commands to keybindings of you preference
+The package provides a transient menu (=cmake-integration-transient=) for quick access to its functions. For efficient workflow, consider binding frequently used commands to custom keybindings.
 
 ![Main transient menu](images/transient-menu.png)
 
-## Basic Workflow
+### Basic Workflow
 
 1.  **Configure Project:**
     - Use `cmake-integration-select-configure-preset` to choose a CMake configure preset. It lists all available
@@ -62,8 +63,9 @@ probably want to bind some of the most common commands to keybindings of you pre
     - **Important:** You must configure your project at least once before target-related features can work.
 
 2.  **Compile Target:**
-    - Use `cmake-integration-save-and-compile` to select a target and start compiling it.
+    - Use `cmake-integration-select-current-target` to select a target.
     - Use `cmake-integration-save-and-compile-last-target` to compile the last selected target.
+    - You can also use `cmake-integration-save-and-compile` to select a target and compile it in a single command.
 
 3.  **Run Target:**
     - Use `cmake-integration-run-last-target` to execute the compiled executable.
@@ -76,10 +78,10 @@ probably want to bind some of the most common commands to keybindings of you pre
       (see the `cmake-integration-use-dap-for-debug` variable).
 
 5.  **Run Tests:**
-    - You can always choose a target that correspond to tests and then run them as usual.
+    - You can always choose a target that has the executable for your tests and run it as usual.
     - If you want to run the tests using CTest, use `cmake-integration-run-ctest`.
 
-## Example Keybindings
+### Example Keybindings
 
 The following Emacs Lisp code demonstrates how to bind most useful commands to convenient keys, primarily within
 `c++-mode`.
@@ -88,7 +90,7 @@ The following Emacs Lisp code demonstrates how to bind most useful commands to c
 (use-package cmake-integration
   :bind (:map c++-mode-map
               ([f5] . cmake-integration-transient)                         ;; Open main transient menu
-              ([M-f9] . cmake-integration-save-and-compile)                ;; Ask for target and compile
+              ([M-f9] . cmake-integration-select-current-target)           ;; Ask for target
               ([f9] . cmake-integration-save-and-compile-last-target)      ;; Recompile last target
               ([C-f9] . cmake-integration-run-ctest)                       ;; Run CTest
               ([f10] . cmake-integration-run-last-target)                  ;; Run last target (with saved args)
@@ -100,8 +102,8 @@ The following Emacs Lisp code demonstrates how to bind most useful commands to c
               ))
 ```
 
-To make these keybindings available globally in CMake projects, regardless of the buffer's major mode, you can use the
-following configuration:
+To make these keybindings available globally in CMake projects, regardless of the buffer's major mode, but only in
+projects using CMake, you can use the following configuration:
 
 ```emacs-lisp
 (defun is-cmake-project? ()
@@ -125,7 +127,7 @@ following configuration:
   "cmake"
   '(
     ([f5] . cmake-integration-transient)                         ;; Open main transient menu
-    ([M-f9] . cmake-integration-save-and-compile)                ;; Ask for the target name and compile it
+    ([M-f9] . cmake-integration-select-current-target)           ;; Ask for the target name and compile it
     ([f9] . cmake-integration-save-and-compile-last-target)      ;; Recompile the last target
     ([C-f9] . cmake-integration-run-ctest)                       ;; Run CTest
     ([f10] . cmake-integration-run-last-target)                  ;; Run the target (using any previously set command line parameters)
@@ -140,7 +142,8 @@ following configuration:
 (define-globalized-minor-mode global-cmake-integration-keybindings-mode
   cmake-integration-keybindings-mode cmake-integration-keybindings-mode-turn-on-in-cmake-projects)
 
-
+;; Turn on the global minor mode that automatically enables the buffer local
+;; minor mode in any buffer inside a CMake project
 (global-cmake-integration-keybindings-mode)
 ```
 
@@ -148,9 +151,9 @@ This defines a local minor mode with the keybindings, a function that determine 
 based project, and a global mode that uses that to decide if the local minor mode should be activated when you switch to
 a buffer.
 
-# Extra Configuration
+## Extra Configuration
 
-## Build Directory
+### Build Directory
 
 By default, if you do not use presets then `cmake-integration` assumes the build folder is named `build`. If your
 project uses a different build directory, set the `cmake-integration-build-dir` variable accordingly. 
@@ -164,12 +167,12 @@ be added in the future, if necessary.
 folders for different presets.
 
 
-## Hiding some targets during completion
+### Hiding some targets during completion
 
 When invoking `cmake-integration-save-and-compile`, a list of targets is presented, allowing the user to select one for
-compilation. In many cases, you may only be interested in a specific subset of targets, such as executable targets. To
-streamline this process, several variables can be used to filter the targets displayed during completion. These
-variables are:
+compiling, running, etc. In many cases, you may only be interested in a specific subset of targets, such as executable
+targets. To streamline this process, several variables can be used to filter the targets displayed during completion.
+These variables are:
 
 - `cmake-integration-include-subproject-targets-during-completion`
 - `cmake-integration-hide-library-targets-during-completion`
@@ -181,7 +184,7 @@ to reduce the number of targets shown during completion, which can be useful for
 to filter the target list, you can temporarily override them and display all targets by pressing `C-u C-u` before
 executing `cmake-integration-save-and-compile`.
 
-## Project Configuration (Non-Version Controlled Projects)
+### Project Configuration (Non-Version Controlled Projects)
 
 `cmake-integration` relies on Emacs's `project` infrastructure to find the project root. For Git repositories, this
 works automatically. If you are not using version control or need to define a custom project root within a Git
@@ -223,16 +226,16 @@ DIR must include a .project file to be considered a project."
   )
 ```
 
-# Integration with the Conan Package Manager
+## Integration with the Conan Package Manager
 
-## Running Conan
+### Running Conan
 
 - **During CMake Configuration:** When you run `cmake-integration-cmake-configure-with-preset` or
   `cmake-integration-cmake-reconfigure`, passing a prefix argument (`C-u`) will first execute `conan install` in the
   build directory before configuring with CMake.
 - **Standalone:** Use `cmake-integration-run-conan` to execute `conan install` in the last used build folder.
 
-## Conan Arguments and Profiles
+### Conan Arguments and Profiles
 
 - **`cmake-integration-conan-arguments`:** Set this variable to pass arguments to `conan install`. The default is
   `--build missing`.
@@ -240,7 +243,7 @@ DIR must include a .project file to be considered a project."
     - A string with the profile name (e.g., `"default"`).
     - An alist mapping CMake preset names to Conan profile names (e.g., `'(("my-cmake-preset" . "my-conan-profile"))`).
 
-## Managing Conan Remotes
+### Managing Conan Remotes
 
 Use `cmake-integration-conan-manage-remotes` to interact with Conan remotes:
 
@@ -250,7 +253,7 @@ Use `cmake-integration-conan-manage-remotes` to interact with Conan remotes:
 - **Toggle SSL Verification (`v`):** Toggles SSL verification for a remote.
 - **Access Conan Commands (`c`):** Opens a transient menu for other Conan operations.
 
-## Displaying Conan Cache and Searching Repositories
+### Displaying Conan Cache and Searching Repositories
 
 - **`cmake-integration-conan-list-packages-in-local-cache`:** Lists locally installed Conan packages.
 - **`cmake-integration-conan-search`:** Searches for packages in configured Conan repositories.
@@ -263,14 +266,14 @@ dependencies to `conanfile.py`.
 
 ![Searching for boost library](images/conan_search_boost.png)
 
-# Debugging with GDB/DAP
+## Debugging
 
 To debug an executable target:
 
 - Use `cmake-integration-debug-last-target`. This command passes any current command-line arguments to the executable
   within the debugger and sets the working directory according to `cmake-integration-run-working-directory`.
 
-# Screenshots
+## Screenshots
 
 **Note:** The screenshots below use the `doom-material-dark` theme with `vertico` and `marginalia` for enhanced
 completion UIs.
@@ -293,7 +296,7 @@ completion UIs.
     The targets "all" and "clean" are always available.
 
 
-# Remote Execution with TRAMP
+## Remote Execution with TRAMP
 
 The `cmake-integration` package supports remote connections using TRAMP, allowing for seamless integration. However, you
 might need to modify your `tramp-remote-path` variable to ensure executables are accessible on the remote system.
@@ -304,6 +307,12 @@ directory within your Docker container, add the following line to your Emacs con
 ```
 (add-to-list 'tramp-remote-path "/home/ubuntu/.local/bin")
 ```
+
+## Other packages you might be interested in
+
+- [CMake Presets mode](https://github.com/darcamo/cmakepresets-mode)
+  - Small usability improvements when editing CMake presets files
+
 
 <!-- Local Variables: -->
 <!-- fill-column: 120 -->
