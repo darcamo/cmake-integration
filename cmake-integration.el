@@ -49,6 +49,7 @@
 (require 'cmake-integration-ctest)
 (require 'cmake-integration-cpack)
 (require 'cmake-integration-extra)
+(require 'cmake-integration-binary-info)
 (require 'cmake-integration-transient)
 (require 'cmake-integration-persistence)
 (require 'cmake-integration-project-mode)
