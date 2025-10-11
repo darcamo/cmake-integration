@@ -233,30 +233,48 @@ test code from inside a 'test project'."
 
 (ert-deftest test-cmake-integration-get-build-folder-without-presets ()
   (test-fixture-setup
-   "./test-project" ;; project root is the parent "test-project" folder
+   "./test-project/subfolder" ;; project root is the parent "test-project" folder
    (lambda ()
      ;; Without setting `cmake-integration-build-dir' -> default value is "build"
-     (should (filepath-equal-p (cmake-integration-get-build-folder) "./build"))
-
+     (let* ((project-root (cmake-integration--get-project-root-folder))
+            (expected-build-folder (expand-file-name "./build" project-root)))
+       (should (filepath-equal-p (cmake-integration-get-build-folder) expected-build-folder)))
+     
      ;; Set `cmake-integration-build-dir'
-     (let ((cmake-integration-build-dir "some-build-folder"))
-       (should (filepath-equal-p (cmake-integration-get-build-folder) "./some-build-folder"))
-       ))))
+     (let* ((project-root (cmake-integration--get-project-root-folder))
+            (cmake-integration-build-dir "some-build-folder")
+            (expected-build-folder (expand-file-name cmake-integration-build-dir project-root)))
+       (should (filepath-equal-p (cmake-integration-get-build-folder) expected-build-folder))))))
 
 
 (ert-deftest test-cmake-integration-get-build-folder-with-presets ()
   (test-fixture-setup
-   "./test-project-with-presets"
+   ;; Note that in this test we set default-directory to a subfolder in the
+   ;; project root
+   "./test-project-with-presets/subfolder"
    (lambda ()
      ;; Build folder is taken from the `binaryDir' field in
-     ;; `cmake-integration-configure-preset', which is an alist
-     (let ((cmake-integration-configure-preset '((binaryDir . "${sourceDir}/build/${presetName}")
-                                                 (name . "ninjamulticonfig"))))
-       (should (filepath-equal-p (cmake-integration-get-build-folder) "./build/ninjamulticonfig")))
+     ;; `cmake-integration-configure-preset', which is an alist.
+     ;; Here we test with a binaryDir value with some replacements
+     (let* ((cmake-integration-configure-preset '((binaryDir . "${sourceDir}/build/${presetName}")
+                                                  (name . "ninjamulticonfig")))
+            (project-root (cmake-integration--get-project-root-folder))
+            (expected-build-folder (expand-file-name "./build/ninjamulticonfig" project-root)))
+       (should (filepath-equal-p (cmake-integration-get-build-folder) expected-build-folder)))
 
-     (let ((cmake-integration-configure-preset '((binaryDir . "${sourceDir}/build/${presetName}")
-                                                 (name . "Ninja"))))
-       (should (filepath-equal-p (cmake-integration-get-build-folder) "./build/Ninja"))))))
+     ;; Now we test with a binaryDir that has a relative path
+     (let* ((cmake-integration-configure-preset '((binaryDir . "build/${presetName}")
+                                                  (name . "ninjamulticonfig")))
+            (project-root (cmake-integration--get-project-root-folder))
+            (expected-build-folder (expand-file-name "./build/ninjamulticonfig" project-root)))
+       (should (filepath-equal-p (cmake-integration-get-build-folder) expected-build-folder)))
+
+     ;; Test with a different preset
+     (let* ((cmake-integration-configure-preset '((binaryDir . "./build/${presetName}")
+                                                  (name . "Ninja")))
+            (project-root (cmake-integration--get-project-root-folder))
+            (expected-build-folder (expand-file-name "./build/Ninja" project-root)))
+       (should (filepath-equal-p (cmake-integration-get-build-folder) expected-build-folder))))))
 
 
 (ert-deftest test-cmake-integration--get-query-folder ()

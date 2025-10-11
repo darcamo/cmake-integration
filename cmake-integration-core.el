@@ -85,7 +85,11 @@ Otherwise return it unchanged."
 
 Returns the build folder path based on either the configure preset or
 the manually specified `cmake-integration-build-dir'. Throws an error if
-no valid build folder can be determined."
+no valid build folder can be determined.
+
+Note that the returned build folder is always an absolute path. Relative
+paths from `cmake-integration-build-dir' or the active preset are
+resolved against the project root."
   (let ((project-root-folder (ci--get-project-root-folder))
         (preset ci-configure-preset)
         (build-dir ci-build-dir))
@@ -94,11 +98,11 @@ no valid build folder can be determined."
 
     (if preset
         ;; Use the build folder from the configure preset
-        (ci--get-binaryDir-with-replacements preset)
+        (expand-file-name (ci--get-binaryDir-with-replacements preset) project-root-folder)
 
       ;; Use manually set build directory or throw an error
       (if build-dir
-          (file-name-concat project-root-folder build-dir)
+          (expand-file-name build-dir project-root-folder)
         (error "Build folder is not set.
 Call `cmake-integration-select-configure-preset' to select a configure preset,
 or set `cmake-integration-build-dir' manually")))))
