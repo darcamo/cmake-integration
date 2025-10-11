@@ -97,8 +97,8 @@ resolved against the project root."
       (error "Not in a project"))
 
     (if preset
-        ;; Use the build folder from the configure preset
-        (expand-file-name (ci--get-binaryDir-with-replacements preset) project-root-folder)
+        (let ((binaryDir-with-replacements (ci--get-binaryDir-with-replacements preset)))
+          (expand-file-name binaryDir-with-replacements project-root-folder))
 
       ;; Use manually set build directory or throw an error
       (if build-dir

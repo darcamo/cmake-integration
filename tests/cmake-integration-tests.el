@@ -279,8 +279,12 @@ test code from inside a 'test project'."
 
 (ert-deftest test-cmake-integration--get-query-folder ()
   (test-fixture-setup
-   "./test-project"
-   (lambda () (should (filepath-equal-p (cmake-integration--get-query-folder) "./build/.cmake/api/v1/query/client-emacs")))))
+   "./test-project/subfolder"
+   (lambda ()
+     (let* ((build-folder (cmake-integration-get-build-folder))
+            (query-relative-path ".cmake/api/v1/query/client-emacs")
+            (expected-query-folder (expand-file-name query-relative-path build-folder)))
+       (should (filepath-equal-p (cmake-integration--get-query-folder) expected-query-folder))))))
 
 
 (ert-deftest test-cmake-integration--get-reply-folder ()
