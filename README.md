@@ -12,6 +12,9 @@ information. It simplifies common development tasks such as:
 
 ## Core Concepts
 
+- **Relies on native Emacs features**: This package treats as a project whatever the built-in `project` package recognizes.
+  It assumes the top-level `CMakeLists.txt` is at the project root. If the root also contains `CMakePresets.json` and/or
+  `CMakeUserPresets.json`, they are read to collect preset names.
 - **CMake File API:** This package relies on CMake's File API to query project information, such as available targets,
   build configurations, and presets. This allows for dynamic and accurate introspection of your project.
 - **CMake Presets:** CMake presets provide a standardized way to configure build environments. This package allows you
@@ -184,12 +187,12 @@ to reduce the number of targets shown during completion, which can be useful for
 to filter the target list, you can temporarily override them and display all targets by pressing `C-u C-u` before
 executing `cmake-integration-save-and-compile`.
 
-### Project Configuration (Non-Version Controlled Projects)
+### Project Configuration (non-version controlled projects or monorepos)
 
-`cmake-integration` relies on Emacs's `project` infrastructure to find the project root. For Git repositories, this
-works automatically. If you are not using version control or need to define a custom project root within a Git
-repository, you can use a `.project` file. Emacs's `project` package can be extended to recognize directories containing
-an empty `.project` file as project roots.
+`cmake-integration` uses Emacs's `project` infrastructure to determine the project root. ForGit repositories are
+detected automatically. If you're not using version control or need a custom root within a Git repository, you can use a
+`.project` file. Emacs's `project` package can be extended to recognize directories containing an empty `.project` file
+as project roots.
 
 The following Emacs Lisp code (adapted from
 [manueluberti.eu](https://manueluberti.eu/posts/2020-11-14-extending-project/)) demonstrates how to achieve this:
