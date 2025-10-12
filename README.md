@@ -37,7 +37,7 @@ The package is available on GitHub. You can install it using your preferred Emac
     ```emacs-lisp
     (use-package cmake-integration
       :vc (:url "https://github.com/darcamo/cmake-integration.git"
-                :rev :newest))
+           :rev :newest))
     ```
 
 ## Usage
