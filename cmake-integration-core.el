@@ -30,6 +30,7 @@
 (require 'cl-extra)
 (require 'json)
 (require 'project)
+(require 'map)
 
 (require 'cmake-integration-variables)
 
@@ -68,6 +69,40 @@ Function to verify is VAL is save as a value for the
   (if-let* ((project (project-current)))
     (project-name project)
     nil))
+
+
+(defun ci--get-index-reply-json-filename ()
+  "Get the name of the index json file.
+This file is created by CMake's File API."
+  (elt (f-glob "index-*json" (ci--get-reply-folder)) 0))
+
+
+(defun ci--get-cmake-project-info ()
+  "Get information about the generated project files."
+  (interactive)
+  (if-let* ((index-file (ci--get-index-reply-json-filename))
+            (json-content-alist (json-read-file index-file))
+            (generator (map-nested-elt json-content-alist '(cmake generator name)))
+            (version (map-nested-elt json-content-alist '(cmake version string)))
+            (paths (map-nested-elt json-content-alist '(cmake paths))))
+
+      (map-let (cmake cpack ctest root) paths
+        (format "
+CMake version: %s\nGenerator:  %s\nCMake path: %s\nCpack path: %s\nCtest path: %s\nRoot path:  %s\n"
+                (if version version "unknown")
+                (if generator generator "unknown")
+                (if cmake cmake "unknown")
+                (if cpack cpack "unknown")
+                (if ctest ctest "unknown")
+                (if root root "unknown")))
+    (display-warning 'cmake-integration "Project has not been generated yet. Please run either `cmake-integration-cmake-reconfigure' or
+`cmake-integration-cmake-configure-with-preset'")))
+
+
+(defun ci-display-cmake-project-info ()
+  "Display information about the generated project files in the echo area."
+  (interactive)
+  (message "%s" (ci--get-cmake-project-info)))
 
 
 (defun ci--get-codemodel-reply-json-filename ()
