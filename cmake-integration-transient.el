@@ -532,6 +532,7 @@ will be obtained from PRESET and this returns the string
     ("ud" "Open build folder (dired)" ci-open-dired-in-build-folder)
     ("us" "Open build folder (eshell)" ci-open-shell-in-build-folder)
     ("ur" "Delete build folder" ci-delete-build-folder :transient transient--do-call)
+    ("ui" "Display CMake project info" ci-display-cmake-project-info :transient nil)
     ("q" " Quit" transient-quit-one)
     ]
    ["Target"
