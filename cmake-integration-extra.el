@@ -39,7 +39,7 @@
 
 ;;;###autoload (autoload 'cmake-integration-open-dired-in-build-folder "cmake-integration")
 (defun ci-open-dired-in-build-folder ()
-  "Open Dired in the buiild folder."
+  "Open Dired in the build folder."
   (interactive)
   (ci--check-if-build-folder-exists-and-throws-if-not)
   (dired (ci-get-build-folder)))

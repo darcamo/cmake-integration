@@ -542,6 +542,11 @@ will be obtained from PRESET and this returns the string
     ("td" "Open target folder in dired" ci-open-dired-in-target-folder :transient nil)
     ("ts" "Open target folder in eshell" ci-open-eshell-in-target-folder :transient nil)
     ]
+   ["Binary Info (WIP)"
+    ("br" "RUNPATH" ci-print-current-target-runpath :transient transient--do-call)
+    ("bs" "SONAME" ci-print-current-target-soname :transient transient--do-call)
+    ("bd" "Dependencies" ci-print-current-target-dependencies :transient transient--do-call)
+    ]
    ]
   ["Operations"
    [("oo" "Conan" ci--conan-transient)]

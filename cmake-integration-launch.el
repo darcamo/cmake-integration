@@ -70,8 +70,8 @@ If TARGET-NAME is not provided use the last target (saved in a
                               (alist-get 'jsonFile target-info)))
            (target-data (json-read-file target-json-file)))
 
-      (unless (equal (alist-get 'type target-data) "EXECUTABLE")
-        (error "Target '%s' is not an executable" target-name))
+      ;; (unless (equal (alist-get 'type target-data) "EXECUTABLE")
+      ;;   (error "Target '%s' is not an executable" target-name))
 
       ;; Note that target-artifacts is a vector, but with a single
       ;; element in our case
