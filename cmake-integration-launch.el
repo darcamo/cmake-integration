@@ -5,6 +5,16 @@
 ;;; Code:
 
 
+(defun ci-default-program-launch-function (command &optional buffer-name)
+  "Launch COMMAND in a compilation buffer with name BUFFER-NAME.
+
+If BUFFER-NAME is nil, use the default compilation buffer name."
+  (let ((compilation-buffer-name-function (if buffer-name
+                                              (lambda (_) buffer-name)
+                                            compilation-buffer-name-function)))
+    (compile command)))
+
+
 (defun ci-get-target-executable-filename (&optional target)
   "Get the executable filename for the target TARGET.
 
@@ -75,9 +85,8 @@ If it is not provided the executable for the target in
     (file-name-concat (ci-get-build-folder) executable-filename)))
 
 
-(defun ci--compilation-buffer-name-function (name-of-mode)
+(defun ci--get-program-launch-buffer-name ()
   "Get the compilation buffer name for NAME-OF-MODE current target name."
-  name-of-mode  ;; Avoid warning about unused argument
   (format "*Running - %s*" cmake-integration-current-target))
 
 
@@ -101,13 +110,13 @@ string to run."
   (interactive)
   (check-if-build-folder-exists-and-throws-if-not)
 
-  (let ((compilation-buffer-name-function (if ci-use-separated-compilation-buffer-for-each-target
-                                              'ci--compilation-buffer-name-function
-                                            compilation-buffer-name-function)))
+  (let ((bufer-name (when ci-use-separated-compilation-buffer-for-each-target
+                      (ci--get-program-launch-buffer-name))))
     (pcase-let* ((`(,run-dir ,cmd) (ci--get-run-command (ci-get-target-executable-filename))))
       (let ((default-directory run-dir))
-        ;; Run the target
-        (compile cmd)))))
+        (funcall ci-program-launcher cmd bufer-name)))
+    )
+  )
 
 
 (defun ci--get-debug-command (executable-filename)
