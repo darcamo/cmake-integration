@@ -184,13 +184,6 @@ will be obtained from PRESET and this returns the string
   (setq ci-current-target nil))
 
 
-(transient-define-suffix ci--open-dired-in-target-folder-sufix ()
-  :transient nil
-  :description "Open target folder in dired"
-  (interactive)
-  (ci-open-dired-in-target-folder))
-
-
 (transient-define-suffix ci--set-conan-profile-suffix ()
   :transient 'transient--do-call
   :description 'ci--describe-conan-profile
@@ -459,7 +452,8 @@ will be obtained from PRESET and this returns the string
    ["Target"
     ("tt" ci--set-build-target-suffix)
     ("tc" ci--clear-build-target-suffix)
-    ("td" ci--open-dired-in-target-folder-sufix)
+    ("td" "Open target folder in dired" ci-open-dired-in-target-folder :transient nil)
+    ("ts" "Open target folder in eshell" ci-open-eshell-in-target-folder :transient nil)
     ]
    ]
   ["Operations"
