@@ -403,7 +403,7 @@ will be obtained from PRESET and this returns the string
    ("a" ci--set-runtime-arguments-suffix)
    ("t" ci--set-build-target-suffix)
    ("r" "Run" ci-run-last-target)
-   ("d" "Debug (gdb)" ci-debug-last-target)
+   ("d" "Debug" ci-debug-last-target)
    ("q" "Quit" transient-quit-one)
    ]
   )

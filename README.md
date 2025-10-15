@@ -5,8 +5,9 @@ information. It simplifies common development tasks such as:
 
 - **Preset Management:** Easily select and apply CMake configure, build, test, and package presets.
 - **Target Compilation:** Compile specific targets within your project with a single keybinding.
-- **Debugging:** Launch GDB or DAP for debugging your executables.
-- **Conan Integration:** Manage Conan packages and remotes directly from Emacs.
+- **Debugging:** Easily start debugging your executable targets with classic gdb mi interface or with gdb through
+  [dape](https://github.com/svaante/dape).
+- **Conan Integration:** Manage Conan packages and remotes directly from Emacs, call ``conan install`, etc..
 - **Language Server:** A symbolic link is automatically created from the build folder `compile_commands.json` file to the
   root of the project. This helps the `clangd` language server index correctly the project.
 
@@ -49,9 +50,12 @@ The package is available on GitHub. You can install it using your preferred Emac
 
 ## Usage
 
-The package provides a transient menu (=cmake-integration-transient=) for quick access to its functions. For efficient workflow, consider binding frequently used commands to custom keybindings.
+The package provides a transient menu (`cmake-integration-transient`) for quick access to its functions. For efficient workflow, consider binding frequently used commands to custom keybindings.
 
 ![Main transient menu](images/transient-menu.png)
+
+Note: You probably stop reading this README now and just explore almost everything in the package with just the
+transient menu.
 
 ### Basic Workflow
 
@@ -67,18 +71,21 @@ The package provides a transient menu (=cmake-integration-transient=) for quick 
 
 2.  **Compile Target:**
     - Use `cmake-integration-select-current-target` to select a target.
+      - **TIP:** See the documentation of `cmake-integration-program-launcher-function` if you want to customize how the
+        executable is run.
     - Use `cmake-integration-save-and-compile-last-target` to compile the last selected target.
     - You can also use `cmake-integration-save-and-compile` to select a target and compile it in a single command.
 
 3.  **Run Target:**
     - Use `cmake-integration-run-last-target` to execute the compiled executable.
+      - **TIP:** See the documentation of the `cmake-integration-debug-launcher-function` if you want to customize how
+        the debug is run.
     - If you need to pass any command line arguments to the executable, use
       `cmake-integration-run-last-target-with-arguments` to specify custom command-line arguments and then run the
       executable. Any subsequence call to `cmake-integration-run-last-target` will use these arguments as well.
 
 4.  **Debug Target:**
-    - Use `cmake-integration-debug-last-target` to launch GDB or a DAP client for debugging the last compiled executable
-      (see the `cmake-integration-use-dap-for-debug` variable).
+    - Use `cmake-integration-debug-last-target` to debug the last compiled executable.
 
 5.  **Run Tests:**
     - You can always choose a target that has the executable for your tests and run it as usual.
@@ -159,7 +166,7 @@ a buffer.
 ### Customize how the target executable is run
 
 By default, when running a target executable with `cmake-integration-run-last-target` the process run in a compilation
-buffer. If the program needs to read input from the user, customize the `cmake-integration-program-launcher` variable
+buffer. If the program needs to read input from the user, customize the `cmake-integration-program-launcher-function` variable
 with a different "launch function". This should be a function receiving two arguments, the command that should be run, and a name that should be used for the buffer.
 
 There are three built-in functions that can be used and should cover most use cases:
@@ -172,10 +179,10 @@ There are three built-in functions that can be used and should cover most use ca
 By default, if you do not use presets then `cmake-integration` assumes the build folder is named `build`. If your
 project uses a different build directory, set the `cmake-integration-build-dir` variable accordingly. 
 
-If you use presets, then, the build folder is taken from the `binaryDir` field in the chosen configure preset, since
-that is the actual build folder that is used when compiling. `cmake-integration` can understand `${sourceDir}` and
-`${presetName}` when used to define the value of the `binaryDir` field in the configure preset. Other replacements may
-be added in the future, if necessary.
+If you use presets, then the build folder is taken from the `binaryDir` field in the chosen configure preset, since that
+is the actual build folder that is used when compiling. `cmake-integration` can understand a few macro replacements in
+the `binaryDir` field of the configure preset. The supported ones are `${sourceDir}` and `${presetName}`. Other
+replacements may be added in the future, if necessary.
 
 **TIP:** Setting `binaryDir` to something like `"${sourceDir}/build/${presetName}"` is an easy way to separate build
 folders for different presets.
