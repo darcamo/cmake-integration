@@ -4,44 +4,6 @@
 
 ;;; Code:
 
-(require 'esh-mode)  ;; For eshell-send-input
-
-(defun ci-default-program-launch-function (command &optional buffer-name)
-  "Launch COMMAND in a compilation buffer with name BUFFER-NAME.
-
-If BUFFER-NAME is nil, use the default compilation buffer name."
-  (let ((compilation-buffer-name-function (if buffer-name
-                                              (lambda (_) buffer-name)
-                                            compilation-buffer-name-function)))
-    (compile command)))
-
-
-(defun ci-comint-program-launch-function (command &optional buffer-name)
-  "Launch COMMAND in a comint buffer with name BUFFER-NAME.
-
-If BUFFER-NAME is nil, use the default compilation buffer name."
-  (let* ((buffer-name (or buffer-name "*compilation*"))
-         (compilation-buffer-name-function (lambda (_) buffer-name)))
-    (compile command t)
-    (pop-to-buffer buffer-name)))
-
-
-(defun ci-eshell-program-launch-function (command &optional buffer-name)
-  "Launch COMMAND in an eshell buffer with name BUFFER-NAME.
-
-If BUFFER-NAME is nil, use the default eshell buffer name is used."
-  (let ((eshell-buffer-name (if buffer-name
-                                buffer-name
-                              "*eshell*")))
-    (unless (get-buffer eshell-buffer-name)
-      (eshell))
-    (let ((eshell-buffer (get-buffer eshell-buffer-name)))
-      (with-current-buffer eshell-buffer
-        (goto-char (point-max))
-        (insert command)
-        (eshell-send-input))
-      (pop-to-buffer eshell-buffer))))
-
 
 (defun ci-get-target-executable-filename (&optional target)
   "Get the executable filename for the target TARGET.

@@ -45,6 +45,7 @@
 (require 'cmake-integration-configure)
 (require 'cmake-integration-build)
 (require 'cmake-integration-launch)
+(require 'cmake-integration-launch-functions)
 (require 'cmake-integration-doxygen)
 (require 'cmake-integration-ctest)
 (require 'cmake-integration-cpack)
