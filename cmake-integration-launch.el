@@ -111,51 +111,7 @@ string to run."
                       (ci--get-program-launch-buffer-name))))
     (pcase-let* ((`(,run-dir ,cmd) (ci--get-run-command (ci-get-target-executable-filename))))
       (let ((default-directory run-dir))
-        (funcall ci-program-launcher cmd bufer-name)))
-    )
-  )
-
-
-;; ;; TODO Remove this function
-;; (defun ci--get-debug-command (executable-filename)
-;;   "Get the directory and the debug command for EXECUTABLE-FILENAME.
-
-;; Return a list (RUN-DIR COMMAND), where RUN-DIR is the directory from
-;; which the command must be executed, and COMMAND is the command line
-;; string to run (`gdb' invocation)."
-;;   (let* ((run-dir (ci--get-working-directory executable-filename))
-;;          (executable-path (file-relative-name (ci-get-target-executable-full-path executable-filename) run-dir))
-;;          (gdb-command (format "gdb -i=mi --args %s %s" executable-path ci-run-arguments)))
-;;     (list run-dir gdb-command)))
-
-
-;; (defun ci--launch-gdb-with-last-target ()
-;;   "Launch gdb inside Emacs to debug the last target."
-;;   (pcase-let* ((`(,run-dir ,cmd) (ci--get-debug-command (ci-get-target-executable-filename))))
-;;     ;; TODO GDB seems to not be respecting default-directory. It's probably
-;;     ;; necessary to pass the `--cd' argument to gdb.
-;;     (let ((default-directory run-dir))
-;;       (gdb cmd))))
-
-
-;; (declare-function dap-debug "dap-mode")
-
-
-;; (defun ci--launch-dap-debug-cpptools-last-target ()
-;;   "Launch `dap-debug' using cpptools to debug the last target."
-;;   (require 'dap-mode)
-;;   (let ((executable-filename (ci-get-target-executable-filename)))
-
-;;     (let ((program-path (expand-file-name (ci-get-target-executable-full-path executable-filename)))
-;;           (cwd (expand-file-name (ci--get-working-directory executable-filename))))
-
-;;       (dap-debug (list :type "cppdbg"
-;;                        :request "launch"
-;;                        :name "cmake-integration-target"
-;;                        :MIMode "gdb"
-;;                        :program program-path
-;;                        :arguments ci-run-arguments
-;;                        :cwd cwd)))))
+        (funcall ci-program-launcher cmd bufer-name)))))
 
 
 ;;;###autoload (autoload 'cmake-integration-debug-last-target "cmake-integration")

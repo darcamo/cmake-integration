@@ -9,6 +9,9 @@
 
 (require 'esh-mode)  ;; For eshell-send-input
 
+(declare-function dape "dape")
+
+
 (defun ci-default-program-launch-function (command &optional buffer-name)
   "Launch COMMAND in a compilation buffer with name BUFFER-NAME.
 

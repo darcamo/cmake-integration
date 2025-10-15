@@ -7,6 +7,8 @@
 (declare-function ci-default-program-launch-function "cmake-integration-launch-functions")
 (declare-function ci-eshell-program-launch-function "cmake-integration-launch-functions")
 (declare-function ci-default-debug-launch-function "cmake-integration-launch-functions")
+(declare-function ci-dape-debug-launch-function "cmake-integration-launch-functions")
+
 
 (defgroup cmake-integration nil "Easily call cmake configure and run compiled targets." :group 'tools :prefix "cmake-integration-")
 
@@ -104,15 +106,6 @@ Built-in functions are:
   "If t, make a link of `compile_commands.json' to the project root.
 
 This helps lsp and clangd correctly parsing the project files."
-  :type 'boolean :safe #'booleanp :group 'cmake-integration)
-
-
-;; TODO Remove this variable
-;; TODO Update the readme about this variable
-(defcustom ci-use-dap-for-debug nil
-  "If t, use `dap-mode' with cpptools for debug.
-
-If nil, use standard gdb graphical interface (see Emacs manual)."
   :type 'boolean :safe #'booleanp :group 'cmake-integration)
 
 
