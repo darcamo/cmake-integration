@@ -77,8 +77,7 @@ The package provides a transient menu (=cmake-integration-transient=) for quick 
       executable. Any subsequence call to `cmake-integration-run-last-target` will use these arguments as well.
 
 4.  **Debug Target:**
-    - Use `cmake-integration-debug-last-target` to launch GDB or a DAP client for debugging the last compiled executable
-      (see the `cmake-integration-use-dap-for-debug` variable).
+    - Use `cmake-integration-debug-last-target` to debug the last compiled executable.
 
 5.  **Run Tests:**
     - You can always choose a target that has the executable for your tests and run it as usual.
@@ -159,7 +158,7 @@ a buffer.
 ### Customize how the target executable is run
 
 By default, when running a target executable with `cmake-integration-run-last-target` the process run in a compilation
-buffer. If the program needs to read input from the user, customize the `cmake-integration-program-launcher` variable
+buffer. If the program needs to read input from the user, customize the `cmake-integration-program-launcher-function` variable
 with a different "launch function". This should be a function receiving two arguments, the command that should be run, and a name that should be used for the buffer.
 
 There are three built-in functions that can be used and should cover most use cases:
