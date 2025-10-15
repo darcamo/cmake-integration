@@ -156,6 +156,17 @@ a buffer.
 
 ## Extra Configuration
 
+### Customize how the target executable is run
+
+By default, when running a target executable with `cmake-integration-run-last-target` the process run in a compilation
+buffer. If the program needs to read input from the user, customize the `cmake-integration-program-launcher` variable
+with a different "launch function". This should be a function receiving two arguments, the command that should be run, and a name that should be used for the buffer.
+
+There are three built-in functions that can be used and should cover most use cases:
+- `cmake-integration-default-program-launch-function` (default): Uses `compile` to run the command in a compilation buffer.
+- `cmake-integration-comint-program-launch-function`: Uses `compile` with the comint argument set to `t` to run the command in a comint buffer. Also switch to that buffer.
+- `cmake-integration-eshell-program-launch-function`: Uses `eshell` to run the command in a eshell buffer.
+
 ### Build Directory
 
 By default, if you do not use presets then `cmake-integration` assumes the build folder is named `build`. If your

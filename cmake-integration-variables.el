@@ -4,6 +4,9 @@
 
 ;;; Code:
 
+(declare-function ci-default-program-launch-function "cmake-integration-launch")
+(declare-function ci-eshell-program-launch-function "cmake-integration-launch")
+
 (defgroup cmake-integration nil "Easily call cmake configure and run compiled targets." :group 'tools :prefix "cmake-integration-")
 
 
@@ -65,6 +68,29 @@ the project root." :type '(choice symbol string)
   :group 'cmake-integration
   :safe #'ci--run-working-directory-p
   :local t)
+
+
+(defcustom ci-program-launcher #'ci-default-program-launch-function
+  "Stores the function that is used to launch the current target.
+
+It takes two arguments:
+
+1. COMMAND: A string representing the shell command to execute the
+   current target, including any command-line arguments.
+2. BUFFER-NAME: The name to be used for the buffer displaying the
+   running program. This could be nil, which indicates a default name
+   should be used.
+
+Built-in functions are:
+- `cmake-integration-default-program-launch-function': Uses
+  `compile' to run the command in a compilation buffer.
+- `cmake-integration-comint-program-launch-function': Uses `compile'
+  with the comint argument set to t to run the command in a comint
+  buffer. Also switch to that buffer.
+- `cmake-integration-eshell-program-launch-function': Uses eshell to run
+  the command in a eshell buffer."
+  :type 'function
+  :group 'cmake-integration)
 
 
 (defcustom ci-create-compile-commands-link t
