@@ -108,9 +108,16 @@ If TARGET-NAME is not provided use the last target (saved in a
 EXECUTABLE-FILENAME must be relative to the build folder.
 
 If it is not provided the executable for the target in
-`cmake-integration-current-target' is used."
-  (let ((executable-filename (or executable-filename (ci-get-target-executable-filename))))
-    (file-name-concat (ci-get-build-folder) executable-filename)))
+`cmake-integration-current-target' is used.
+
+If called interactively, the result is copied to the `kill-ring`."
+  (interactive)
+  (let* ((executable-filename (or executable-filename (ci-get-target-executable-filename)))
+         (full-path (file-name-concat (ci-get-build-folder) executable-filename)))
+    (when (called-interactively-p 'any)
+      (kill-new full-path)
+      (message "Copied to kill-ring: %s" full-path))
+    full-path))
 
 
 (defun ci--get-program-launch-buffer-name ()
