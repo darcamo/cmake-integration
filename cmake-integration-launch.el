@@ -111,7 +111,7 @@ string to run."
                       (ci--get-program-launch-buffer-name))))
     (pcase-let* ((`(,run-dir ,cmd) (ci--get-run-command (ci-get-target-executable-filename))))
       (let ((default-directory run-dir))
-        (funcall ci-program-launcher cmd bufer-name)))))
+        (funcall ci-program-launcher-function cmd bufer-name)))))
 
 
 ;;;###autoload (autoload 'cmake-integration-debug-last-target "cmake-integration")
@@ -125,7 +125,7 @@ string to run."
          (executable-path (file-relative-name (ci-get-target-executable-full-path executable-filename) run-dir)))
 
     ;; Call the debug launcher function
-    (funcall ci-debug-launcher executable-path ci-run-arguments run-dir)))
+    (funcall ci-debug-launcher-function executable-path ci-run-arguments run-dir)))
 
 
 (defun ci--set-runtime-arguments (run-arguments)

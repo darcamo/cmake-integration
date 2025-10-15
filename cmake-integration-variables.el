@@ -73,7 +73,7 @@ the project root." :type '(choice symbol string)
   :local t)
 
 
-(defcustom ci-program-launcher #'ci-default-program-launch-function
+(defcustom ci-program-launcher-function #'ci-default-program-launch-function
   "Stores the function that is used to launch the current target.
 
 It takes two arguments:
@@ -96,7 +96,7 @@ Built-in functions are:
   :group 'cmake-integration)
 
 
-(defcustom ci-debug-launcher #'ci-default-debug-launch-function
+(defcustom ci-debug-launcher-function #'ci-default-debug-launch-function
   "Stores the function that is used to debug the current target."
   :type 'function
   :group 'cmake-integration)

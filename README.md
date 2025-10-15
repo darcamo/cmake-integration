@@ -158,7 +158,7 @@ a buffer.
 ### Customize how the target executable is run
 
 By default, when running a target executable with `cmake-integration-run-last-target` the process run in a compilation
-buffer. If the program needs to read input from the user, customize the `cmake-integration-program-launcher` variable
+buffer. If the program needs to read input from the user, customize the `cmake-integration-program-launcher-function` variable
 with a different "launch function". This should be a function receiving two arguments, the command that should be run, and a name that should be used for the buffer.
 
 There are three built-in functions that can be used and should cover most use cases:

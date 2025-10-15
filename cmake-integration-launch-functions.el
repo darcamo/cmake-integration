@@ -2,8 +2,16 @@
 
 ;;; Commentary:
 
-;; Define different "launch functions" to run a target in different ways. These
-;; functions can be assigned to `cmake-integration-program-launcher'.
+;; Define different "launch functions" to run or debug a target in different
+;; ways.
+;;
+;; "Launcher functions" can be assigned to
+;; `cmake-integration-program-launcher-function' and affect how the program is
+;; run.
+;;
+;; "Debug launch functions" can be assigned to
+;; `cmake-integration-debug-launcher-function' and affect how the program is run
+;; in the debugger
 
 ;;; Code:
 
