@@ -16,6 +16,15 @@ If BUFFER-NAME is nil, use the default compilation buffer name."
     (compile command)))
 
 
+(defun ci-comint-program-launch-function (command &optional buffer-name)
+  "Launch COMMAND in a comint buffer with name BUFFER-NAME.
+
+If BUFFER-NAME is nil, use the default compilation buffer name."
+  (let* ((buffer-name (or buffer-name "*compilation*"))
+         (compilation-buffer-name-function (lambda (_) buffer-name)))
+    (compile command t)
+    (pop-to-buffer buffer-name)))
+
 
 (defun ci-eshell-program-launch-function (command &optional buffer-name)
   "Launch COMMAND in an eshell buffer with name BUFFER-NAME.

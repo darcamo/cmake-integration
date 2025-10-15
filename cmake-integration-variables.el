@@ -81,9 +81,14 @@ It takes two arguments:
    running program. This could be nil, which indicates a default name
    should be used.
 
-Built-in functions are
-`cmake-integration-default-program-launch-function' and
-`cmake-integration-eshell-program-launch-function'."
+Built-in functions are:
+- `cmake-integration-default-program-launch-function': Uses
+  `compile' to run the command in a compilation buffer.
+- `cmake-integration-comint-program-launch-function': Uses `compile'
+  with the comint argument set to t to run the command in a comint
+  buffer. Also switch to that buffer.
+- `cmake-integration-eshell-program-launch-function': Uses eshell to run
+  the command in a eshell buffer."
   :type 'function
   :group 'cmake-integration)
 
