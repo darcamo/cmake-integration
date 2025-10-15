@@ -46,6 +46,47 @@ If BUFFER-NAME is nil, use the default eshell buffer name is used."
       (pop-to-buffer eshell-buffer))))
 
 
+(defun ci-default-debug-launch-function (executable-path &optional args run-dir)
+  "Debug EXECUTABLE-PATH passign ARGS and in directory RUN-DIR using `gdb'.
+
+Start debugging the executable in EXECUTABLE-PATH with gdb and pass it
+the command line arguments in ARGS. The RUN-DIR is passed to gdb with
+the \"--cd\" option."
+  (let* ((default-directory (or run-dir default-directory))
+         (gdb-command (format "gdb -i=mi --cd=%s --args %s %s"
+                              default-directory
+                              executable-path
+                              (or args ""))))
+    (gdb gdb-command)))
+
+
+(defun ci-dape-debug-launch-function (executable-path &optional args run-dir)
+  "Debug EXECUTABLE-PATH with dape, passign ARGS and sing RUN-DIR as cwd.
+
+Note: This is EXPERIMENTAL and has not been tested much. It may also
+break in the future in case dap changes, since there is no official
+documentation on how to call it from Lisp."
+
+  (let ((default-directory (or run-dir default-directory))
+        (args-vector (if args
+                         (vconcat (split-string args " " t))
+                       [])))
+    ;; Dape documentaton does not tell us how to call it from lisp. Hence, this
+    ;; could break in the future. The current approach was taken from the dape's
+    ;; author information in this github issue:
+    ;; https://github.com/svaante/dape/issues/193
+    (dape `( command "gdb"
+             command-args ("--interpreter=dap")
+             command-cwd ,default-directory
+             ;; command-insert-stderr t
+             ;; port :autoport
+             :request "launch"
+             :type "debug"
+             :cwd ,default-directory
+             :program ,executable-path
+             :args ,args-vector))))
+
+
 (provide 'cmake-integration-launch-functions)
 
 ;;; cmake-integration-launch-functions.el ends here
