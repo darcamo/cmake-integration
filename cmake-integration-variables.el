@@ -5,6 +5,7 @@
 ;;; Code:
 
 (declare-function ci-default-program-launch-function "cmake-integration-launch")
+(declare-function ci-eshell-program-launch-function "cmake-integration-launch")
 
 (defgroup cmake-integration nil "Easily call cmake configure and run compiled targets." :group 'tools :prefix "cmake-integration-")
 
@@ -78,8 +79,13 @@ It takes two arguments:
    current target, including any command-line arguments.
 2. BUFFER-NAME: The name to be used for the buffer displaying the
    running program. This could be nil, which indicates a default name
-   should be used."
-  :type 'function)
+   should be used.
+
+Built-in functions are
+`cmake-integration-default-program-launch-function' and
+`cmake-integration-eshell-program-launch-function'."
+  :type 'function
+  :group 'cmake-integration)
 
 
 (defcustom ci-create-compile-commands-link t
