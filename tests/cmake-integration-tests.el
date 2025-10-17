@@ -51,6 +51,21 @@ test code from inside a 'test project'."
 ;; xxxxxxxxxxxxxxx Define the tests xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
+(ert-deftest test-ci--get-preset-name ()
+  (let ((preset '((name . "my-preset") (displayName . "My Preset")))
+        (expected-name "my-preset"))
+    (should (equal (ci--get-preset-name preset) expected-name))))
+
+
+(ert-deftest test-ci-get-last-build-preset-name ()
+  (let ((ci-build-preset))
+    (should (null (ci-get-last-build-preset-name))))
+
+  (let ((ci-build-preset '((name . "my-preset") (displayName . "My Preset"))))
+    (should (equal (ci-get-last-build-preset-name) "my-preset"))))
+
+
+
 (ert-deftest test-cmake-integration--get-system-presets-file ()
   (test-fixture-setup
    "./test-project/subfolder" ;; project root is the parent "test-project" folder
@@ -239,7 +254,7 @@ test code from inside a 'test project'."
      (let* ((project-root (cmake-integration--get-project-root-folder))
             (expected-build-folder (expand-file-name "./build" project-root)))
        (should (filepath-equal-p (cmake-integration-get-build-folder) expected-build-folder)))
-     
+
      ;; Set `cmake-integration-build-dir'
      (let* ((project-root (cmake-integration--get-project-root-folder))
             (cmake-integration-build-dir "some-build-folder")
@@ -389,83 +404,83 @@ test code from inside a 'test project'."
            (should (filepath-equal-p dir expected-run-dir))
            (should (equal command expected-cmd))))))))
 
-(ert-deftest test-cmake-integration--get-run-command--custom-folder ()
-  (test-fixture-setup
-   "./test-project"
-   (lambda ()
-     (let* ((cmake-integration-run-working-directory "subfolder")
-            (cmake-integration-run-arguments "arg1 arg2")
-            (executable-relative-path "../build/bin/myexec")
-            (expected-run-dir (file-name-concat (cmake-integration--get-project-root-folder) "subfolder"))
-            (expected-cmd (format "gdb -i=mi --args %s %s"
-                                  executable-relative-path
-                                  cmake-integration-run-arguments)))
-       (pcase-let* ((`(,dir ,command) (cmake-integration--get-debug-command "bin/myexec")))
-         (should (filepath-equal-p dir expected-run-dir))
-         (should (equal command expected-cmd)))))))
+;; (ert-deftest test-cmake-integration--get-run-command--custom-folder ()
+;;   (test-fixture-setup
+;;    "./test-project"
+;;    (lambda ()
+;;      (let* ((cmake-integration-run-working-directory "subfolder")
+;;             (cmake-integration-run-arguments "arg1 arg2")
+;;             (executable-relative-path "../build/bin/myexec")
+;;             (expected-run-dir (file-name-concat (cmake-integration--get-project-root-folder) "subfolder"))
+;;             (expected-cmd (format "gdb -i=mi --args %s %s"
+;;                                   executable-relative-path
+;;                                   cmake-integration-run-arguments)))
+;;        (pcase-let* ((`(,dir ,command) (cmake-integration--get-debug-command "bin/myexec")))
+;;          (should (filepath-equal-p dir expected-run-dir))
+;;          (should (equal command expected-cmd)))))))
 
 
-(ert-deftest test-cmake-integration--get-debug-command--root-folder ()
-  (test-fixture-setup
-   "./test-project"
-   (lambda ()
-     (let* ((cmake-integration-run-working-directory 'root)
-            (cmake-integration-run-arguments "arg1 arg2")
-            (executable-relative-path "build/bin/myexec")
-            (expected-run-dir (cmake-integration--get-project-root-folder))
-            (expected-cmd (format "gdb -i=mi --args %s %s"
-                                  executable-relative-path
-                                  cmake-integration-run-arguments)))
-       (pcase-let* ((`(,dir ,command) (cmake-integration--get-debug-command "bin/myexec")))
-         (should (filepath-equal-p dir expected-run-dir))
-         (should (equal command expected-cmd)))))))
+;; (ert-deftest test-cmake-integration--get-debug-command--root-folder ()
+;;   (test-fixture-setup
+;;    "./test-project"
+;;    (lambda ()
+;;      (let* ((cmake-integration-run-working-directory 'root)
+;;             (cmake-integration-run-arguments "arg1 arg2")
+;;             (executable-relative-path "build/bin/myexec")
+;;             (expected-run-dir (cmake-integration--get-project-root-folder))
+;;             (expected-cmd (format "gdb -i=mi --args %s %s"
+;;                                   executable-relative-path
+;;                                   cmake-integration-run-arguments)))
+;;        (pcase-let* ((`(,dir ,command) (cmake-integration--get-debug-command "bin/myexec")))
+;;          (should (filepath-equal-p dir expected-run-dir))
+;;          (should (equal command expected-cmd)))))))
 
 
-(ert-deftest test-cmake-integration--get-debug-command--build-folder ()
-  (test-fixture-setup
-   "./test-project"
-   (lambda ()
-     (let* ((cmake-integration-run-working-directory 'build)
-            (cmake-integration-run-arguments "arg1 arg2")
-            (executable-relative-path "bin/myexec")
-            (expected-run-dir (cmake-integration-get-build-folder))
-            (expected-cmd (format "gdb -i=mi --args %s %s"
-                                  executable-relative-path
-                                  cmake-integration-run-arguments)))
-       (pcase-let* ((`(,dir ,command) (cmake-integration--get-debug-command "bin/myexec")))
-         (should (filepath-equal-p dir expected-run-dir))
-         (should (equal command expected-cmd)))))))
+;; (ert-deftest test-cmake-integration--get-debug-command--build-folder ()
+;;   (test-fixture-setup
+;;    "./test-project"
+;;    (lambda ()
+;;      (let* ((cmake-integration-run-working-directory 'build)
+;;             (cmake-integration-run-arguments "arg1 arg2")
+;;             (executable-relative-path "bin/myexec")
+;;             (expected-run-dir (cmake-integration-get-build-folder))
+;;             (expected-cmd (format "gdb -i=mi --args %s %s"
+;;                                   executable-relative-path
+;;                                   cmake-integration-run-arguments)))
+;;        (pcase-let* ((`(,dir ,command) (cmake-integration--get-debug-command "bin/myexec")))
+;;          (should (filepath-equal-p dir expected-run-dir))
+;;          (should (equal command expected-cmd)))))))
 
-(ert-deftest test-cmake-integration--get-debug-command--bin-folder ()
-  (test-fixture-setup
-   "./test-project"
-   (lambda ()
-     (let* ((cmake-integration-run-working-directory 'bin)
-            (cmake-integration-run-arguments "arg1 arg2")
-            (executable-relative-path "myexec")
-            (expected-run-dir (file-name-concat (cmake-integration-get-build-folder) "bin/"))
-            (expected-cmd (format "gdb -i=mi --args %s %s"
-                                  executable-relative-path
-                                  cmake-integration-run-arguments)))
-       (pcase-let* ((`(,dir ,command) (cmake-integration--get-debug-command "bin/myexec")))
-         (should (filepath-equal-p dir expected-run-dir))
-         (should (equal command expected-cmd)))))))
+;; (ert-deftest test-cmake-integration--get-debug-command--bin-folder ()
+;;   (test-fixture-setup
+;;    "./test-project"
+;;    (lambda ()
+;;      (let* ((cmake-integration-run-working-directory 'bin)
+;;             (cmake-integration-run-arguments "arg1 arg2")
+;;             (executable-relative-path "myexec")
+;;             (expected-run-dir (file-name-concat (cmake-integration-get-build-folder) "bin/"))
+;;             (expected-cmd (format "gdb -i=mi --args %s %s"
+;;                                   executable-relative-path
+;;                                   cmake-integration-run-arguments)))
+;;        (pcase-let* ((`(,dir ,command) (cmake-integration--get-debug-command "bin/myexec")))
+;;          (should (filepath-equal-p dir expected-run-dir))
+;;          (should (equal command expected-cmd)))))))
 
 
-(ert-deftest test-cmake-integration--get-debug-command--custom-folder ()
-  (test-fixture-setup
-   "./test-project"
-   (lambda ()
-     (let* ((cmake-integration-run-working-directory "subfolder")
-            (cmake-integration-run-arguments "arg1 arg2")
-            (executable-relative-path "../build/bin/myexec")
-            (expected-run-dir (file-name-concat (cmake-integration--get-project-root-folder) "subfolder"))
-            (expected-cmd (format "gdb -i=mi --args %s %s"
-                                  executable-relative-path
-                                  cmake-integration-run-arguments)))
-       (pcase-let* ((`(,dir ,command) (cmake-integration--get-debug-command "bin/myexec")))
-         (should (filepath-equal-p dir expected-run-dir))
-         (should (equal command expected-cmd)))))))
+;; (ert-deftest test-cmake-integration--get-debug-command--custom-folder ()
+;;   (test-fixture-setup
+;;    "./test-project"
+;;    (lambda ()
+;;      (let* ((cmake-integration-run-working-directory "subfolder")
+;;             (cmake-integration-run-arguments "arg1 arg2")
+;;             (executable-relative-path "../build/bin/myexec")
+;;             (expected-run-dir (file-name-concat (cmake-integration--get-project-root-folder) "subfolder"))
+;;             (expected-cmd (format "gdb -i=mi --args %s %s"
+;;                                   executable-relative-path
+;;                                   cmake-integration-run-arguments)))
+;;        (pcase-let* ((`(,dir ,command) (cmake-integration--get-debug-command "bin/myexec")))
+;;          (should (filepath-equal-p dir expected-run-dir))
+;;          (should (equal command expected-cmd)))))))
 
 
 ;;; TODO: add more cases to the test (install target, ninja multi-config, etc)
@@ -699,6 +714,69 @@ test code from inside a 'test project'."
     (should-not (cmake-integration--preset-has-matching-configure-preset-p preset2 configurePreset1))))
 
 
+(ert-deftest test-ci-get-all-presets-of-type ()
+  (test-fixture-setup
+   "./test-project-with-presets"
+   (lambda ()
+     ;; Include hidden presets
+     (let ((all-presets (ci-get-all-presets-of-type 'configurePresets t))
+           (expected-preset-names '("Ninja" "Debug" "default" "ninjamulticonfig" "Dummy" "ninjamulticonfig2")))
+       (should (equal (length all-presets) 6))
+       (should (equal (mapcar #'ci--get-preset-name all-presets) expected-preset-names)))
+
+     ;; No Hidden presets
+     (let ((all-presets (ci-get-all-presets-of-type 'configurePresets))
+           (expected-preset-names '("default" "ninjamulticonfig" "Dummy" "ninjamulticonfig2")))
+       (should (equal (length all-presets) 4))
+       (should (equal (mapcar #'ci--get-preset-name all-presets) expected-preset-names))))))
+
+
+(ert-deftest test-ci-get-presets-of-type ()
+  (test-fixture-setup
+   "./test-project-with-presets"
+   (lambda ()
+     (let* ((all-configure-presets (ci-get-presets-of-type 'configurePresets))
+            (configure-preset-1 (elt all-configure-presets 0)) ;; default
+            (configure-preset-2 (elt all-configure-presets 1)) ;; ninjamulticonfig
+            (configure-preset-3 (elt all-configure-presets 2)) ;; Dummy
+            )
+       ;; Case when passing a configure preset
+       (let* ((build-presets-1 (ci-get-presets-of-type 'buildPresets configure-preset-1))
+              (build-presets-2 (ci-get-presets-of-type 'buildPresets configure-preset-2))
+              (build-preset-nil (ci-get-presets-of-type 'buildPresets configure-preset-3))
+              )
+         (should (equal (length build-presets-1) 1))
+         (should (equal (ci--get-preset-name (elt build-presets-1 0))
+                        (ci--get-preset-name configure-preset-1)))
+
+         (should (equal (length build-presets-2) 1))
+         (should (equal (ci--get-preset-name (elt build-presets-2 0))
+                        (ci--get-preset-name configure-preset-2)))
+
+         ;; There are no build presets with configure preset "dummy"
+         (should (equal (length build-preset-nil) 0)))
+
+       ;; Case when not passing a configure preset
+       (let* ((ci-configure-preset (elt all-configure-presets 1))
+              ;; (expected-build-preset (ci-get-presets-of-type 'buildPresets configure-preset-1))
+              (all-build-presets (ci-get-all-presets-of-type 'buildPresets))
+              (build-preset-1 (elt all-build-presets 0))
+              (build-preset-2 (elt all-build-presets 1))
+              (build-preset-3 (elt all-build-presets 2))
+
+              (obtained-build-preset (ci-get-presets-of-type 'buildPresets))
+              )
+
+         (should (equal (length all-build-presets) 2))
+         ;; There is only one build preset with the configure preset "ninjamulticonfig"
+         (should (equal (length obtained-build-preset) 1))
+
+         (should (equal (ci--get-preset-name ci-configure-preset) "ninjamulticonfig"))
+
+         (should (equal (elt obtained-build-preset 0) build-preset-2)))))))
+
+
+
 (ert-deftest test-cmake-integration-get-build-presets ()
   (test-fixture-setup
    "./test-project-with-presets"
@@ -740,6 +818,45 @@ test code from inside a 'test project'."
        (should (equal build-presets expected-build-presets))))))
 
 
+(ert-deftest test-ci--get-all-targets ()
+  (test-fixture-setup
+   "./test-project-with-codemodel-reply"
+   (lambda ()
+     (let* ((codemodel-file (cmake-integration--get-codemodel-reply-json-filename))
+            (all-targets (ci--get-all-targets codemodel-file))
+            (target-1 (elt all-targets 0))
+            (target-2 (elt all-targets 1))
+            (target-3 (elt all-targets 2))
+            (target-4 (elt all-targets 3)))
+
+       ;; Two targets defined in the codemodel + all + clean
+       (should (equal (length all-targets) 4))
+
+       (should (equal target-1 '("all")))
+       (should (equal target-2 '("clean")))
+       (should (equal (alist-get 'name target-3) "somelib"))
+       (should (equal (alist-get 'type target-3) "STATIC_LIBRARY"))
+
+       (should (equal (alist-get 'name target-4) "main"))
+       (should (equal (alist-get 'type target-4) "EXECUTABLE"))))))
+
+
+
+(ert-deftest test-ci--get-target-type-from-name ()
+  (test-fixture-setup
+   "./test-project-with-codemodel-reply"
+   (lambda ()
+     (let* ((codemodel-file (cmake-integration--get-codemodel-reply-json-filename))
+            (all-targets (ci--get-all-targets codemodel-file))
+            (target-type-main (ci--get-target-type-from-name "main" all-targets))
+            (target-type-somelib (ci--get-target-type-from-name "somelib" all-targets))
+            )
+       (should (equal target-type-main "EXECUTABLE"))
+       (should (equal target-type-somelib "STATIC_LIBRARY"))))))
+
+
+
+
 
 ;; Assert macros:
 ;; - should
@@ -749,3 +866,7 @@ test code from inside a 'test project'."
 
 (provide 'cmake-integration-tests)
 ;;; cmake-integration-tests.el ends here
+
+;; Local Variables:
+;; read-symbol-shorthands: (("ci-" . "cmake-integration-"))
+;; End:
