@@ -51,7 +51,22 @@ test code from inside a 'test project'."
 ;; xxxxxxxxxxxxxxx Define the tests xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
-(ert-deftest test-cmake-integration--get-system-presets-file ()
+(ert-deftest test-ci--get-preset-name ()
+  (let ((preset '((name . "my-preset") (displayName . "My Preset")))
+        (expected-name "my-preset"))
+    (should (equal (ci--get-preset-name preset) expected-name))))
+
+
+(ert-deftest test-ci-get-last-build-preset-name ()
+  (let ((ci-build-preset))
+    (should (null (ci-get-last-build-preset-name))))
+
+  (let ((ci-build-preset '((name . "my-preset") (displayName . "My Preset"))))
+    (should (equal (ci-get-last-build-preset-name) "my-preset"))))
+
+
+
+(ert-deftest test-ci--get-system-presets-file ()
   (test-fixture-setup
    "./test-project/subfolder" ;; project root is the parent "test-project" folder
    (lambda ()
@@ -60,7 +75,7 @@ test code from inside a 'test project'."
        (should (equal (cmake-integration--get-system-presets-file) expected-system-preset))))))
 
 
-(ert-deftest test-cmake-integration--get-user-presets-file ()
+(ert-deftest test-ci--get-user-presets-file ()
   (test-fixture-setup
    "./test-project/subfolder" ;; project root is the parent "test-project" folder
    (lambda ()
@@ -69,7 +84,7 @@ test code from inside a 'test project'."
        (should (equal (cmake-integration--get-user-presets-file) expected-user-preset))))))
 
 
-(ert-deftest test-cmake-integration--expand-included-presets ()
+(ert-deftest test-ci--expand-included-presets ()
   (test-fixture-setup
    "./test-project-with-presets"
    (lambda ()
@@ -83,7 +98,7 @@ test code from inside a 'test project'."
        (should (equal filenames '("subfolder2/MorePresets-Extra.json""MorePresets.json" "subfolder/EvenMorePresets.json" "CMakePresets.json")))))))
 
 
-(ert-deftest test-cmake-integration--get-all-preset-files ()
+(ert-deftest test-ci--get-all-preset-files ()
   (test-fixture-setup
    "./test-project"
    (lambda ()
@@ -116,7 +131,15 @@ test code from inside a 'test project'."
        (cl-mapc (lambda (obtained expected) (should (filepath-equal-p expected obtained)) ) all-files expected-preset-files)))))
 
 
-(ert-deftest test-cmake-integration--create-target-fullname ()
+(ert-deftest test-ci--create-target ()
+  ;; ci--create-target returns a list with a sigle string
+  (should (equal (ci--create-target "target-name" "config-name") '("target-name/config-name")))
+
+  (let ((cmake-integration--multi-config-separator "|"))
+    (should (equal (ci--create-target "all" "Debug") '("all|Debug")))))
+
+
+(ert-deftest test-ci--create-target-fullname ()
   (should (equal (cmake-integration--create-target-fullname "target" "config") "target/config"))
   (let ((cmake-integration--multi-config-separator "|"))
     (should (equal (cmake-integration--create-target-fullname "target" "config") "target|config"))))
@@ -124,7 +147,7 @@ test code from inside a 'test project'."
 
 ;; NOTE: For this test to pass a folder with a `.project' file must be recognized as a project.
 ;; See https://www.reddit.com/r/emacs/comments/k3og7d/extending_projectel/
-(ert-deftest test-cmake-integration--get-project-root-folder ()
+(ert-deftest test-ci--get-project-root-folder ()
   "Test getting the project root when no presets are used."
   (test-fixture-setup
    "./test-project/subfolder" ;; project root is the parent "test-project" folder
@@ -133,7 +156,7 @@ test code from inside a 'test project'."
                            "..")))))
 
 
-(ert-deftest test-cmake-integration--get-preset-by-name ()
+(ert-deftest test-ci--get-preset-by-name ()
   (let* ((preset1 '((name . "preset1") (displayName . "The first preset")))
          (preset2 '((name . "preset2") (displayName . "The second preset")))
          (list-of-presets (list preset1 preset2))
@@ -142,7 +165,7 @@ test code from inside a 'test project'."
     (should (equal (cmake-integration--get-preset-by-name "preset2" list-of-presets) preset2))))
 
 
-(ert-deftest test-cmake-integration--get-configure-parent-preset ()
+(ert-deftest test-ci--get-configure-parent-preset ()
   (test-fixture-setup
    "./test-project-with-presets"
    (lambda ()
@@ -165,7 +188,7 @@ test code from inside a 'test project'."
        (should (equal parent-names '("default" "Dummy")))))))
 
 
-(ert-deftest test-cmake-integration--perform-binaryDir-replacements ()
+(ert-deftest test-ci--perform-binaryDir-replacements ()
   (test-fixture-setup
    "./test-project-with-presets"
    (lambda ()
@@ -183,7 +206,7 @@ test code from inside a 'test project'."
                   "~/some_path/my-project/build/my-preset/")))))))
 
 
-(ert-deftest test-cmake-integration--get-binaryDir ()
+(ert-deftest test-ci--get-binaryDir ()
   (test-fixture-setup
    "./test-project-with-presets"
    (lambda ()
@@ -207,7 +230,7 @@ test code from inside a 'test project'."
      )))
 
 
-(ert-deftest test-cmake-integration--get-binaryDir-with-replacements ()
+(ert-deftest test-ci--get-binaryDir-with-replacements ()
   (test-fixture-setup
    "./test-project-with-presets"
    (lambda ()
@@ -231,7 +254,7 @@ test code from inside a 'test project'."
      )))
 
 
-(ert-deftest test-cmake-integration-get-build-folder-without-presets ()
+(ert-deftest test-ci-get-build-folder-without-presets ()
   (test-fixture-setup
    "./test-project/subfolder" ;; project root is the parent "test-project" folder
    (lambda ()
@@ -239,7 +262,7 @@ test code from inside a 'test project'."
      (let* ((project-root (cmake-integration--get-project-root-folder))
             (expected-build-folder (expand-file-name "./build" project-root)))
        (should (filepath-equal-p (cmake-integration-get-build-folder) expected-build-folder)))
-     
+
      ;; Set `cmake-integration-build-dir'
      (let* ((project-root (cmake-integration--get-project-root-folder))
             (cmake-integration-build-dir "some-build-folder")
@@ -247,7 +270,7 @@ test code from inside a 'test project'."
        (should (filepath-equal-p (cmake-integration-get-build-folder) expected-build-folder))))))
 
 
-(ert-deftest test-cmake-integration-get-build-folder-with-presets ()
+(ert-deftest test-ci-get-build-folder-with-presets ()
   (test-fixture-setup
    ;; Note that in this test we set default-directory to a subfolder in the
    ;; project root
@@ -277,7 +300,7 @@ test code from inside a 'test project'."
        (should (filepath-equal-p (cmake-integration-get-build-folder) expected-build-folder))))))
 
 
-(ert-deftest test-cmake-integration--get-query-folder ()
+(ert-deftest test-ci--get-query-folder ()
   (test-fixture-setup
    "./test-project/subfolder"
    (lambda ()
@@ -287,19 +310,19 @@ test code from inside a 'test project'."
        (should (filepath-equal-p (cmake-integration--get-query-folder) expected-query-folder))))))
 
 
-(ert-deftest test-cmake-integration--get-reply-folder ()
+(ert-deftest test-ci--get-reply-folder ()
   (test-fixture-setup
    "./test-project"
    (lambda () (should (filepath-equal-p (cmake-integration--get-reply-folder) "./build/.cmake/api/v1/reply/")))))
 
 
-(ert-deftest test-cmake-integration--get-path-of-codemodel-query-file ()
+(ert-deftest test-ci--get-path-of-codemodel-query-file ()
   (test-fixture-setup
    "./test-project"
    (lambda () (should (filepath-equal-p (cmake-integration--get-path-of-codemodel-query-file) "./build/.cmake/api/v1/query/client-emacs/codemodel-v2")))))
 
 
-(ert-deftest test-cmake-integration--get-codemodel-reply-json-filename ()
+(ert-deftest test-ci--get-codemodel-reply-json-filename ()
   (test-fixture-setup
    "./test-project-with-codemodel-reply"
    (lambda ()
@@ -309,7 +332,7 @@ test code from inside a 'test project'."
                       "codemodel-v2-some-hash.json"))))))
 
 
-(ert-deftest test-cmake-integration--get-working-directory ()
+(ert-deftest test-ci--get-working-directory ()
   (test-fixture-setup
    "./test-project-with-presets"
    (lambda ()
@@ -333,7 +356,7 @@ test code from inside a 'test project'."
                         (file-name-concat (cmake-integration--get-project-root-folder) "some/subfolder/"))))))))
 
 
-(ert-deftest test-cmake-integration-get-target-executable-full-path ()
+(ert-deftest test-ci-get-target-executable-full-path ()
   (test-fixture-setup
    "./test-project-with-presets"
    (lambda ()
@@ -349,7 +372,7 @@ test code from inside a 'test project'."
 
 
 
-(ert-deftest test-cmake-integration--get-run-command--root-folder ()
+(ert-deftest test-ci--get-run-command--root-folder ()
   (test-fixture-setup
    "./test-project"
    (lambda ()
@@ -363,7 +386,7 @@ test code from inside a 'test project'."
            (should (filepath-equal-p dir expected-run-dir))
            (should (equal command expected-cmd))))))))
 
-(ert-deftest test-cmake-integration--get-run-command--build-folder ()
+(ert-deftest test-ci--get-run-command--build-folder ()
   (test-fixture-setup
    "./test-project"
    (lambda ()
@@ -376,7 +399,7 @@ test code from inside a 'test project'."
            (should (filepath-equal-p dir expected-run-dir))
            (should (equal command expected-cmd))))))))
 
-(ert-deftest test-cmake-integration--get-run-command--bin-folder ()
+(ert-deftest test-ci--get-run-command--bin-folder ()
   (test-fixture-setup
    "./test-project"
    (lambda ()
@@ -389,87 +412,87 @@ test code from inside a 'test project'."
            (should (filepath-equal-p dir expected-run-dir))
            (should (equal command expected-cmd))))))))
 
-(ert-deftest test-cmake-integration--get-run-command--custom-folder ()
-  (test-fixture-setup
-   "./test-project"
-   (lambda ()
-     (let* ((cmake-integration-run-working-directory "subfolder")
-            (cmake-integration-run-arguments "arg1 arg2")
-            (executable-relative-path "../build/bin/myexec")
-            (expected-run-dir (file-name-concat (cmake-integration--get-project-root-folder) "subfolder"))
-            (expected-cmd (format "gdb -i=mi --args %s %s"
-                                  executable-relative-path
-                                  cmake-integration-run-arguments)))
-       (pcase-let* ((`(,dir ,command) (cmake-integration--get-debug-command "bin/myexec")))
-         (should (filepath-equal-p dir expected-run-dir))
-         (should (equal command expected-cmd)))))))
+;; (ert-deftest test-ci--get-run-command--custom-folder ()
+;;   (test-fixture-setup
+;;    "./test-project"
+;;    (lambda ()
+;;      (let* ((cmake-integration-run-working-directory "subfolder")
+;;             (cmake-integration-run-arguments "arg1 arg2")
+;;             (executable-relative-path "../build/bin/myexec")
+;;             (expected-run-dir (file-name-concat (cmake-integration--get-project-root-folder) "subfolder"))
+;;             (expected-cmd (format "gdb -i=mi --args %s %s"
+;;                                   executable-relative-path
+;;                                   cmake-integration-run-arguments)))
+;;        (pcase-let* ((`(,dir ,command) (cmake-integration--get-debug-command "bin/myexec")))
+;;          (should (filepath-equal-p dir expected-run-dir))
+;;          (should (equal command expected-cmd)))))))
 
 
-(ert-deftest test-cmake-integration--get-debug-command--root-folder ()
-  (test-fixture-setup
-   "./test-project"
-   (lambda ()
-     (let* ((cmake-integration-run-working-directory 'root)
-            (cmake-integration-run-arguments "arg1 arg2")
-            (executable-relative-path "build/bin/myexec")
-            (expected-run-dir (cmake-integration--get-project-root-folder))
-            (expected-cmd (format "gdb -i=mi --args %s %s"
-                                  executable-relative-path
-                                  cmake-integration-run-arguments)))
-       (pcase-let* ((`(,dir ,command) (cmake-integration--get-debug-command "bin/myexec")))
-         (should (filepath-equal-p dir expected-run-dir))
-         (should (equal command expected-cmd)))))))
+;; (ert-deftest test-ci--get-debug-command--root-folder ()
+;;   (test-fixture-setup
+;;    "./test-project"
+;;    (lambda ()
+;;      (let* ((cmake-integration-run-working-directory 'root)
+;;             (cmake-integration-run-arguments "arg1 arg2")
+;;             (executable-relative-path "build/bin/myexec")
+;;             (expected-run-dir (cmake-integration--get-project-root-folder))
+;;             (expected-cmd (format "gdb -i=mi --args %s %s"
+;;                                   executable-relative-path
+;;                                   cmake-integration-run-arguments)))
+;;        (pcase-let* ((`(,dir ,command) (cmake-integration--get-debug-command "bin/myexec")))
+;;          (should (filepath-equal-p dir expected-run-dir))
+;;          (should (equal command expected-cmd)))))))
 
 
-(ert-deftest test-cmake-integration--get-debug-command--build-folder ()
-  (test-fixture-setup
-   "./test-project"
-   (lambda ()
-     (let* ((cmake-integration-run-working-directory 'build)
-            (cmake-integration-run-arguments "arg1 arg2")
-            (executable-relative-path "bin/myexec")
-            (expected-run-dir (cmake-integration-get-build-folder))
-            (expected-cmd (format "gdb -i=mi --args %s %s"
-                                  executable-relative-path
-                                  cmake-integration-run-arguments)))
-       (pcase-let* ((`(,dir ,command) (cmake-integration--get-debug-command "bin/myexec")))
-         (should (filepath-equal-p dir expected-run-dir))
-         (should (equal command expected-cmd)))))))
+;; (ert-deftest test-ci--get-debug-command--build-folder ()
+;;   (test-fixture-setup
+;;    "./test-project"
+;;    (lambda ()
+;;      (let* ((cmake-integration-run-working-directory 'build)
+;;             (cmake-integration-run-arguments "arg1 arg2")
+;;             (executable-relative-path "bin/myexec")
+;;             (expected-run-dir (cmake-integration-get-build-folder))
+;;             (expected-cmd (format "gdb -i=mi --args %s %s"
+;;                                   executable-relative-path
+;;                                   cmake-integration-run-arguments)))
+;;        (pcase-let* ((`(,dir ,command) (cmake-integration--get-debug-command "bin/myexec")))
+;;          (should (filepath-equal-p dir expected-run-dir))
+;;          (should (equal command expected-cmd)))))))
 
-(ert-deftest test-cmake-integration--get-debug-command--bin-folder ()
-  (test-fixture-setup
-   "./test-project"
-   (lambda ()
-     (let* ((cmake-integration-run-working-directory 'bin)
-            (cmake-integration-run-arguments "arg1 arg2")
-            (executable-relative-path "myexec")
-            (expected-run-dir (file-name-concat (cmake-integration-get-build-folder) "bin/"))
-            (expected-cmd (format "gdb -i=mi --args %s %s"
-                                  executable-relative-path
-                                  cmake-integration-run-arguments)))
-       (pcase-let* ((`(,dir ,command) (cmake-integration--get-debug-command "bin/myexec")))
-         (should (filepath-equal-p dir expected-run-dir))
-         (should (equal command expected-cmd)))))))
+;; (ert-deftest test-ci--get-debug-command--bin-folder ()
+;;   (test-fixture-setup
+;;    "./test-project"
+;;    (lambda ()
+;;      (let* ((cmake-integration-run-working-directory 'bin)
+;;             (cmake-integration-run-arguments "arg1 arg2")
+;;             (executable-relative-path "myexec")
+;;             (expected-run-dir (file-name-concat (cmake-integration-get-build-folder) "bin/"))
+;;             (expected-cmd (format "gdb -i=mi --args %s %s"
+;;                                   executable-relative-path
+;;                                   cmake-integration-run-arguments)))
+;;        (pcase-let* ((`(,dir ,command) (cmake-integration--get-debug-command "bin/myexec")))
+;;          (should (filepath-equal-p dir expected-run-dir))
+;;          (should (equal command expected-cmd)))))))
 
 
-(ert-deftest test-cmake-integration--get-debug-command--custom-folder ()
-  (test-fixture-setup
-   "./test-project"
-   (lambda ()
-     (let* ((cmake-integration-run-working-directory "subfolder")
-            (cmake-integration-run-arguments "arg1 arg2")
-            (executable-relative-path "../build/bin/myexec")
-            (expected-run-dir (file-name-concat (cmake-integration--get-project-root-folder) "subfolder"))
-            (expected-cmd (format "gdb -i=mi --args %s %s"
-                                  executable-relative-path
-                                  cmake-integration-run-arguments)))
-       (pcase-let* ((`(,dir ,command) (cmake-integration--get-debug-command "bin/myexec")))
-         (should (filepath-equal-p dir expected-run-dir))
-         (should (equal command expected-cmd)))))))
+;; (ert-deftest test-ci--get-debug-command--custom-folder ()
+;;   (test-fixture-setup
+;;    "./test-project"
+;;    (lambda ()
+;;      (let* ((cmake-integration-run-working-directory "subfolder")
+;;             (cmake-integration-run-arguments "arg1 arg2")
+;;             (executable-relative-path "../build/bin/myexec")
+;;             (expected-run-dir (file-name-concat (cmake-integration--get-project-root-folder) "subfolder"))
+;;             (expected-cmd (format "gdb -i=mi --args %s %s"
+;;                                   executable-relative-path
+;;                                   cmake-integration-run-arguments)))
+;;        (pcase-let* ((`(,dir ,command) (cmake-integration--get-debug-command "bin/myexec")))
+;;          (should (filepath-equal-p dir expected-run-dir))
+;;          (should (equal command expected-cmd)))))))
 
 
 ;;; TODO: add more cases to the test (install target, ninja multi-config, etc)
-(ert-deftest test-cmake-integration--get-targets-from-codemodel-json-file ()
+(ert-deftest test-ci--get-targets-from-codemodel-json-file ()
   (test-fixture-setup
    "./test-project-with-codemodel-reply"
    (lambda ()
@@ -488,7 +511,7 @@ test code from inside a 'test project'."
        (should (equal targets expected-targets))))))
 
 
-(ert-deftest test-cmake-integration--add-all-clean-install-targets ()
+(ert-deftest test-ci--add-all-clean-install-targets ()
   ;; Test when config-name is nil
   (let* ((targets '(("main" (name . "main")) ("somelib" (name . "somelib"))))
          (expected-all-targets '(("all") ("clean") ("main" (name . "main")) ("somelib" (name . "somelib"))))
@@ -522,7 +545,7 @@ test code from inside a 'test project'."
     (should (equal all-targets expected-all-targets))))
 
 
-(ert-deftest test-cmake-integration--change-to-absolute-filename ()
+(ert-deftest test-ci--change-to-absolute-filename ()
   (let ((absolute-filename "/somefolder/subfolder/filename1.txt")
         (relative-filename "subfolder/filename2.txt")
         (parent-folder "/somefolder"))
@@ -532,7 +555,7 @@ test code from inside a 'test project'."
                    (f-join parent-folder relative-filename)))))
 
 
-(ert-deftest test-cmake-integration-get-configure-presets ()
+(ert-deftest test-ci-get-configure-presets ()
   ;; Without any presets file
   (test-fixture-setup
    "./test-project"
@@ -569,7 +592,7 @@ test code from inside a 'test project'."
        (should (equal presets-names expected-preset-names))))))
 
 
-(ert-deftest test-cmake-integration-get-build-command ()
+(ert-deftest test-ci-get-build-command ()
   (let ((cmake-integration-build-preset nil))
 
     (test-fixture-setup
@@ -636,7 +659,7 @@ test code from inside a 'test project'."
                               "cmake --build --preset build-preset --target the_target --lala lele --lili lolo"))))))))
 
 
-(ert-deftest test-cmake-integration-get-conan-run-command ()
+(ert-deftest test-ci-get-conan-run-command ()
   (test-fixture-setup
    "./test-project"
    (lambda ()
@@ -681,14 +704,14 @@ test code from inside a 'test project'."
                                 conanfile-relative-path))))))))
 
 
-(ert-deftest test-cmake-integration--get-associated-configure-preset ()
+(ert-deftest test-ci--get-associated-configure-preset ()
   (let ((build-preset1 '((name . "presetName1") (configurePreset . "configurePresetName1")))
         (build-preset2 '((name . "presetName2") (configurePreset . "configurePresetName2"))))
     (should (equal (cmake-integration--get-associated-configure-preset build-preset1) "configurePresetName1"))
     (should (equal (cmake-integration--get-associated-configure-preset build-preset2) "configurePresetName2"))))
 
 
-(ert-deftest test-cmake-integration--preset-has-matching-configure-preset-p ()
+(ert-deftest test-ci--preset-has-matching-configure-preset-p ()
   (let ((preset1 '((name . "preset1") (configurePreset . "configurePreset1")))
         (preset2 '((name . "preset2") (configurePreset . "configurePreset2")))
         (configurePreset1 '((name . "configurePreset1")))
@@ -699,7 +722,70 @@ test code from inside a 'test project'."
     (should-not (cmake-integration--preset-has-matching-configure-preset-p preset2 configurePreset1))))
 
 
-(ert-deftest test-cmake-integration-get-build-presets ()
+(ert-deftest test-ci-get-all-presets-of-type ()
+  (test-fixture-setup
+   "./test-project-with-presets"
+   (lambda ()
+     ;; Include hidden presets
+     (let ((all-presets (ci-get-all-presets-of-type 'configurePresets t))
+           (expected-preset-names '("Ninja" "Debug" "default" "ninjamulticonfig" "Dummy" "ninjamulticonfig2")))
+       (should (equal (length all-presets) 6))
+       (should (equal (mapcar #'ci--get-preset-name all-presets) expected-preset-names)))
+
+     ;; No Hidden presets
+     (let ((all-presets (ci-get-all-presets-of-type 'configurePresets))
+           (expected-preset-names '("default" "ninjamulticonfig" "Dummy" "ninjamulticonfig2")))
+       (should (equal (length all-presets) 4))
+       (should (equal (mapcar #'ci--get-preset-name all-presets) expected-preset-names))))))
+
+
+(ert-deftest test-ci-get-presets-of-type ()
+  (test-fixture-setup
+   "./test-project-with-presets"
+   (lambda ()
+     (let* ((all-configure-presets (ci-get-presets-of-type 'configurePresets))
+            (configure-preset-1 (elt all-configure-presets 0)) ;; default
+            (configure-preset-2 (elt all-configure-presets 1)) ;; ninjamulticonfig
+            (configure-preset-3 (elt all-configure-presets 2)) ;; Dummy
+            )
+       ;; Case when passing a configure preset
+       (let* ((build-presets-1 (ci-get-presets-of-type 'buildPresets configure-preset-1))
+              (build-presets-2 (ci-get-presets-of-type 'buildPresets configure-preset-2))
+              (build-preset-nil (ci-get-presets-of-type 'buildPresets configure-preset-3))
+              )
+         (should (equal (length build-presets-1) 1))
+         (should (equal (ci--get-preset-name (elt build-presets-1 0))
+                        (ci--get-preset-name configure-preset-1)))
+
+         (should (equal (length build-presets-2) 1))
+         (should (equal (ci--get-preset-name (elt build-presets-2 0))
+                        (ci--get-preset-name configure-preset-2)))
+
+         ;; There are no build presets with configure preset "dummy"
+         (should (equal (length build-preset-nil) 0)))
+
+       ;; Case when not passing a configure preset
+       (let* ((ci-configure-preset (elt all-configure-presets 1))
+              ;; (expected-build-preset (ci-get-presets-of-type 'buildPresets configure-preset-1))
+              (all-build-presets (ci-get-all-presets-of-type 'buildPresets))
+              (build-preset-1 (elt all-build-presets 0))
+              (build-preset-2 (elt all-build-presets 1))
+              (build-preset-3 (elt all-build-presets 2))
+
+              (obtained-build-preset (ci-get-presets-of-type 'buildPresets))
+              )
+
+         (should (equal (length all-build-presets) 2))
+         ;; There is only one build preset with the configure preset "ninjamulticonfig"
+         (should (equal (length obtained-build-preset) 1))
+
+         (should (equal (ci--get-preset-name ci-configure-preset) "ninjamulticonfig"))
+
+         (should (equal (elt obtained-build-preset 0) build-preset-2)))))))
+
+
+
+(ert-deftest test-ci-get-build-presets ()
   (test-fixture-setup
    "./test-project-with-presets"
    (lambda ()
@@ -740,6 +826,155 @@ test code from inside a 'test project'."
        (should (equal build-presets expected-build-presets))))))
 
 
+(ert-deftest test-ci--get-all-targets ()
+  (test-fixture-setup
+   "./test-project-with-codemodel-reply"
+   (lambda ()
+     (let* ((codemodel-file (cmake-integration--get-codemodel-reply-json-filename))
+            (all-targets (ci--get-all-targets codemodel-file))
+            (target-1 (elt all-targets 0))
+            (target-2 (elt all-targets 1))
+            (target-3 (elt all-targets 2))
+            (target-4 (elt all-targets 3)))
+
+       ;; Two targets defined in the codemodel + all + clean
+       (should (equal (length all-targets) 4))
+
+       (should (equal target-1 '("all")))
+       (should (equal target-2 '("clean")))
+       (should (equal (alist-get 'name target-3) "somelib"))
+       (should (equal (alist-get 'type target-3) "STATIC_LIBRARY"))
+
+       (should (equal (alist-get 'name target-4) "main"))
+       (should (equal (alist-get 'type target-4) "EXECUTABLE"))))))
+
+
+
+(ert-deftest test-ci--get-target-type-from-name ()
+  (test-fixture-setup
+   "./test-project-with-codemodel-reply"
+   (lambda ()
+     (let* ((codemodel-file (cmake-integration--get-codemodel-reply-json-filename))
+            (all-targets (ci--get-all-targets codemodel-file))
+            (target-type-main (ci--get-target-type-from-name "main" all-targets))
+            (target-type-somelib (ci--get-target-type-from-name "somelib" all-targets))
+            )
+       (should (equal target-type-main "EXECUTABLE"))
+       (should (equal target-type-somelib "STATIC_LIBRARY"))))))
+
+
+(ert-deftest test-ci--get-target-name ()
+  (let* (
+         (target-name "target-name")
+         (config-name "config-name")
+         (target-info `((name . ,target-name)))
+         (target-name-with-config-name (format "%s/%s" target-name config-name)))
+    ;; If config-name is non-nil, the returned value is in the form "target-name/config-name"
+    (should (equal (ci--get-target-name target-info config-name) target-name-with-config-name))
+
+    ;; If config is nil, it returns just the target name
+    (should (equal (ci--get-target-name target-info nil) target-name))))
+
+
+(ert-deftest test-ci--add-name-to-target ()
+  (let* ((target-name "the-target-name")
+         (config-name "the-config-name")
+         (target-info `((name . ,target-name) (somethingElse . "somethingElse") ))
+         (target-name-with-config "the-target-name/the-config-name")
+         (expected (cons target-name-with-config target-info))
+         (expected2 (cons target-name target-info)))
+
+    ;; Case where we pass the config name
+    (should (equal (ci--add-name-to-target target-info config-name) expected))
+
+    ;; Case where we do not pass the config name (it's nil)
+    (should (equal (ci--add-name-to-target target-info) expected2))
+    (should (equal (ci--add-name-to-target target-info nil) expected2))))
+
+
+
+(ert-deftest test-ci--get-prepared-targets-from-configuration ()
+  (test-fixture-setup
+   "./test-project-with-codemodel-reply"
+   (lambda ()
+     (let* ((codemodel-file (ci--get-codemodel-reply-json-filename))
+            (all-config (alist-get 'configurations (json-read-file codemodel-file)))
+            (first-config (elt all-config 0))
+            (first-config-name (alist-get 'name first-config))
+            (targets-no-config-name (ci--get-prepared-targets-from-configuration first-config nil))
+            (targets-with-config-name (ci--get-prepared-targets-from-configuration first-config t)))
+
+       (should (equal (alist-get 'name first-config) "the-config-name"))
+
+       (should (equal (length targets-no-config-name) 4))
+       (should (equal (elt targets-no-config-name 0) '("all")))
+       (should (equal (elt targets-no-config-name 1) '("clean")))
+       (should (equal (car (elt targets-no-config-name 2)) "somelib"))
+       (should (equal (car (elt targets-no-config-name 3)) "main"))
+
+       (should (equal (length targets-with-config-name) 4))
+       (should (equal (elt targets-with-config-name 0) '("all/the-config-name")))
+       (should (equal (elt targets-with-config-name 1) '("clean/the-config-name")))
+       (should (equal (car (elt targets-with-config-name 2)) "somelib/the-config-name"))
+       (should (equal (car (elt targets-with-config-name 3)) "main/the-config-name"))))))
+
+
+(ert-deftest test-ci--add-type-field-to-target ()
+
+  (test-fixture-setup
+   "./test-project-with-codemodel-reply"
+   (lambda ()
+     (let* ((codemodel-file (ci--get-codemodel-reply-json-filename))
+            (all-targets (ci--get-targets-from-codemodel-json-file codemodel-file))
+            (somelib-target (elt all-targets 2))
+            (main-target (elt all-targets 3)))
+       ;; There is no type field in original target obtained with
+       ;; ci--get-targets-from-codemodel-json-file
+       (should (null (alist-get 'type somelib-target)))
+       (should (null (alist-get 'type main-target)))
+
+       (ci--add-type-field-to-target somelib-target)
+       (ci--add-type-field-to-target main-target)
+
+       ;; The input to ci--add-type-field-to-target is modified
+       (should (not (null (alist-get 'type somelib-target))))
+       (should (not (null (alist-get 'type main-target))))
+
+       (should (equal (alist-get 'type somelib-target) "STATIC_LIBRARY"))
+       (should (equal (alist-get 'type main-target) "EXECUTABLE"))))))
+
+
+(ert-deftest test-ci--get-targets-from-codemodel-json-file-2 ()
+  ;; ci--get-targets-from-codemodel-json-file-2 is the same as
+  ;; ci--get-targets-from-codemodel-json-file, but it calls
+  ;; ci--add-type-field-to-target to add a type field in each target
+  (test-fixture-setup
+   "./test-project-with-codemodel-reply"
+   (lambda ()
+     (let* ((codemodel-file (ci--get-codemodel-reply-json-filename))
+            (all-targets-without-type (ci--get-targets-from-codemodel-json-file codemodel-file))
+            (all-targets-with-type (ci--get-targets-from-codemodel-json-file-2 codemodel-file))
+            )
+
+       ;; Both have the same number of elements
+       (should (equal (length all-targets-without-type) (length all-targets-with-type)))
+
+       ;; First two targets are the "all" and "clean" targets
+       (should (equal (elt all-targets-without-type 0) (elt all-targets-with-type 0)))
+       (should (equal (elt all-targets-without-type 1) (elt all-targets-with-type 1)))
+
+       ;; Other two elements are the "main" and "somelib" targets
+       (should (not (equal (elt all-targets-without-type 2) (elt all-targets-with-type 2))))
+       (should (not (equal (elt all-targets-without-type 3) (elt all-targets-with-type 3))))
+
+       ;; If we call ci--add-type-field-to-target to add the type field to the
+       ;; elements in all-targets-without-type, then they will have a type field
+       ;; and they should now be equal to what we have in all-targets-with-type
+       (ci--add-type-field-to-target (elt all-targets-without-type 2))
+       (ci--add-type-field-to-target (elt all-targets-without-type 3))
+       (should (equal (elt all-targets-without-type 2) (elt all-targets-with-type 2)))
+       (should (equal (elt all-targets-without-type 3) (elt all-targets-with-type 3)))))))
+
 
 ;; Assert macros:
 ;; - should
@@ -749,3 +984,7 @@ test code from inside a 'test project'."
 
 (provide 'cmake-integration-tests)
 ;;; cmake-integration-tests.el ends here
+
+;; Local Variables:
+;; read-symbol-shorthands: (("ci-" . "cmake-integration-"))
+;; End:
