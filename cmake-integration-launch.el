@@ -105,7 +105,7 @@ string to run."
 (defun ci-run-last-target ()
   "Run the last compiled target."
   (interactive)
-  (check-if-build-folder-exists-and-throws-if-not)
+  (ci--check-if-build-folder-exists-and-throws-if-not)
 
   (let ((bufer-name (when ci-use-separated-compilation-buffer-for-each-target
                       (ci--get-program-launch-buffer-name))))
@@ -118,7 +118,7 @@ string to run."
 (defun ci-debug-last-target ()
   "Run the last compiled target."
   (interactive)
-  (check-if-build-folder-exists-and-throws-if-not)
+  (ci--check-if-build-folder-exists-and-throws-if-not)
 
   (let* ((executable-filename (ci-get-target-executable-filename))
          (run-dir (ci--get-working-directory executable-filename))

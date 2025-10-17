@@ -86,8 +86,8 @@ complain in that case."
       (message "Build folder was not deleted"))))
 
 
-;; TODO Rename to ci--check-if-build-folder-exists-and-throws-if-not
-(defun check-if-build-folder-exists-and-throws-if-not ()
+;; TODO Rename to ci--ci--check-if-build-folder-exists-and-throws-if-not
+(defun ci--check-if-build-folder-exists-and-throws-if-not ()
   "Check that the build folder exists and throws an error if not."
   (unless (file-exists-p (ci-get-build-folder))
     (error "The build folder is missing. Please run either `cmake-integration-cmake-reconfigure' or
@@ -189,7 +189,7 @@ If two prefix arguments are provided, then all targets are included."
 
   ;; If the build folder is missing we should stop with an error
   (interactive)
-  (check-if-build-folder-exists-and-throws-if-not)
+  (ci--check-if-build-folder-exists-and-throws-if-not)
 
   (if-let* ((json-filename (ci--get-codemodel-reply-json-filename))
             (list-of-targets (ci--get-all-targets json-filename))
