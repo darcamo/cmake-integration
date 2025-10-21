@@ -107,11 +107,25 @@ string to run."
   (interactive)
   (ci--check-if-build-folder-exists-and-throws-if-not)
 
-  (let ((bufer-name (when ci-use-separated-compilation-buffer-for-each-target
-                      (ci--get-program-launch-buffer-name))))
-    (pcase-let* ((`(,run-dir ,cmd) (ci--get-run-command (ci-get-target-executable-filename))))
+  (let ((bufer-name
+         (when ci-use-separated-compilation-buffer-for-each-target
+           (ci--get-program-launch-buffer-name))))
+    (pcase-let* ((`(,run-dir ,cmd)
+                  (ci--get-run-command (ci-get-target-executable-filename))))
       (let ((default-directory run-dir))
-        (funcall ci-program-launcher-function cmd bufer-name)))))
+        (cond
+         ((eq ci-program-launcher-function 'compilation)
+          ;; Use compile to run the command in a compilation buffer
+          (funcall 'ci-default-program-launch-function cmd bufer-name))
+         ((eq ci-program-launcher-function 'comint)
+          ;; Use compile with `t` arg to run the command in a comint buffer
+          (funcall 'ci-comint-program-launch-function cmd bufer-name))
+         ((eq ci-program-launcher-function 'eshell)
+          ;; Use eshell to run the command
+          (funcall 'ci-eshell-program-launch-function cmd bufer-name))
+         (t
+          ;; Assume it is a function
+          (funcall ci-program-launcher-function cmd bufer-name)))))))
 
 
 ;;;###autoload (autoload 'cmake-integration-debug-last-target "cmake-integration")

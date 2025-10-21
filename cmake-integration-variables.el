@@ -73,26 +73,27 @@ the project root." :type '(choice symbol string)
   :local t)
 
 
-(defcustom ci-program-launcher-function #'ci-default-program-launch-function
-  "Stores the function that is used to launch the current target.
+(defcustom ci-program-launcher-function 'compilation
+  "Function or method to launch a program.
 
-It takes two arguments:
+This variable can be set to one of the following values:
 
-1. COMMAND: A string representing the shell command to execute the
-   current target, including any command-line arguments.
-2. BUFFER-NAME: The name to be used for the buffer displaying the
-   running program. This could be nil, which indicates a default name
-   should be used.
+- `compilation': Use `compile` to run the program (does not allow input
+  interaction).
+- `comint': Use a comint buffer to run the program (allows input
+  interaction).
+- `eshell': Use Eshell to run the program.
+- A function: Use a custom function to define how the program is run.
+  The function should take one argument, the program command, and handle
+  the invocation.
 
-Built-in functions are:
-- `cmake-integration-default-program-launch-function': Uses
-  `compile' to run the command in a compilation buffer.
-- `cmake-integration-comint-program-launch-function': Uses `compile'
-  with the comint argument set to t to run the command in a comint
-  buffer. Also switch to that buffer.
-- `cmake-integration-eshell-program-launch-function': Uses eshell to run
-  the command in a eshell buffer."
-  :type 'function
+Customize this variable to control how programs are launched."
+  :type
+  '(choice
+    (const :tag "Compilation Buffer" compilation)
+    (const :tag "Comint Buffer" comint)
+    (const :tag "Eshell" eshell)
+    (function :tag "Custom Function"))
   :group 'cmake-integration)
 
 

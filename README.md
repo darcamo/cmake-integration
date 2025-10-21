@@ -165,14 +165,14 @@ a buffer.
 
 ### Customize how the target executable is run
 
-By default, when running a target executable with `cmake-integration-run-last-target` the process run in a compilation
-buffer. If the program needs to read input from the user, customize the `cmake-integration-program-launcher-function` variable
-with a different "launch function". This should be a function receiving two arguments, the command that should be run, and a name that should be used for the buffer.
+By default, when running a target executable with `cmake-integration-run-last-target` the process run in a compilation buffer. If the program needs to read input from the user, customize the `cmake-integration-program-launcher-function` variable with a different "launch function". This should be a function receiving two arguments, the command that should be run, and a name that should be used for the buffer.
 
-There are three built-in functions that can be used and should cover most use cases:
-- `cmake-integration-default-program-launch-function` (default): Uses `compile` to run the command in a compilation buffer.
-- `cmake-integration-comint-program-launch-function`: Uses `compile` with the comint argument set to `t` to run the command in a comint buffer. Also switch to that buffer.
-- `cmake-integration-eshell-program-launch-function`: Uses `eshell` to run the command in a eshell buffer.
+The `cmake-integration-program-launcher-function` variable can also be set to one of the three symbols below, which map to default builtin functions that can be used and should cover most use cases:
+- `'compilation` (default value): Uses Emacs `compile` feature to run the command in a compilation buffer. This does not
+  allow input interaction with the program being executed.
+- `'comint`: Uses Emacs `compile` feature with the comint argument set to `t` to run the command in a comint buffer.
+  Also switch to that buffer. This allows input interaction
+- `'eshell`: Uses `eshell` to run the command in a eshell buffer.
 
 ### Build Directory
 
