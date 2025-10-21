@@ -72,7 +72,7 @@ the \"--cd\" option."
 
 
 (defun ci-dape-debug-launch-function (executable-path &optional args run-dir)
-  "Debug EXECUTABLE-PATH with dape, passign ARGS and sing RUN-DIR as cwd.
+  "Debug EXECUTABLE-PATH with dape, passign ARGS and using RUN-DIR as cwd.
 
 Note: This is EXPERIMENTAL and has not been tested much. It may also
 break in the future in case dap changes, since there is no official

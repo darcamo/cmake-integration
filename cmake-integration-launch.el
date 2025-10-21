@@ -136,10 +136,31 @@ string to run."
 
   (let* ((executable-filename (ci-get-target-executable-filename))
          (run-dir (ci--get-working-directory executable-filename))
-         (executable-path (file-relative-name (ci-get-target-executable-full-path executable-filename) run-dir)))
+         (executable-path
+          (file-relative-name
+           (ci-get-target-executable-full-path executable-filename)
+           run-dir)))
 
     ;; Call the debug launcher function
-    (funcall ci-debug-launcher-function executable-path ci-run-arguments run-dir)))
+    (cond
+     ((eq ci-debug-launcher-function 'classic-gdb)
+      ;; Use native gdb Emacs integration
+      (funcall 'ci-default-debug-launch-function
+               executable-path
+               ci-run-arguments
+               run-dir))
+     ((eq ci-debug-launcher-function 'dape)
+      ;; Use dape with gdb's Debugger Adapter Protocol
+      (funcall 'ci-dape-debug-launch-function
+               executable-path
+               ci-run-arguments
+               run-dir))
+     (t
+      ;; Assume it is a function
+      (funcall ci-debug-launcher-function
+               executable-path
+               ci-run-arguments
+               run-dir)))))
 
 
 (defun ci--set-runtime-arguments (run-arguments)

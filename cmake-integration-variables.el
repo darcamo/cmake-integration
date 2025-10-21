@@ -103,9 +103,24 @@ Customize this variable to control how programs are launched."
   :group 'cmake-integration)
 
 
-(defcustom ci-debug-launcher-function #'ci-default-debug-launch-function
-  "Stores the function that is used to debug the current target."
-  :type 'function
+(defcustom ci-debug-launcher-function 'classic-gdb
+  "Function or method to launch a debugger.
+
+This variable can be set to one of the following values:
+- classic-gdb: Use the `gdb' command in Emacs to debug the target.
+- dape: Use `dape' package to debug the target using gdb's Debugger
+  Adapter Protocol support.
+- Custom function: Use a custom function to define how the debugger is
+  invoked. The function should take three parameters: the program to be
+  executed in the debugger, a string with the command line arguments to
+  pass to to the program, and the working directory to be used.
+
+Customize this variable to control how the debugger is launched."
+  :type
+  '(choice
+    (const :tag "Classic GDB" classic-gdb)
+    (const :tag "DAPE (with gdb's native DAP support)" dape)
+    (function :tag "Custom Function"))
   :group 'cmake-integration)
 
 
