@@ -56,7 +56,7 @@ If TARGET-NAME is not provided use the last target (saved in a
 
 
 (defun ci--get-working-directory (executable-filename)
-  "Get the working directory for to run EXECUTABLE-FILENAME."
+  "Get the working directory to run EXECUTABLE-FILENAME."
   (pcase ci-run-working-directory
     ('root (ci--get-project-root-folder))
     ('build (ci-get-build-folder))
@@ -96,8 +96,8 @@ Return a list (RUN-DIR COMMAND), where RUN-DIR is the directory from
 which the command must be executed, and COMMAND is the command line
 string to run."
   (let* ((run-dir (ci--get-working-directory executable-filename))
-         (executable-path (file-relative-name (ci-get-target-executable-full-path executable-filename) run-dir))
-         (run-command (format "./%s %s" executable-path ci-run-arguments)))
+         (executable-relative-path (file-relative-name (ci-get-target-executable-full-path executable-filename) run-dir))
+         (run-command (format "./%s %s" executable-relative-path ci-run-arguments)))
     (list run-dir run-command)))
 
 
