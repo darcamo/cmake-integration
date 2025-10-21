@@ -1225,8 +1225,8 @@ test code from inside a 'test project'."
      (ci--add-type-field-to-target main-target)
 
      ;; The input to ci--add-type-field-to-target is modified
-     (should (not (null (alist-get 'type somelib-target))))
-     (should (not (null (alist-get 'type main-target))))
+     (should-not (null (alist-get 'type somelib-target)))
+     (should-not (null (alist-get 'type main-target)))
 
      (should (equal (alist-get 'type somelib-target) "STATIC_LIBRARY"))
      (should (equal (alist-get 'type main-target) "EXECUTABLE")))))
@@ -1255,12 +1255,10 @@ test code from inside a 'test project'."
       (equal (elt all-targets-without-type 1) (elt all-targets-with-type 1)))
 
      ;; Other two elements are the "main" and "somelib" targets
-     (should
-      (not
-       (equal (elt all-targets-without-type 2) (elt all-targets-with-type 2))))
-     (should
-      (not
-       (equal (elt all-targets-without-type 3) (elt all-targets-with-type 3))))
+     (should-not
+      (equal (elt all-targets-without-type 2) (elt all-targets-with-type 2)))
+     (should-not
+      (equal (elt all-targets-without-type 3) (elt all-targets-with-type 3)))
 
      ;; If we call ci--add-type-field-to-target to add the type field to the
      ;; elements in all-targets-without-type, then they will have a type field
