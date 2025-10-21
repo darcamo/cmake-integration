@@ -67,7 +67,13 @@ Possible values are the symbols `bin' (to run from the folder
 containing the executable), `build' (to run from the build folder)
 and `root' (to run from the project root), as well as any string.
 In the case of a string, it should match an existing subfolder of
-the project root." :type '(choice symbol string)
+the project root."
+  :type
+  '(choice
+    (const :tag "Binary folder" bin)
+    (const :tag "Build folder" build)
+    (const :tag "Project root folder" root)
+    (string :tag "Custom subfolder of project root"))
   :group 'cmake-integration
   :safe #'ci--run-working-directory-p
   :local t)
