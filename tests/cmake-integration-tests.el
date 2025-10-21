@@ -1,4 +1,4 @@
-;;; tests.el --- Tests for the cmake-integration library  -*- lexical-binding: t; -*-
+;;; cmake-integration-tests.el --- Tests for the cmake-integration library  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2022  Darlan Cavalcante Moreira
 
@@ -41,8 +41,19 @@ file/folder to exist."
 
 This is used in the tests definitions to make sure we run the
 test code from inside a 'test project'."
-  (let ((default-directory (expand-file-name subfolder))
-        (cmake-integration-configure-preset nil))
+  ;; When Emacs is running in batch mode the `load-file-name' variable has the
+  ;; name of the .el file being run. We assume that file is in the tests folder
+  ;; and compute the default-directory from the folder containing it and from
+  ;; subfolder. If Emacs is not running in batch mode, then load-file-name is
+  ;; nil and we compute default-directory as just subfolder.
+  (let* ((run-tests-script-folder
+          (when load-file-name
+            (file-name-directory load-file-name)))
+         (default-directory
+          (if run-tests-script-folder
+              (file-name-concat run-tests-script-folder subfolder)
+            (expand-file-name subfolder)))
+         (cmake-integration-configure-preset nil))
     (funcall body)))
 
 
@@ -1262,6 +1273,11 @@ test code from inside a 'test project'."
        (should
         (equal
          (elt all-targets-without-type 3) (elt all-targets-with-type 3)))))))
+
+
+;; get-target-executable-filename
+
+;; ci--get-working-directory
 
 
 ;; Assert macros:
