@@ -15,6 +15,7 @@
 
 ;;; Code:
 
+(require 'eshell)
 (require 'esh-mode)  ;; For eshell-send-input
 
 (declare-function dape "dape")
@@ -44,9 +45,7 @@ If BUFFER-NAME is nil, use the default compilation buffer name."
   "Launch COMMAND in an eshell buffer with name BUFFER-NAME.
 
 If BUFFER-NAME is nil, use the default eshell buffer name is used."
-  (let ((eshell-buffer-name (if buffer-name
-                                buffer-name
-                              "*eshell*")))
+  (let ((eshell-buffer-name (or buffer-name "*eshell*")))
     (unless (get-buffer eshell-buffer-name)
       (eshell))
     (let ((eshell-buffer (get-buffer eshell-buffer-name)))
