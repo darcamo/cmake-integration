@@ -5,7 +5,7 @@ information. It simplifies common development tasks such as:
 
 - **Preset Management:** Easily select and apply CMake configure, build, test, and package presets.
 - **Target Compilation:** Compile specific targets within your project with a single keybinding.
-- **Debugging:** Easily start debugging your executable targets with classic gdb mi interface or with gdb through
+- **Debugging:** Easily start debugging your executable targets with the classic gdb mi interface or with gdb through
   [dape](https://github.com/svaante/dape).
 - **Conan Integration:** Manage Conan packages and remotes directly from Emacs, call ``conan install`, etc..
 - **Language Server:** A symbolic link is automatically created from the build folder `compile_commands.json` file to the
@@ -50,12 +50,12 @@ The package is available on GitHub. You can install it using your preferred Emac
 
 ## Usage
 
-The package provides a transient menu (`cmake-integration-transient`) for quick access to its functions. For efficient workflow, consider binding frequently used commands to custom keybindings.
+The package provides a transient menu (`cmake-integration-transient`) for quick access to its functions. For efficient
+workflow, consider binding frequently used commands to custom keybindings.
 
 ![Main transient menu](images/transient-menu.png)
 
-Note: You probably stop reading this README now and just explore almost everything in the package with just the
-transient menu.
+Note: Try experimenting with with the transient menu to get a better idea about all the functionality.
 
 ### Basic Workflow
 
@@ -71,8 +71,6 @@ transient menu.
 
 2.  **Compile Target:**
     - Use `cmake-integration-select-current-target` to select a target.
-      - **TIP:** See the documentation of `cmake-integration-program-launcher-function` if you want to customize how the
-        executable is run.
     - Use `cmake-integration-save-and-compile-last-target` to compile the last selected target.
     - You can also use `cmake-integration-save-and-compile` to select a target and compile it in a single command.
 
@@ -87,7 +85,8 @@ transient menu.
 4.  **Debug Target:**
     - Use `cmake-integration-debug-last-target` to debug the last compiled executable.
       - **TIP:** See the documentation of the `cmake-integration-debug-launcher-function` variable if you want to
-        customize how the program is executed, including use the [dape package](https://github.com/svaante/dape).
+        customize how the program is executed (such as using [dape](https://github.com/svaante/dape) instead of the
+        native gdb in Emacs).
 
 5.  **Run Tests:**
     - You can always choose a target that has the executable for your tests and run it as usual.
@@ -167,9 +166,14 @@ a buffer.
 
 ### Customize how the target executable is run
 
-By default, when running a target executable with `cmake-integration-run-last-target` the process run in a compilation buffer. If the program needs to read input from the user, customize the `cmake-integration-program-launcher-function` variable with a different "launch function". This should be a function receiving two arguments, the command that should be run, and a name that should be used for the buffer.
+By default, when running a target executable with `cmake-integration-run-last-target` the process run in a compilation
+buffer. If the program needs to read input from the user, customize the `cmake-integration-program-launcher-function`
+variable with a different "launcher function". This should be a function receiving two arguments, the command that
+should be run, and a name that should be used for the buffer.
 
-The `cmake-integration-program-launcher-function` variable can also be set to one of the three symbols below, which map to default builtin functions that can be used and should cover most use cases:
+The `cmake-integration-program-launcher-function` variable can also be set to one of the three symbols below, which map
+to the available builtin launcher functions that should cover most use cases:
+
 - `'compilation` (default value): Uses Emacs `compile` feature to run the command in a compilation buffer. This does not
   allow input interaction with the program being executed.
 - `'comint`: Uses Emacs `compile` feature with the comint argument set to `t` to run the command in a comint buffer.
