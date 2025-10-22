@@ -5,6 +5,9 @@
 ;;; Code:
 
 
+(require 'cmake-integration-launch-functions)
+
+
 (defun ci-get-target-executable-filename (&optional target)
   "Get the executable filename for the target TARGET.
 
