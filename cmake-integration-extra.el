@@ -9,7 +9,7 @@
 (defun ci-open-shell-in-build-folder ()
   "Open eshell in the build folder."
   (interactive)
-  (check-if-build-folder-exists-and-throws-if-not)
+  (ci--check-if-build-folder-exists-and-throws-if-not)
   (let ((default-directory (ci-get-build-folder)))
     (eshell)))
 
@@ -18,7 +18,7 @@
 (defun ci-open-dired-in-build-folder ()
   "Open Dired in the buiild folder."
   (interactive)
-  (check-if-build-folder-exists-and-throws-if-not)
+  (ci--check-if-build-folder-exists-and-throws-if-not)
   (dired (ci-get-build-folder)))
 
 
@@ -28,7 +28,7 @@ Checks if the build folder exists and gets the target folder for
 TARGET-NAME. Executes BODY in the context where `target-folder' is bound
 to the target directory."
   `(progn
-     (check-if-build-folder-exists-and-throws-if-not)
+     (ci--check-if-build-folder-exists-and-throws-if-not)
      (let* ((target-name (or ,target-name ci-current-target))
             (executable-relative-path (ci-get-target-executable-filename target-name))
             (target-full-path (ci-get-target-executable-full-path executable-relative-path))

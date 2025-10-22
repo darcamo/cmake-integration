@@ -4,8 +4,11 @@
 
 ;;; Code:
 
-(declare-function ci-default-program-launch-function "cmake-integration-launch")
-(declare-function ci-eshell-program-launch-function "cmake-integration-launch")
+(declare-function ci-default-program-launch-function "cmake-integration-launch-functions")
+(declare-function ci-eshell-program-launch-function "cmake-integration-launch-functions")
+(declare-function ci-default-debug-launch-function "cmake-integration-launch-functions")
+(declare-function ci-dape-debug-launch-function "cmake-integration-launch-functions")
+
 
 (defgroup cmake-integration nil "Easily call cmake configure and run compiled targets." :group 'tools :prefix "cmake-integration-")
 
@@ -64,32 +67,60 @@ Possible values are the symbols `bin' (to run from the folder
 containing the executable), `build' (to run from the build folder)
 and `root' (to run from the project root), as well as any string.
 In the case of a string, it should match an existing subfolder of
-the project root." :type '(choice symbol string)
+the project root."
+  :type
+  '(choice
+    (const :tag "Binary folder" bin)
+    (const :tag "Build folder" build)
+    (const :tag "Project root folder" root)
+    (string :tag "Custom subfolder of project root"))
   :group 'cmake-integration
   :safe #'ci--run-working-directory-p
   :local t)
 
 
-(defcustom ci-program-launcher #'ci-default-program-launch-function
-  "Stores the function that is used to launch the current target.
+(defcustom ci-program-launcher-function 'compilation
+  "Function or method to launch a program.
 
-It takes two arguments:
+This variable can be set to one of the following values:
 
-1. COMMAND: A string representing the shell command to execute the
-   current target, including any command-line arguments.
-2. BUFFER-NAME: The name to be used for the buffer displaying the
-   running program. This could be nil, which indicates a default name
-   should be used.
+- `compilation': Use `compile` to run the program (does not allow input
+  interaction).
+- `comint': Use a comint buffer to run the program (allows input
+  interaction).
+- `eshell': Use Eshell to run the program.
+- A function: Use a custom function to define how the program is run.
+  The function should take one argument, the program command, and handle
+  the invocation.
 
-Built-in functions are:
-- `cmake-integration-default-program-launch-function': Uses
-  `compile' to run the command in a compilation buffer.
-- `cmake-integration-comint-program-launch-function': Uses `compile'
-  with the comint argument set to t to run the command in a comint
-  buffer. Also switch to that buffer.
-- `cmake-integration-eshell-program-launch-function': Uses eshell to run
-  the command in a eshell buffer."
-  :type 'function
+Customize this variable to control how programs are launched."
+  :type
+  '(choice
+    (const :tag "Compilation Buffer" compilation)
+    (const :tag "Comint Buffer" comint)
+    (const :tag "Eshell" eshell)
+    (function :tag "Custom Function"))
+  :group 'cmake-integration)
+
+
+(defcustom ci-debug-launcher-function 'classic-gdb
+  "Function or method to launch a debugger.
+
+This variable can be set to one of the following values:
+- classic-gdb: Use the `gdb' command in Emacs to debug the target.
+- dape: Use `dape' package to debug the target using gdb's Debugger
+  Adapter Protocol support.
+- Custom function: Use a custom function to define how the debugger is
+  invoked. The function should take three parameters: the program to be
+  executed in the debugger, a string with the command line arguments to
+  pass to to the program, and the working directory to be used.
+
+Customize this variable to control how the debugger is launched."
+  :type
+  '(choice
+    (const :tag "Classic GDB" classic-gdb)
+    (const :tag "DAPE (with gdb's native DAP support)" dape)
+    (function :tag "Custom Function"))
   :group 'cmake-integration)
 
 
@@ -97,13 +128,6 @@ Built-in functions are:
   "If t, make a link of `compile_commands.json' to the project root.
 
 This helps lsp and clangd correctly parsing the project files."
-  :type 'boolean :safe #'booleanp :group 'cmake-integration)
-
-
-(defcustom ci-use-dap-for-debug nil
-  "If t, use `dap-mode' with cpptools for debug.
-
-If nil, use standard gdb graphical interface (see Emacs manual)."
   :type 'boolean :safe #'booleanp :group 'cmake-integration)
 
 

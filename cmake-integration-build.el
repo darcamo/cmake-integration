@@ -86,8 +86,7 @@ complain in that case."
       (message "Build folder was not deleted"))))
 
 
-;; TODO Rename to ci--check-if-build-folder-exists-and-throws-if-not
-(defun check-if-build-folder-exists-and-throws-if-not ()
+(defun ci--check-if-build-folder-exists-and-throws-if-not ()
   "Check that the build folder exists and throws an error if not."
   (unless (file-exists-p (ci-get-build-folder))
     (error "The build folder is missing. Please run either `cmake-integration-cmake-reconfigure' or
@@ -189,7 +188,7 @@ If two prefix arguments are provided, then all targets are included."
 
   ;; If the build folder is missing we should stop with an error
   (interactive)
-  (check-if-build-folder-exists-and-throws-if-not)
+  (ci--check-if-build-folder-exists-and-throws-if-not)
 
   (if-let* ((json-filename (ci--get-codemodel-reply-json-filename))
             (list-of-targets (ci--get-all-targets json-filename))
@@ -267,9 +266,9 @@ separation and then passed to cmake command to build the target."
 
 ;; See CMake file API documentation for what projectIndex is
 ;; https://cmake.org/cmake/help/latest/manual/cmake-file-api.7.html
-(defun ci--target-is-in-projectIndex0-p (target)
-  "Return t if the projectIndex field of TARGET is 0."
-  (eq (alist-get 'projectIndex target) 0))
+(defun ci--target-is-in-projectIndex0-p (target-info)
+  "Return t if the projectIndex field of TARGET-INFO is 0."
+  (eq (alist-get 'projectIndex target-info) 0))
 
 
 (defun ci--target-is-not-utility-p (target)
@@ -285,39 +284,61 @@ separation and then passed to cmake command to build the target."
 
 
 (defun ci--get-targets-from-configuration (config &optional predicate)
-  "Get all targets in CONFIG that match PREDICATE."
+  "Get all targets in CONFIG that match PREDICATE.
+
+CONFIG is a subset of the codemodel JSON file. One of the keys in it is
+`targets', whose value is an array of \"targets\". This function will
+return all targets in that array that match PREDICATE.
+
+PREDICATE is a function that takes one argument, which is an alist, such
+like the example below:
+
+  ((directoryIndex . 1)
+  (id . \"some-id\")
+  (jsonFile . \"target-...-....json\")
+  (name . \"target-name\")
+  (projectIndex . 0))."
   (if predicate
       (seq-filter predicate (alist-get 'targets config))
     (alist-get 'targets config)))
 
 
-(defun ci--get-target-name (target config-name)
-  "Get name for TARGET, including CONFIG-NAME (if not nil)."
-  (let* ((target-name (alist-get 'name target)))
+(defun ci--get-target-name (target-info &optional config-name)
+  "Get the full name for TARGET-INFO, including CONFIG-NAME (if not nil).
+
+TARGET-INFO is an alist with the information about a given target,
+including its name."
+  (let* ((target-name (alist-get 'name target-info)))
     (ci--create-target-fullname target-name config-name)))
 
 
-(defun ci--add-name-to-target (target config-name)
-  "Add the target name to TARGET for CONFIG-NAME.
+(defun ci--add-name-to-target (target-info &optional config-name)
+  "Add the target name to TARGET-INFO for CONFIG-NAME.
 
-TARGET is a list of cons cells, including one with `name` field. This
-function will extract the value in the name field and prepend it to the
-list."
-  (let ((target-name (ci--get-target-name target config-name)))
-    (cons target-name target)))
+TARGET-INFO is an alist, which includes amond other things the the
+`name` of the target. This function will extract the name field and
+prepend it to the list. In other words, this function returns a cons
+cell containing the target-name as car and TARGET-INFO as cdr."
+  (let ((target-name (ci--get-target-name target-info config-name)))
+    (cons target-name target-info)))
 
 
-(defun ci--get-prepared-targets-from-configuration (config config-name predicate)
-  "Get all targets in CONFIG with name CONFIG-NAME that match PREDICATE.
+(defun ci--get-prepared-targets-from-configuration (config include-config-name &optional predicate)
+  "Get all targets in CONFIG matching PREDICATE.
+
+ If INCLUDE-CONFIG-NAME is t, the configuration name is added after the
+ target name.
+
+CONFIG is a subset of the codemodel JSON file. One of the keys in it is
+`targets', whose value is an array of \"targets\". This function will
+return all targets in that array that match PREDICATE.
 
 The implicit targets `all', `clean' and optional `install' targets will
-be returned as well.
-
-CONFIG-NAME is non-nil only when using ninja multi-config generator,
-where we have more than one configuration."
+be returned as well."
   (let ((install-rule? (cl-some (lambda (dir) (alist-get 'hasInstallRule dir))
                                 (alist-get 'directories config)))
         (targets-in-config (ci--get-targets-from-configuration config predicate))
+        (config-name (when include-config-name (alist-get 'name config)))
         (targets-and-name))
     (setq targets-and-name (mapcar (lambda (target-info) (ci--add-name-to-target target-info config-name))
                                    targets-in-config))
@@ -357,6 +378,10 @@ Each entry maps `target-name` to `target-info`."
                             ;; If json-filename was not provided, get it from
                             ;; 'cmake-integration--get-codemodel-reply-json-filename'.
                             (ci--get-codemodel-reply-json-filename)))
+         ;; On single-configuration generators there is one entry for the value
+         ;; of the CMAKE_BUILD_TYPE variable. For multi-configuration generators
+         ;; there is an entry for each configuration listed in the
+         ;; CMAKE_CONFIGURATION_TYPES variable.
          (all-config (alist-get 'configurations (json-read-file json-filename))))
     ;; The result of the nested `mapcar's below is a list of list of alists.
     ;; What we need a list of alists so remove one level and combine the next
@@ -378,15 +403,17 @@ Each entry maps `target-name` to `target-info`."
 (defvar ci--target-type-cache (make-hash-table :test 'equal)
   "Cache for target types. Maps target names to their types.")
 
+
 (defun ci-refresh-target-type-cache ()
   "Clear the target type cache."
   (interactive)
   (clrhash ci--target-type-cache))
 
+
 (defun ci--add-type-field-to-target (target)
   "Add a `type' field to a TARGET, using cache if available.
 
-This will modify TARGET.
+NOTE: This will modify the input TARGET.
 
 TARGET is a list containing the target name followed by many cons, with
 each cons having some information about the TARGET. Particularly, TARGET

@@ -4,43 +4,8 @@
 
 ;;; Code:
 
-(require 'esh-mode)  ;; For eshell-send-input
 
-(defun ci-default-program-launch-function (command &optional buffer-name)
-  "Launch COMMAND in a compilation buffer with name BUFFER-NAME.
-
-If BUFFER-NAME is nil, use the default compilation buffer name."
-  (let ((compilation-buffer-name-function (if buffer-name
-                                              (lambda (_) buffer-name)
-                                            compilation-buffer-name-function)))
-    (compile command)))
-
-
-(defun ci-comint-program-launch-function (command &optional buffer-name)
-  "Launch COMMAND in a comint buffer with name BUFFER-NAME.
-
-If BUFFER-NAME is nil, use the default compilation buffer name."
-  (let* ((buffer-name (or buffer-name "*compilation*"))
-         (compilation-buffer-name-function (lambda (_) buffer-name)))
-    (compile command t)
-    (pop-to-buffer buffer-name)))
-
-
-(defun ci-eshell-program-launch-function (command &optional buffer-name)
-  "Launch COMMAND in an eshell buffer with name BUFFER-NAME.
-
-If BUFFER-NAME is nil, use the default eshell buffer name is used."
-  (let ((eshell-buffer-name (if buffer-name
-                                buffer-name
-                              "*eshell*")))
-    (unless (get-buffer eshell-buffer-name)
-      (eshell))
-    (let ((eshell-buffer (get-buffer eshell-buffer-name)))
-      (with-current-buffer eshell-buffer
-        (goto-char (point-max))
-        (insert command)
-        (eshell-send-input))
-      (pop-to-buffer eshell-buffer))))
+(require 'cmake-integration-launch-functions)
 
 
 (defun ci-get-target-executable-filename (&optional target)
@@ -94,7 +59,7 @@ If TARGET-NAME is not provided use the last target (saved in a
 
 
 (defun ci--get-working-directory (executable-filename)
-  "Get the working directory for to run EXECUTABLE-FILENAME."
+  "Get the working directory to run EXECUTABLE-FILENAME."
   (pcase ci-run-working-directory
     ('root (ci--get-project-root-folder))
     ('build (ci-get-build-folder))
@@ -134,8 +99,8 @@ Return a list (RUN-DIR COMMAND), where RUN-DIR is the directory from
 which the command must be executed, and COMMAND is the command line
 string to run."
   (let* ((run-dir (ci--get-working-directory executable-filename))
-         (executable-path (file-relative-name (ci-get-target-executable-full-path executable-filename) run-dir))
-         (run-command (format "./%s %s" executable-path ci-run-arguments)))
+         (executable-relative-path (file-relative-name (ci-get-target-executable-full-path executable-filename) run-dir))
+         (run-command (format "./%s %s" executable-relative-path ci-run-arguments)))
     (list run-dir run-command)))
 
 
@@ -143,68 +108,62 @@ string to run."
 (defun ci-run-last-target ()
   "Run the last compiled target."
   (interactive)
-  (check-if-build-folder-exists-and-throws-if-not)
+  (ci--check-if-build-folder-exists-and-throws-if-not)
 
-  (let ((bufer-name (when ci-use-separated-compilation-buffer-for-each-target
-                      (ci--get-program-launch-buffer-name))))
-    (pcase-let* ((`(,run-dir ,cmd) (ci--get-run-command (ci-get-target-executable-filename))))
+  (let ((bufer-name
+         (when ci-use-separated-compilation-buffer-for-each-target
+           (ci--get-program-launch-buffer-name))))
+    (pcase-let* ((`(,run-dir ,cmd)
+                  (ci--get-run-command (ci-get-target-executable-filename))))
       (let ((default-directory run-dir))
-        (funcall ci-program-launcher cmd bufer-name)))
-    )
-  )
-
-
-(defun ci--get-debug-command (executable-filename)
-  "Get the directory and the debug command for EXECUTABLE-FILENAME.
-
-Return a list (RUN-DIR COMMAND), where RUN-DIR is the directory from
-which the command must be executed, and COMMAND is the command line
-string to run (`gdb' invocation)."
-  (let* ((run-dir (ci--get-working-directory executable-filename))
-         (executable-path (file-relative-name (ci-get-target-executable-full-path executable-filename) run-dir))
-         (gdb-command (format "gdb -i=mi --args %s %s" executable-path ci-run-arguments)))
-    (list run-dir gdb-command)))
-
-
-(defun ci--launch-gdb-with-last-target ()
-  "Launch gdb inside Emacs to debug the last target."
-  (pcase-let* ((`(,run-dir ,cmd) (ci--get-debug-command (ci-get-target-executable-filename))))
-    ;; TODO GDB seems to not be respecting default-directory. It's probably
-    ;; necessary to pass the `--cd' argument to gdb.
-    (let ((default-directory run-dir))
-      (gdb cmd))))
-
-
-(declare-function dap-debug "dap-mode")
-
-
-(defun ci--launch-dap-debug-cpptools-last-target ()
-  "Launch `dap-debug' using cpptools to debug the last target."
-  (require 'dap-mode)
-  (let ((executable-filename (ci-get-target-executable-filename)))
-
-    (let ((program-path (expand-file-name (ci-get-target-executable-full-path executable-filename)))
-          (cwd (expand-file-name (ci--get-working-directory executable-filename))))
-
-      (dap-debug (list :type "cppdbg"
-                       :request "launch"
-                       :name "cmake-integration-target"
-                       :MIMode "gdb"
-                       :program program-path
-                       :arguments ci-run-arguments
-                       :cwd cwd)))))
+        (cond
+         ((eq ci-program-launcher-function 'compilation)
+          ;; Use compile to run the command in a compilation buffer
+          (funcall 'ci-default-program-launch-function cmd bufer-name))
+         ((eq ci-program-launcher-function 'comint)
+          ;; Use compile with `t` arg to run the command in a comint buffer
+          (funcall 'ci-comint-program-launch-function cmd bufer-name))
+         ((eq ci-program-launcher-function 'eshell)
+          ;; Use eshell to run the command
+          (funcall 'ci-eshell-program-launch-function cmd bufer-name))
+         (t
+          ;; Assume it is a function
+          (funcall ci-program-launcher-function cmd bufer-name)))))))
 
 
 ;;;###autoload (autoload 'cmake-integration-debug-last-target "cmake-integration")
 (defun ci-debug-last-target ()
   "Run the last compiled target."
   (interactive)
-  (check-if-build-folder-exists-and-throws-if-not)
+  (ci--check-if-build-folder-exists-and-throws-if-not)
 
-  (if ci-use-dap-for-debug
-      (ci--launch-dap-debug-cpptools-last-target)
-    ;; Run the target
-    (ci--launch-gdb-with-last-target)))
+  (let* ((executable-filename (ci-get-target-executable-filename))
+         (run-dir (ci--get-working-directory executable-filename))
+         (executable-path
+          (file-relative-name
+           (ci-get-target-executable-full-path executable-filename)
+           run-dir)))
+
+    ;; Call the debug launcher function
+    (cond
+     ((eq ci-debug-launcher-function 'classic-gdb)
+      ;; Use native gdb Emacs integration
+      (funcall 'ci-default-debug-launch-function
+               executable-path
+               ci-run-arguments
+               run-dir))
+     ((eq ci-debug-launcher-function 'dape)
+      ;; Use dape with gdb's Debugger Adapter Protocol
+      (funcall 'ci-dape-debug-launch-function
+               executable-path
+               ci-run-arguments
+               run-dir))
+     (t
+      ;; Assume it is a function
+      (funcall ci-debug-launcher-function
+               executable-path
+               ci-run-arguments
+               run-dir)))))
 
 
 (defun ci--set-runtime-arguments (run-arguments)
