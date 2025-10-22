@@ -78,14 +78,16 @@ transient menu.
 
 3.  **Run Target:**
     - Use `cmake-integration-run-last-target` to execute the compiled executable.
-      - **TIP:** See the documentation of the `cmake-integration-debug-launcher-function` if you want to customize how
-        the debug is run.
+      - **TIP:** See the documentation of the `cmake-integration-program-launcher-function` variable if you want to
+        customize how the program is executed.
     - If you need to pass any command line arguments to the executable, use
       `cmake-integration-run-last-target-with-arguments` to specify custom command-line arguments and then run the
       executable. Any subsequence call to `cmake-integration-run-last-target` will use these arguments as well.
 
 4.  **Debug Target:**
     - Use `cmake-integration-debug-last-target` to debug the last compiled executable.
+      - **TIP:** See the documentation of the `cmake-integration-debug-launcher-function` variable if you want to
+        customize how the program is executed, including use the [dape package](https://github.com/svaante/dape).
 
 5.  **Run Tests:**
     - You can always choose a target that has the executable for your tests and run it as usual.
