@@ -180,6 +180,42 @@ to the available builtin launcher functions that should cover most use cases:
   Also switch to that buffer. This allows input interaction
 - `'eshell`: Uses `eshell` to run the command in a eshell buffer.
 
+
+### Customize how the debugger is run
+
+By default, when debugging the target executabe with `cmake-integration-debug-last-target` the emacs native gdb
+integration is used. You can customize the `cmake-integration-debug-launcher-function` with a different launcher
+function to change this. It should be a function receiving three arguments, the path of the executabel being debugged, a
+string with any command lline arguments passed to it, and the working directory.
+
+The `cmake-integration-debug-launcher-function` variable can aso be set o one of the two symbols below, which map to the
+available builtin launcher functions:
+
+- `classic-gdb` (default value): Uses the native gdb integration in Emacs to debug the current target.
+- `dape`: Uses [dape](https://github.com/svaante/dape) to debug the current target.
+
+
+Other options can be easily added by creating a custom debug launcher function. The code below implements a simple
+launcher function to debug using gdbgui
+
+```emacs-lisp
+(defun gdbgui-debug-launch-function (executable-path &optional args run-dir)
+  "Debug EXECUTABLE-PATH with gdbgui, passign ARGS and using RUN-DIR as cwd."
+    (let* ((default-directory (or run-dir default-directory))
+             (gdbgui-args (format "%s %s" executable-path
+                           (or args ""))))
+      (start-process "gdbgui" "*gdbgui*" "gdbgui" gdbgui-args))
+
+    ;; Start the browser to show the gdbgui interface
+    (browse-url "http://127.0.0.1:5000/")
+  )
+```
+
+**Note**: You will need to stop the `gdbgui` process yourself after you are done with it. You can do that by calling the
+`list-processes` Emacs command and stopping the `gdbgui` process from there.
+
+
+
 ### Build Directory
 
 By default, if you do not use presets then `cmake-integration` assumes the build folder is named `build`. If your
