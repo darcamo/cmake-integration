@@ -446,15 +446,18 @@ with the exception that it adds the type of each target to a
 `type' field in the target. The main use for this information is
 during completion of target names, where this type information is
 shown as an annotation."
-
-  ;; Start with the list of targets returned by
-  ;; `cmake-integration--get-targets-from-codemodel-json-file',
-  ;; then loop over each target to add the type information, skipping
-  ;; the "all", "clean" and "install" targets.
   (let ((list-of-targets (ci--get-targets-from-codemodel-json-file json-filename predicate)))
-    (mapc 'ci--add-type-field-to-target list-of-targets)
+    ;; Create the progress reporter
+    (let* ((total (length list-of-targets))
+           (progress-reporter
+            (make-progress-reporter "Processing targets..." 0 total)))
+      ;; Process each target and update the progress reporter
+      (cl-loop for target in list-of-targets
+               for idx from 0
+               do (ci--add-type-field-to-target target)
+               do (progress-reporter-update progress-reporter idx))
+      (progress-reporter-done progress-reporter))
     list-of-targets))
-
 
 
 (provide 'cmake-integration-build)
