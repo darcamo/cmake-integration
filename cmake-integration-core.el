@@ -80,6 +80,28 @@ Otherwise return it unchanged."
       (make-empty-file query-file))))
 
 
+(defun ci--get-build-dir-if-set (&optional warn-if-nil)
+  "Get the manually set build directory.
+
+If it is nil and WARN-IF-NIL is set, a warning is displayed.
+
+Note: If it not in a project, an error is always thrown."
+  (let ((project-root-folder (ci--get-project-root-folder))
+        (build-dir ci-build-dir))
+    (if project-root-folder
+
+        (if build-dir
+            (expand-file-name build-dir project-root-folder)
+
+          (when warn-if-nil
+            (warn
+             "Build folder is not set.
+Call `cmake-integration-select-configure-preset' to select a configure preset,
+or set `cmake-integration-build-dir' manually")))
+
+      (error "Not in a project"))))
+
+
 (defun ci-get-build-folder ()
   "Get the project build folder.
 
@@ -91,21 +113,30 @@ Note that the returned build folder is always an absolute path. Relative
 paths from `cmake-integration-build-dir' or the active preset are
 resolved against the project root."
   (let ((project-root-folder (ci--get-project-root-folder))
-        (preset ci-configure-preset)
-        (build-dir ci-build-dir))
+        (preset ci-configure-preset))
     (unless project-root-folder
       (error "Not in a project"))
 
     (if preset
-        (let ((binaryDir-with-replacements (ci--get-binaryDir-with-replacements preset)))
-          (expand-file-name binaryDir-with-replacements project-root-folder))
+        (if-let* ((binaryDir-with-replacements
+                   (ci--get-binaryDir-with-replacements preset)))
+          (expand-file-name binaryDir-with-replacements project-root-folder)
+          ;; Maybe the preset or any parent preset has no binaryDir set, or
+          ;; maybe a parent preset is missing. We need to warn the user and than
+          ;; we try using the manually set build dir instead
+          (warn
+           "Could not determine build folder from preset '%s'.\n   - Maybe the preset and none of its parent presets has the 'binaryDir' field, or a parent preset is missing."
+           (ci--get-preset-name preset))
+          (if-let* ((build-dir (ci--get-build-dir-if-set)))
+            (progn
+              (warn "Using manually set build folder: '%s'" build-dir)
+              build-dir)
+            (error
+             "Build folder could not be determined from preset '%s' and no manual build folder is set"
+             (ci--get-preset-name preset))))
 
       ;; Use manually set build directory or throw an error
-      (if build-dir
-          (expand-file-name build-dir project-root-folder)
-        (error "Build folder is not set.
-Call `cmake-integration-select-configure-preset' to select a configure preset,
-or set `cmake-integration-build-dir' manually")))))
+      (ci--get-build-dir-if-set t))))
 
 
 (defun ci--get-build-folder-relative-to-project ()

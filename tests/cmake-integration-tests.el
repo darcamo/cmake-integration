@@ -294,6 +294,8 @@ test code from inside a 'test project'."
      (should (filepath-equal-p (ci-get-build-folder) expected-build-folder)))))
 
 
+;; TODO: Add a test case for missing parent preset, to verify if the warning is
+;; shown and if the value in `ci-get-build-folder' is taken from `ci-build-dir'.
 (ert-deftest test-ci-get-build-folder-with-presets ()
   (test-fixture-setup
    ;; Note that in this test we set default-directory to a subfolder in the
