@@ -16,7 +16,13 @@
 (defcustom ci-build-dir "build"
   "The build folder to use when no presets are used.
 
-If this is nil, then using presets is required." :type '(string) :group 'cmake-integration)
+If this is nil, then using presets is required."
+  :type
+  '(choice
+    (const
+     :tag "Don't specity the build folder (requires using presets)" nil)
+    (string :tag "Specity the build folder"))
+  :group 'cmake-integration)
 
 
 (defcustom ci-install-prefix nil
