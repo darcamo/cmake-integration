@@ -109,7 +109,7 @@ EXTRA-ARGS parameter."
 (defun ci--get-target-type-from-name (target-name all-targets)
   "Get the type of the target with name TARGET-NAME from ALL-TARGETS.
 ALL-TARGETS is an alist like the one returned by
-`cmake-integration--get-targets-from-codemodel-json-file-2'."
+`cmake-integration--get-annotated-targets-from-codemodel-json-file'."
   (let ((target (alist-get target-name all-targets nil nil 'equal)))
     ;; (ci--get-target-type target)
     (alist-get 'type target)))
@@ -151,9 +151,9 @@ If two prefix arguments are provided, then all targets are included."
 
   (let* ((include-subprojects (or current-prefix-arg ci-include-subproject-targets-during-completion))
          (list-of-targets (if include-subprojects
-                              (ci--get-targets-from-codemodel-json-file-2
+                              (ci--get-annotated-targets-from-codemodel-json-file
                                json-filename)
-                            (ci--get-targets-from-codemodel-json-file-2
+                            (ci--get-annotated-targets-from-codemodel-json-file
                              json-filename
                              'ci--target-is-in-projectIndex0-p))))
 
@@ -437,7 +437,7 @@ added to TARGET."
           (setf (alist-get 'type (cdr target)) target-type))))))
 
 
-(defun ci--get-targets-from-codemodel-json-file-2 (&optional json-filename predicate)
+(defun ci--get-annotated-targets-from-codemodel-json-file (&optional json-filename predicate)
   "Return the targets found in JSON-FILENAME that respect PREDICATE.
 
 This function is the same as

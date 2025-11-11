@@ -1091,8 +1091,8 @@ test code from inside a 'test project'."
      (should (equal (alist-get 'type main-target) "EXECUTABLE")))))
 
 
-(ert-deftest test-ci--get-targets-from-codemodel-json-file-2 ()
-  ;; ci--get-targets-from-codemodel-json-file-2 is the same as
+(ert-deftest test-ci--get-annotated-targets-from-codemodel-json-file ()
+  ;; ci--get-annotated-targets-from-codemodel-json-file is the same as
   ;; ci--get-targets-from-codemodel-json-file, but it calls
   ;; ci--add-type-field-to-target to add a type field in each target
   (test-fixture-setup
@@ -1101,7 +1101,7 @@ test code from inside a 'test project'."
           (all-targets-without-type
            (ci--get-targets-from-codemodel-json-file codemodel-file))
           (all-targets-with-type
-           (ci--get-targets-from-codemodel-json-file-2 codemodel-file)))
+           (ci--get-annotated-targets-from-codemodel-json-file codemodel-file)))
 
      ;; Both have the same number of elements
      (should
