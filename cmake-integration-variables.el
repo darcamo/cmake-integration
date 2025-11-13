@@ -60,6 +60,15 @@ project are included (targets with projectIndex equal to zero)."
   :type 'boolean :safe #'booleanp :group 'cmake-integration)
 
 
+;; TODO Allow the values 't', 'local-only' and 'nil'. With local-only, it should
+;; not annotate in tramp connections.
+(defcustom ci-annotate-targets t
+  "Annotate the targets in the list of targets with the target type"
+  :type 'boolean
+  :safe #'booleanp
+  :group 'cmake-integration)
+
+
 ;; Tell the byte compile that
 ;; cmake-integration--run-working-directory-p is defined in the
 ;; "-core" file

@@ -289,6 +289,17 @@ DIR must include a .project file to be considered a project."
   )
 ```
 
+
+### Speed-up obtaining the list of targets
+
+Obtaining the list of targets is likely the slowest operation in `cmake-integration`, especially if there are many
+targets or you are working remotely via TRAMP. This is because `cmake-integration` reads and parses a separate JSON file
+for each target to annotate them with their target types in the completion list. If this process is too slow for your
+use case and you'd rather avoid the performance cost, you can set `cmake-integration-annotate-targets` to `nil`. To
+apply this setting only to a specific project, configure it as a directory-local variable.
+
+Note: This information is cached after the first retrieval.
+
 ## Integration with the Conan Package Manager
 
 ### Running Conan

@@ -420,21 +420,32 @@ each cons having some information about the TARGET. Particularly, TARGET
 has a cons cell with a `jsonFile' car and a `\"someJsonFile.json\"'
 filename. This json file will be read to extract the type that should be
 added to TARGET."
-  (let ((target-name (car (split-string (car target) ci--multi-config-separator))))
-    (unless (or (equal target-name "all") (equal target-name "clean") (equal target-name "install"))
-      (if-let* ((target-type (when ci--target-type-cache (gethash target-name ci--target-type-cache))))
-          (setf (alist-get 'type (cdr target)) target-type)
-        (let* ((json-file (alist-get 'jsonFile target))
-               (json-full-filename (file-name-concat (ci--get-reply-folder) json-file))
-               (target-json-data (json-read-file json-full-filename)))
+  (let ((target-name
+         (car (split-string (car target) ci--multi-config-separator))))
+    (unless (or (equal target-name "all")
+                (equal target-name "clean")
+                (equal target-name "install"))
+      (if-let* ((target-type
+                 (when ci--target-type-cache
+                   (gethash target-name ci--target-type-cache))))
+        (setf (alist-get 'type (cdr target)) target-type)
 
-          ;; Update the cache with the type of the target
-          (setq target-type (alist-get 'type target-json-data))
-          (when ci--target-type-cache
-            (puthash target-name target-type ci--target-type-cache))
+        (if ci-annotate-targets
+            (let* ((json-file (alist-get 'jsonFile target))
+                   (json-full-filename
+                    (file-name-concat (ci--get-reply-folder) json-file))
+                   (target-json-data (json-read-file json-full-filename)))
 
-          ;; Set the value from the json data to `type' field
-          (setf (alist-get 'type (cdr target)) target-type))))))
+              ;; Update the cache with the type of the target
+              (setq target-type (alist-get 'type target-json-data)))
+
+          (setq target-type "<UNKNOWN>"))
+
+        (when ci--target-type-cache
+          (puthash target-name target-type ci--target-type-cache))
+
+        ;; Set the value from the json data to `type' field
+        (setf (alist-get 'type (cdr target)) target-type)))))
 
 
 (defun ci--get-annotated-targets-from-codemodel-json-file (&optional json-filename predicate)
