@@ -111,8 +111,21 @@ EXTRA-ARGS parameter."
 ALL-TARGETS is an alist like the one returned by
 `cmake-integration--get-annotated-targets-from-codemodel-json-file'."
   (let ((target (alist-get target-name all-targets nil nil 'equal)))
-    ;; (ci--get-target-type target)
     (alist-get 'type target)))
+
+
+(defun ci--get-propertized-target-type-from-name (target-name all-targets)
+  "Get the type of the target with name TARGET-NAME from ALL-TARGETS.
+
+This is the same as `ci--get-target-type-from-name', with the difference
+that the returned type is propertized with a face that depends on the
+target type."
+  (let ((type (ci--get-target-type-from-name target-name all-targets)))
+    (cond
+     ((string-match-p "executable" type) (propertize type 'face 'ci-executable-target-face))
+     ((string-match-p "library" type) (propertize type 'face 'ci-library-target-face))
+     ((string-match-p "unknown" type) (propertize type 'face 'ci-unknown-target-face))
+     (t type))))
 
 
 (defun ci--target-annotation-function (target-name)
@@ -122,11 +135,12 @@ This is used in `cmake-integration--get-target-using-completions'
 when completing a target name to generate an annotation for that
 target, which is shown during the completions if you are using
 the marginalia package, or in Emacs standard completion buffer."
-  (pcase (car (split-string target-name ci--multi-config-separator))
-    ("clean" (concat (ci--get-annotation-initial-spaces target-name) "Clean all compiled targets"))
-    ("all" (concat (ci--get-annotation-initial-spaces target-name) "Compile all targets"))
-    (_ (concat (ci--get-annotation-initial-spaces target-name) (ci--get-target-type-from-name target-name minibuffer-completion-table)))
-    ))
+  (let ((spaces (ci--get-annotation-initial-spaces target-name)))
+    (pcase (car (split-string target-name ci--multi-config-separator))
+      ("clean" (concat spaces (propertize "Clean all compiled targets" 'face 'ci-phony-target-face)))
+      ("all" (concat spaces (propertize "Compile all targets" 'face 'ci-phony-target-face)))
+      ("install" (concat spaces (propertize "Install targets" 'face 'ci-phony-target-face)))
+      (_ (concat spaces (ci--get-propertized-target-type-from-name target-name minibuffer-completion-table))))))
 
 
 (defun ci--get-target-using-completions (list-of-targets)
@@ -349,6 +363,14 @@ be returned as well."
      install-rule?)))
 
 
+(defun ci--is-phony-target (target-name)
+  "Return t if TARGET-NAME is one of the phony targets.
+
+The phony targets are all, clean and install."
+  (member target-name '("all" "clean" "install")))
+
+
+;; TODO: Rename to add-phony-targets
 (defun ci--add-all-clean-install-targets (targets config-name has-install-rule)
   "Return TARGETS with extra `all', `clean' and `install' for CONFIG-NAME.
 
@@ -422,9 +444,7 @@ filename. This json file will be read to extract the type that should be
 added to TARGET."
   (let ((target-name
          (car (split-string (car target) ci--multi-config-separator))))
-    (unless (or (equal target-name "all")
-                (equal target-name "clean")
-                (equal target-name "install"))
+    (unless (ci--is-phony-target target-name)
       (if-let* ((target-type
                  (when ci--target-type-cache
                    (gethash target-name ci--target-type-cache))))

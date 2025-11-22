@@ -39,7 +39,7 @@ If TARGET-NAME is not provided use the last target (saved in a
                        nil nil 'equal)))
 
     (unless (cdr target-info)
-      (if (member target-name '("all" "clean" "install"))
+      (if (ci--is-phony-target target-name)
           (error "Target '%s' is not a valid executable target" target-name)
         (error "Unknown target: '%s'" target-name)))
 

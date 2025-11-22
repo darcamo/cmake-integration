@@ -230,6 +230,25 @@ This is a list of strings, each one representing a label to include.")
 This is a list of strings, each one representing a label to include.")
 
 
+(defface ci-phony-target-face '((t . (:inherit font-lock-constant-face)))
+  "Face used to annotate the phony targets (all, clean and install)."
+  :group 'cmake-integration)
+
+(defface ci-executable-target-face '((t . (:inherit font-lock-function-name-face)))
+  "Face used to annotate the executable targets."
+  :group 'cmake-integration)
+
+(defface ci-library-target-face '((t . (:inherit font-lock-comment-face)))
+  "Face used to annotate the library targets."
+  :group 'cmake-integration)
+
+(defface ci-unknown-target-face '((t . (:inherit font-lock-warning-face)))
+  "Face used to annotate targets without type information.
+
+See `cmake-integration-annotate-targets'."
+  :group 'cmake-integration)
+
+
 (provide 'cmake-integration-variables)
 
 ;;; cmake-integration-variables.el ends here
