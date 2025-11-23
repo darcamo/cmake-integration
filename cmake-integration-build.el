@@ -143,9 +143,34 @@ the marginalia package, or in Emacs standard completion buffer."
       (_ (concat spaces (ci--get-propertized-target-type-from-name target-name minibuffer-completion-table))))))
 
 
+(defun ci--target-completion-group-function (completion transform)
+  "Group function used during completion for COMPLETION and TRANSFORM.
+
+If TRANSFORM is nil, the function must return the group title of the
+group to which the COMPLETION candidate belongs. Otherwise the function
+must return the transformed candidate, where the only transformation is
+changing the face to `bold' if COMPLETION is the current target.
+
+See \"Programmed Completion\" in Emacs info for more."
+  (if transform
+      ;; If transform is non-nil, return the transformed completion candidate
+      (if (equal completion ci-current-target)
+          (propertize completion 'face 'bold)
+        completion)
+
+    ;; If transform is nil, return the group title
+    (let ((type (ci--get-target-type-from-name completion minibuffer-completion-table)))
+      (cond
+       ((ci--is-phony-target completion) (propertize "Phony" 'face 'ci-phony-target-face))
+       ((string-match-p "executable" type) (propertize "Executable" 'face 'ci-executable-target-face))
+       ((string-match-p "library" type) (propertize "Library" 'face 'ci-library-target-face))
+       ((string-match-p "unknown" type) (propertize type 'face 'ci-unknown-target-face))
+       (t type)))))
+
+
 (defun ci--get-target-using-completions (list-of-targets)
   "Ask the user to choose one of the targets in LIST-OF-TARGETS using completions."
-  (let ((completion-extra-properties '(:annotation-function ci--target-annotation-function)))
+  (let ((completion-extra-properties '(:annotation-function ci--target-annotation-function :group-function ci--target-completion-group-function)))
     (completing-read "Target: " list-of-targets nil t)))
 
 
