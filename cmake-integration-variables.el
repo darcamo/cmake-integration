@@ -21,14 +21,17 @@ If this is nil, then using presets is required."
   '(choice
     (const
      :tag "Don't specity the build folder (requires using presets)" nil)
-    (string :tag "Specity the build folder"))
+    (directory :tag "Specity the build folder"))
   :group 'cmake-integration)
 
 
 (defcustom ci-install-prefix nil
   "The install preffix to use when running cmake install.
 
-If this is nil, then no install preffix is used." :type '(string) :group 'cmake-integration)
+If this is nil, then no install preffix is used."
+  :type '(choice
+          (const :tag "Don't set install prefix")
+          (directory :tag "Specify the install prefix")) :group 'cmake-integration)
 
 
 (defcustom ci-generator nil
@@ -84,11 +87,11 @@ and `root' (to run from the project root), as well as any string.
 In the case of a string, it should match an existing subfolder of
 the project root."
   :type
-  '(choice
+  '(radio
     (const :tag "Binary folder" bin)
     (const :tag "Build folder" build)
     (const :tag "Project root folder" root)
-    (string :tag "Custom subfolder of project root"))
+    (directory :tag "Custom subfolder of project root"))
   :group 'cmake-integration
   :safe #'ci--run-working-directory-p
   :local t)
@@ -110,7 +113,7 @@ This variable can be set to one of the following values:
 
 Customize this variable to control how programs are launched."
   :type
-  '(choice
+  '(radio
     (const :tag "Compilation Buffer" compilation)
     (const :tag "Comint Buffer" comint)
     (const :tag "Eshell" eshell)
@@ -173,7 +176,7 @@ in a directory local variable in your project."
   "Folder containing the Doxyfile.
 
 If \"${sourceDir}/\" is in `cmake-integration-docs-folder' it
-will be replaced by the project root." :type 'string :group 'cmake-integration)
+will be replaced by the project root." :type 'directory :group 'cmake-integration)
 
 
 (defcustom ci-use-separated-compilation-buffer-for-each-target nil
