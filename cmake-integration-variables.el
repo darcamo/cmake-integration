@@ -271,6 +271,10 @@ This is a list of strings, each one representing a label to include.")
   "Face used to annotate the library targets."
   :group 'cmake-integration)
 
+(defface ci-utility-target-face '((t . (:inherit font-lock-builtin-face)))
+  "Face used to annotate the utility targets."
+  :group 'cmake-integration)
+
 (defface ci-unknown-target-face '((t . (:inherit font-lock-warning-face)))
   "Face used to annotate targets without type information.
 

@@ -147,6 +147,7 @@ target type."
     (cond
      ((string-match-p "executable" type) (propertize type 'face 'ci-executable-target-face))
      ((string-match-p "library" type) (propertize type 'face 'ci-library-target-face))
+     ((string-match-p "utility" type) (propertize type 'face 'ci-utility-target-face))
      ((string-match-p "unknown" type) (propertize type 'face 'ci-unknown-target-face))
      (t type))))
 
@@ -187,6 +188,7 @@ See \"Programmed Completion\" in Emacs info for more."
        ((ci--is-phony-target completion) (propertize "Phony" 'face 'ci-phony-target-face))
        ((string-match-p "executable" type) (propertize "Executable" 'face 'ci-executable-target-face))
        ((string-match-p "library" type) (propertize "Library" 'face 'ci-library-target-face))
+       ((string-match-p "utility" type) (propertize "Utility" 'face 'ci-utility-target-face))
        ((string-match-p "unknown" type) (propertize type 'face 'ci-unknown-target-face))
        (t type)))))
 
