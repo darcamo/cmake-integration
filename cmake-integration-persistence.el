@@ -30,17 +30,8 @@
 ;;; Code:
 
 (require 'project nil t)
+(require 'cmake-integration-variables nil t)
 (require 'cmake-integration-core nil t)
-
-
-(defcustom ci-persist-location 'user-directory
-  "Location where cmake-integration state is serialized."
-  :type
-  '(choice
-    (const :tag "User Emacs Directory" user-directory)
-    (const :tag "Project Directory" project-directory)
-    (directory :tag "Custom location"))
-  :group 'cmake-integration)
 
 
 (defvar ci-last-save-or-restore-state nil

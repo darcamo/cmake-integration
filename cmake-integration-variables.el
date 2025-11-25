@@ -38,6 +38,14 @@
 
 (defgroup cmake-integration nil "Easily call cmake configure and run compiled targets." :group 'tools :prefix "cmake-integration-")
 
+(defgroup cmake-integration-completions nil "Customize completions." :group 'cmake-integration :prefix "cmake-integration-")
+
+(defgroup cmake-integration-faces nil "Faces defined in cmake-integration." :group 'cmake-integration :prefix "cmake-integration-")
+
+(defgroup cmake-integration-conan nil "Conan related variables for cmake-integration." :group 'cmake-integration :prefix "cmake-integration-")
+
+(defgroup cmake-integration-persistence nil "Persist state of cmake-integration for the project." :group 'cmake-integration :prefix "cmake-integration-")
+
 
 (defcustom ci-build-dir "build"
   "The build folder to use when no presets are used.
@@ -67,7 +75,7 @@ If this is nil, then the generator is not explicitly set." :type '(string) :grou
 
 
 (defcustom ci-annotation-column 30
-  "Column where annotations should start during completion." :type '(integer) :group 'cmake-integration)
+  "Column where annotations should start during completion." :type '(integer) :group 'cmake-integration-completions)
 
 
 (defcustom ci-include-subproject-targets-during-completion t
@@ -76,17 +84,17 @@ If this is nil, then the generator is not explicitly set." :type '(string) :grou
 When t (default) all targets are included during completion of
 target names. If nil, then only targets from the main cmake
 project are included (targets with projectIndex equal to zero)."
-  :type 'boolean :safe #'booleanp :group 'cmake-integration)
+  :type 'boolean :safe #'booleanp :group 'cmake-integration-completions)
 
 
 (defcustom ci-hide-utility-targets-during-completion nil
   "If t, then utility targets are not included during completion."
-  :type 'boolean :safe #'booleanp :group 'cmake-integration)
+  :type 'boolean :safe #'booleanp :group 'cmake-integration-completions)
 
 
 (defcustom ci-hide-library-targets-during-completion nil
   "If t, then library targets are not included during completion."
-  :type 'boolean :safe #'booleanp :group 'cmake-integration)
+  :type 'boolean :safe #'booleanp :group 'cmake-integration-completions)
 
 
 ;; TODO Allow the values 't', 'local-only' and 'nil'. With local-only, it should
@@ -95,7 +103,7 @@ project are included (targets with projectIndex equal to zero)."
   "Annotate the targets in the list of targets with the target type"
   :type 'boolean
   :safe #'booleanp
-  :group 'cmake-integration)
+  :group 'cmake-integration-completions)
 
 
 ;; Tell the byte compile that
@@ -175,7 +183,7 @@ This helps lsp and clangd correctly parsing the project files."
   :type 'boolean :safe #'booleanp :group 'cmake-integration)
 
 
-(defcustom ci-conan-arguments "--build missing" "Extra arguments to pass to conan." :type '(string) :group 'cmake-integration)
+(defcustom ci-conan-arguments "--build missing" "Extra arguments to pass to conan." :type '(string) :group 'cmake-integration-conan)
 
 ;; TODO: Investigate if it is possible to get completions for the conan and cmake profiles in the custom interface
 (defcustom ci-conan-profile nil
@@ -187,7 +195,7 @@ This helps lsp and clangd correctly parsing the project files."
                  :key-type (string :tag "Cmake profile")
                  :value-type (string :tag "Conan profile")))
   :safe #'listp
-  :group 'cmake-integration)
+  :group 'cmake-integration-conan)
 
 
 (defcustom ci-include-conan-toolchain-file nil
@@ -195,7 +203,7 @@ This helps lsp and clangd correctly parsing the project files."
 
 If you are using the `CMakeToolchain' generator, set this to true
 in a directory local variable in your project."
-  :type 'boolean :safe #'booleanp :group 'cmake-integration)
+  :type 'boolean :safe #'booleanp :group 'cmake-integration-conan)
 
 
 (defcustom ci-docs-folder "${sourceDir}/docs"
@@ -208,6 +216,16 @@ will be replaced by the project root." :type 'directory :group 'cmake-integratio
 (defcustom ci-use-separated-compilation-buffer-for-each-target nil
   "If t, use a separate compilation buffer for each target."
   :type 'boolean :safe #'booleanp :group 'cmake-integration)
+
+
+(defcustom ci-persist-location 'user-directory
+  "Location where cmake-integration state is serialized."
+  :type
+  '(choice
+    (const :tag "User Emacs Directory" user-directory)
+    (const :tag "Project Directory" project-directory)
+    (directory :tag "Custom location"))
+  :group 'cmake-integration-persistence)
 
 
 (defvar ci-current-target nil "Name of the target that will be compiled and run.")
@@ -261,25 +279,25 @@ This is a list of strings, each one representing a label to include.")
 
 (defface ci-phony-target-face '((t . (:inherit font-lock-constant-face)))
   "Face used to annotate the phony targets (all, clean and install)."
-  :group 'cmake-integration)
+  :group 'cmake-integration-faces)
 
 (defface ci-executable-target-face '((t . (:inherit font-lock-function-name-face)))
   "Face used to annotate the executable targets."
-  :group 'cmake-integration)
+  :group 'cmake-integration-faces)
 
 (defface ci-library-target-face '((t . (:inherit font-lock-comment-face)))
   "Face used to annotate the library targets."
-  :group 'cmake-integration)
+  :group 'cmake-integration-faces)
 
 (defface ci-utility-target-face '((t . (:inherit font-lock-builtin-face)))
   "Face used to annotate the utility targets."
-  :group 'cmake-integration)
+  :group 'cmake-integration-faces)
 
 (defface ci-unknown-target-face '((t . (:inherit font-lock-warning-face)))
   "Face used to annotate targets without type information.
 
 See `cmake-integration-annotate-targets'."
-  :group 'cmake-integration)
+  :group 'cmake-integration-faces)
 
 
 (provide 'cmake-integration-variables)
