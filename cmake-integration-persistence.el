@@ -138,26 +138,31 @@ If ENSURE-DIRECTORY is non-nil, create the directory when necessary."
 (defun ci-save-state ()
   "Save the current state of cmake-integration to persistent storage.
 
-The location is determined by `cmake-integration-persist-location'."
-  (interactive)
-  (let ((state-file (ci--get-persist-file t)))
-    (when state-file
-      (let ((state
-             (mapcar
-              (lambda (var)
-                (cons
-                 var
-                 (when (boundp var)
-                   (symbol-value var))))
-              ci--state-variables))
-            (print-length nil)
-            (print-level nil))
-        (with-temp-file state-file
-          (prin1 state (current-buffer))))
-      (when (called-interactively-p 'interactive)
-        (message "cmake-integration state saved to %s" state-file))
+The location is determined by `cmake-integration-persist-location'.
 
-      (setq ci-last-save-or-restore-state state-file))))
+If not in a CMake project, no state is saved."
+  (interactive)
+  (if (ci-is-cmake-project-p)
+      (let ((state-file (ci--get-persist-file t)))
+        (when state-file
+          (let ((state
+                 (mapcar
+                  (lambda (var)
+                    (cons
+                     var
+                     (when (boundp var)
+                       (symbol-value var))))
+                  ci--state-variables))
+                (print-length nil)
+                (print-level nil))
+            (with-temp-file state-file
+              (prin1 state (current-buffer))))
+          (when (called-interactively-p 'interactive)
+            (message "cmake-integration state saved to %s" state-file))
+
+          (setq ci-last-save-or-restore-state state-file)))
+
+    (message "Current project in '%s' is not a CMake project: cmake-integration state was not saved" (ci--get-project-root-folder))))
 
 
 ;;;###autoload (autoload 'cmake-integration-restore-state "cmake-integration")
