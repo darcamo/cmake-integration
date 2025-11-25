@@ -382,6 +382,33 @@ directory within your Docker container, add the following line to your Emacs con
 (add-to-list 'tramp-remote-path "/home/ubuntu/.local/bin")
 ```
 
+## Persisting state
+
+`cmake-integration` offers support for saving/restoring the current state of its relevant variables. This is done by the
+`cmake-integration-save-state` and `cmake-integration-restore-state` functions, respectively. Where the location is
+saved can be customized with the `cmake-integration-persist-location` variable. By default, it's save the state to a
+folder with the project name in the user's Emacs folder.
+
+The saved state includes the used presets, the current target, any run-time arguments to pass to the current target, as
+well as a cache of all available targets.
+
+**Note**: Currently, saving and restoring the current state is not done automatically in any way, but this might be
+implemented in the future. The function `cmake-integration-maybe-restore-state` can be used to load the current state
+only once in the current project. An easy way to make sure the state is loaded if necessary is to set the lambda
+function below to a keybinding, which will load the state if necessary and then call `cmake-integration-transient`.
+
+```emacs-lisp
+(lambda () (interactive) (cmake-integration-maybe-restore-state) (cmake-integration-transient))
+```
+
+Another trick, if you work with multiple projects, is to use a similar strategy to call `cmake-integration-save-state`
+before switching to a different project. For instance, if you use something like `project-switch-project` (or
+`consult-jump-project` or anything similar) to switch projects, you could use the lambda function below instead
+
+```emacs-lisp
+(lambda () (interactive) (cmake-integration-save-state) (project-switch-project))
+```
+
 ## Other packages you might be interested in
 
 - [CMake Presets mode](https://github.com/darcamo/cmakepresets-mode)
