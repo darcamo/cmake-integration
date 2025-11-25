@@ -50,6 +50,7 @@
 (require 'cmake-integration-cpack)
 (require 'cmake-integration-extra)
 (require 'cmake-integration-transient)
+(require 'cmake-integration-persistence)
 
 
 (provide 'cmake-integration)
