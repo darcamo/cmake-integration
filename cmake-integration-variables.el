@@ -35,7 +35,6 @@
 (declare-function ci-default-debug-launch-function "cmake-integration-launch-functions")
 (declare-function ci-dape-debug-launch-function "cmake-integration-launch-functions")
 
-
 (defgroup cmake-integration nil "Easily call cmake configure and run compiled targets." :group 'tools :prefix "cmake-integration-")
 
 (defgroup cmake-integration-completions nil "Customize completions." :group 'cmake-integration :prefix "cmake-integration-")

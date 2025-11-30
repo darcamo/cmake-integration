@@ -385,29 +385,24 @@ directory within your Docker container, add the following line to your Emacs con
 ## Persisting state
 
 `cmake-integration` offers support for saving/restoring the current state of its relevant variables. This is done by the
-`cmake-integration-save-state` and `cmake-integration-restore-state` functions, respectively. Where the location is
-saved can be customized with the `cmake-integration-persist-location` variable. By default, it's save the state to a
-folder with the project name in the user's Emacs folder.
+`cmake-integration-save-state` and `cmake-integration-restore-state` functions, respectively. The saved state includes
+the last used presets, the current target, any run-time arguments for that target, and the cached list of available
+targets. The storage location is controlled by the `cmake-integration-persist-location` variable; it defaults to a
+project-specific directory under `user-emacs-directory`, but it can be pointed at a custom path or kept inside the
+project itself.
 
-The saved state includes the used presets, the current target, any run-time arguments to pass to the current target, as
-well as a cache of all available targets.
+If you prefer to save and restore state automatically, enable the global minor mode
+`cmake-integration-automatic-persistence-mode`. The mode installs advices so that selecting presets, targets, running
+executables, invoking CTest, and similar actions all keep the persisted data in sync automatically.
 
-**Note**: Currently, saving and restoring the current state is not done automatically in any way, but this might be
-implemented in the future. The function `cmake-integration-maybe-restore-state` can be used to load the current state
-only once in the current project. An easy way to make sure the state is loaded if necessary is to set the lambda
-function below to a keybinding, which will load the state if necessary and then call `cmake-integration-transient`.
+Manual commands remain available for custom workflows:
 
-```emacs-lisp
-(lambda () (interactive) (cmake-integration-maybe-restore-state) (cmake-integration-transient))
-```
+- `cmake-integration-save-state`
+- `cmake-integration-restore-state`
+- `cmake-integration-maybe-restore-state`
 
-Another trick, if you work with multiple projects, is to use a similar strategy to call `cmake-integration-save-state`
-before switching to a different project. For instance, if you use something like `project-switch-project` (or
-`consult-jump-project` or anything similar) to switch projects, you could use the lambda function below instead
-
-```emacs-lisp
-(lambda () (interactive) (cmake-integration-save-state) (project-switch-project))
-```
+These are useful if you occasionally want to persist state without enabling the automatic mode (for example, as part of
+a project-switching hook).
 
 ## Other packages you might be interested in
 

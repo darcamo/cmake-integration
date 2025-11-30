@@ -300,7 +300,8 @@ test code from inside a 'test project'."
 
 
 ;; TODO: Add a test case for missing parent preset, to verify if the warning is
-;; shown and if the value in `ci-get-build-folder' is taken from `ci-build-dir'.
+;; shown and if the value in `cmake-integration-get-build-folder' is taken from
+;; `cmake-integration-build-dir'.
 (ert-deftest test-ci-get-build-folder-with-presets ()
   (test-fixture-setup
    ;; Note that in this test we set default-directory to a subfolder in the
@@ -937,9 +938,8 @@ test code from inside a 'test project'."
      (should (equal (length all-build-presets) 2))
      (should (equal build-presets expected-build-presets))))
 
-  ;; Test when not passing a configure preset to
-  ;; ci-get-build-presets -> The value in the
-  ;; `ci-configure-preset' is used.
+  ;; Test when not passing a configure preset to ci-get-build-presets -> The
+  ;; value in the `cmake-integration-configure-preset' is used.
   (test-fixture-setup ;;
    "./test-project-with-presets"
    (let* ((all-build-presets (ci-get-all-presets-of-type 'buildPresets))

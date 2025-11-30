@@ -140,9 +140,9 @@ ALL-TARGETS is an alist like the one returned by
 (defun ci--get-propertized-target-type-from-name (target-name all-targets)
   "Get the type of the target with name TARGET-NAME from ALL-TARGETS.
 
-This is the same as `ci--get-target-type-from-name', with the difference
-that the returned type is propertized with a face that depends on the
-target type."
+This is the same as `cmake-integration--get-target-type-from-name', with
+the difference that the returned type is propertized with a face that
+depends on the target type."
   (let ((type (ci--get-target-type-from-name target-name all-targets)))
     (cond
      ((string-match-p "executable" type) (propertize type 'face 'ci-executable-target-face))

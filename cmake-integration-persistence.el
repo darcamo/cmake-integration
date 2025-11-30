@@ -39,14 +39,62 @@
 
 
 (defconst ci--state-variables
-  '(cmake-integration--target-type-cache
-    cmake-integration-current-target
-    cmake-integration-run-arguments
-    cmake-integration-configure-preset
-    cmake-integration-build-preset
-    cmake-integration-test-preset
-    cmake-integration-package-preset)
+  '(;; Target
+    ci--target-type-cache
+    ci-current-target
+    ci-run-arguments
+
+    ;; Presets
+    ci-configure-preset
+    ci-build-preset
+    ci-test-preset
+    ci-package-preset
+
+    ;; CTest
+    ci--ctest-label-include-regexp
+    ci--ctest-label-exclude-regexp
+    )
   "List of relevante variables in cmake-integration to save current state.")
+
+
+(defconst ci-functions-to-save-state
+  '(ci-select-current-target
+    ci-select-configure-preset
+    ci-select-test-preset
+    ci-select-build-preset
+    ci-select-package-preset
+    ci-select-conan-profile
+    )
+  "Functions which automatically save cmake-intregration state.
+
+State is only saved if `ci-automatic-persistence-mode' is enabled."
+)
+
+
+(defconst ci-functions-to-restore-state
+  '(ci-transient
+    ci-run-ctest
+    ci-save-and-compile-last-target
+    ci-run-last-target
+    ci-run-last-target-with-arguments
+    ci-debug-last-target
+    ci-cmake-reconfigure
+    ci-run-cpack
+    ci-run-cmake-install
+    ci-open-dired-in-target-folder
+    ci-open-eshell-in-target-folder
+    ci-delete-build-folder)
+  "Functions which automatically restore cmake-intregration state.
+
+State is only restored if `ci-automatic-persistence-mode' is enabled.")
+
+
+(defconst ci-functions-to-restore-and-save-state '(ci-save-and-compile)
+  "Functions which automatically restore and save state.
+
+The state is restored before the function is called, and then saved
+after the function is called.")
+
 
 
 (defconst ci--state-file-name "cmake-integration-state.el"
@@ -195,6 +243,58 @@ state is restored by calling `cmake-integration-restore-state'."
   (interactive)
   (when (ci-should-restore-state-p)
     (ci-restore-state)))
+
+
+(defun ci--advice-restore-and-save-state (orig-func &rest args)
+  "Advice to restore state before calling ORIG-FUNC and save state after.
+
+ORIG-FUNC is the original function being advised, while ARGS is the
+arguments that will be passed to it."
+  (ci-maybe-restore-state)
+  (apply orig-func args)
+  (ci-save-state))
+
+
+(defun ci--add-persistence-advices ()
+  "Add advices to functions to automatically save and restore state."
+  (dolist (func ci-functions-to-restore-state)
+    (unless (advice-member-p #'ci-maybe-restore-state func)
+      (advice-add func :before #'ci-maybe-restore-state)))
+
+  (dolist (func ci-functions-to-save-state)
+    (unless (advice-member-p #'ci-save-state func)
+      (advice-add func :after #'ci-save-state)))
+
+  (dolist (func ci-functions-to-restore-and-save-state)
+    (unless (advice-member-p #'ci--advice-restore-and-save-state func)
+      (advice-add func :around #'ci--advice-restore-and-save-state))))
+
+
+(defun ci--remove-persistence-advices ()
+  "Remove advices added to functions to automatically save and restore state."
+  (dolist (func ci-functions-to-restore-state)
+    (advice-remove func #'ci-maybe-restore-state))
+
+  (dolist (func ci-functions-to-save-state)
+    (advice-remove func #'ci-save-state))
+
+  (dolist (func ci-functions-to-restore-and-save-state)
+    (advice-remove func #'ci--advice-restore-and-save-state)))
+
+
+;;;###autoload (autoload 'cmake-integration-automatic-persistence-mode "cmake-integration")
+(define-minor-mode ci-automatic-persistence-mode
+  "Toggle automatic persistence of cmake-integration state.
+
+When enabled, advices are installed so state is restored and saved
+automatically around relevant commands."
+  :global t
+  :init-value nil
+  :lighter "cip"
+  :group 'cmake-integration-persistence
+  (if ci-automatic-persistence-mode
+      (ci--add-persistence-advices)
+    (ci--remove-persistence-advices)))
 
 
 (provide 'cmake-integration-persistence)
