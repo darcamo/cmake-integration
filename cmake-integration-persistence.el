@@ -234,7 +234,9 @@ If not in a CMake project, no state is saved."
       (setq ci-last-save-or-restore-state state-file)))))
 
 
-(defun ci-maybe-restore-state ()
+;; Note: This function can be called interactively, but it is also used as an
+;; advice. That is the reason why it has the optional argument.
+(defun ci-maybe-restore-state (&optional _)
   "Restore the state of cmake-integration if appropriate.
 
 This function checks whether the state should be restored by calling
