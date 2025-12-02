@@ -1135,6 +1135,37 @@ test code from inside a 'test project'."
       (equal (elt all-targets-without-type 3) (elt all-targets-with-type 3))))))
 
 
+(ert-deftest test-ci--target-is-not-utility-p ()
+  (let ((executable-target-info '((name . "some-target") (type . "EXECUTABLE")))
+        (static-library-target-info
+         '((name . "static-library-target") (type . "STATIC_LIBRARY")))
+        (object-library-target-info
+         '((name . "static-library-target") (type . "STATIC_LIBRARY")))
+        (utility-target-info '((name . "utility-target") (type . "UTILITY")))
+        (unknown-target-info '((name . "unknown-target"))))
+    (should (ci--target-is-not-utility-p executable-target-info))
+    (should (ci--target-is-not-utility-p static-library-target-info))
+    (should (ci--target-is-not-utility-p object-library-target-info))
+    (should-not (ci--target-is-not-utility-p utility-target-info))
+    (should (ci--target-is-not-utility-p unknown-target-info))))
+
+
+(ert-deftest test-ci--target-is-not-library-p ()
+  (let ((executable-target-info '((name . "some-target") (type . "EXECUTABLE")))
+        (static-library-target-info
+         '((name . "static-library-target") (type . "STATIC_LIBRARY")))
+        (object-library-target-info
+         '((name . "static-library-target") (type . "STATIC_LIBRARY")))
+        (utility-target-info '((name . "utility-target") (type . "UTILITY")))
+        (unknown-target-info '((name . "unknown-target"))))
+    (should (ci--target-is-not-library-p executable-target-info))
+    (should-not (ci--target-is-not-library-p static-library-target-info))
+    (should-not (ci--target-is-not-library-p object-library-target-info))
+    (should (ci--target-is-not-library-p utility-target-info))
+    (should (ci--target-is-not-library-p unknown-target-info))))
+
+
+
 ;; get-target-executable-filename
 
 ;; ci--get-working-directory

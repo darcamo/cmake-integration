@@ -341,10 +341,10 @@ separation and then passed to cmake command to build the target."
 
 
 (defun ci--target-is-not-library-p (target)
-  "Return t if TARGET type is not `UTILITY'."
-  (let ((type (alist-get 'type target)))
-    (when type
-      (not (equal (car (cdr (split-string type "_"))) "LIBRARY")))))
+  "Return t if TARGET type does not contain `LIBRARY'."
+  (if-let* ((type (alist-get 'type target)))
+      (not (equal (car (cdr (split-string type "_"))) "LIBRARY"))
+    t))
 
 
 (defun ci--get-targets-from-configuration (config &optional predicate)
