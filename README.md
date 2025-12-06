@@ -382,6 +382,28 @@ directory within your Docker container, add the following line to your Emacs con
 (add-to-list 'tramp-remote-path "/home/ubuntu/.local/bin")
 ```
 
+## Persisting state
+
+`cmake-integration` offers support for saving/restoring the current state of its relevant variables. This is done by the
+`cmake-integration-save-state` and `cmake-integration-restore-state` functions, respectively. The saved state includes
+the last used presets, the current target, any run-time arguments for that target, and the cached list of available
+targets. The storage location is controlled by the `cmake-integration-persist-location` variable; it defaults to a
+project-specific directory under `user-emacs-directory`, but it can be pointed at a custom path or kept inside the
+project itself.
+
+If you prefer to save and restore state automatically, enable the global minor mode
+`cmake-integration-automatic-persistence-mode`. The mode installs advices so that selecting presets, targets, running
+executables, invoking CTest, and similar actions all keep the persisted data in sync automatically.
+
+Manual commands remain available for custom workflows:
+
+- `cmake-integration-save-state`
+- `cmake-integration-restore-state`
+- `cmake-integration-maybe-restore-state`
+
+These are useful if you occasionally want to persist state without enabling the automatic mode (for example, as part of
+a project-switching hook).
+
 ## Other packages you might be interested in
 
 - [CMake Presets mode](https://github.com/darcamo/cmakepresets-mode)

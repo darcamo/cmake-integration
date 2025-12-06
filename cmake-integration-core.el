@@ -34,6 +34,16 @@
 (require 'cmake-integration-variables)
 
 
+;;;###autoload (autoload 'cmake-integration-is-cmake-project-p "cmake-integration")
+(defun ci-is-cmake-project-p ()
+  "Check if the current project is a CMake project."
+  (interactive)
+  (if-let* ((project (project-current))
+            (project-root (project-root project))
+            (cmakelist-path (expand-file-name "CMakeLists.txt" project-root)))
+      (file-exists-p cmakelist-path)))
+
+
 ;; BUG: This function seems to work correctly, but when used as the
 ;; ":safe" predicate in the defcustom Emacs still asks for confirming
 ;; if the variable is safe for the symbol values

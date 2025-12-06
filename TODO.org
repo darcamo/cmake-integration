@@ -1,7 +1,0 @@
-
-
-* TODO: Add an option to launch gdbgui (https://www.gdbgui.com/)
-
-* TODO: Save value "last target" and "runtime arguments" to a
-variable inside the ".cache" folder in the project root (this folder is already created by
-clangd).

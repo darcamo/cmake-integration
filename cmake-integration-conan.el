@@ -83,8 +83,9 @@ Returns the remote alist or nil if not found."
   "Create an entry for a tabulated list for a CONAN-REMOTE.
 
 CONAN-REMOTE is an alist with the remote information, as returned by
-`ci--get-conan-remote-repositories'. The entry is a list with the remote
-name and a vector with the remote name, url, verify_ssl and enabled."
+`cmake-integration--get-conan-remote-repositories'. The entry is a list
+with the remote name and a vector with the remote name, url, verify_ssl
+and enabled."
   (let* ((name (ci--get-remote-name conan-remote))
          (url (alist-get 'url conan-remote))
          (enabled (ci--conan-is-remote-enabled conan-remote))
@@ -135,9 +136,10 @@ See the variable `tablist-operations-function' for more."
 (defun ci--conan-toggle-enable (remote-name)
   "Toggle the enable/disably of REMOTE-NAME.
 
-This queries the remote from its name with `ci--get-remote-by-name' and
-checks if the remote is enabled or not. Then it calls the
-`conan remote enable/disable <remote name>' accordingly."
+This queries the remote from its name with
+`cmake-integration--get-remote-by-name' and checks if the remote is
+enabled or not. Then it calls the `conan remote enable/disable <remote
+name>' accordingly."
   (let* ((remote (ci--get-remote-by-name remote-name))
          (currently-enabled (ci--conan-is-remote-enabled remote))
          (command (if currently-enabled "disable" "enable")))
@@ -150,9 +152,10 @@ checks if the remote is enabled or not. Then it calls the
 (defun ci--conan-toggle-verify-ssl (&optional remote-name)
   "Toggle the SSL verification of REMOTE-NAME.
 
-This queries the remote from its name with `ci--get-remote-by-name' and
-checks if the remote performs SSL verification of not. Then it calls the
-`conan remote update --secure/--insecure <remote name>' accordingly."
+This queries the remote from its name with
+`cmake-integration--get-remote-by-name' and checks if the remote
+performs SSL verification of not. Then it calls the `conan remote update
+--secure/--insecure <remote name>' accordingly."
   (interactive)
   (let* ((remote-name (or remote-name (tabulated-list-get-id)))
          (remote (ci--get-remote-by-name remote-name))
@@ -342,7 +345,7 @@ The result is returned as tabulated entries."
 
 The entries are shown using `conan-list-view-mode' and
 TABULATED-LIST-ENTRIES-FUNC should return entries in the format
-specified by `ci--conan-tabulated-list-columns'."
+specified by `cmake-integration--conan-tabulated-list-columns'."
   (with-current-buffer buffer
     (setq tabulated-list-entries tabulated-list-entries-func)
     (conan-list-view-mode)
