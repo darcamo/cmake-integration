@@ -472,10 +472,6 @@ Each entry maps `target-name` to `target-info`."
                    all-config))))
 
 
-(defvar ci--target-type-cache (make-hash-table :test 'equal)
-  "Cache for target types. Maps target names to their types.")
-
-
 (defun ci-refresh-target-type-cache ()
   "Clear the target type cache."
   (interactive)

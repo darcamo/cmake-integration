@@ -230,6 +230,10 @@ will be replaced by the project root." :type 'directory :group 'cmake-integratio
 (defvar ci-current-target nil "Name of the target that will be compiled and run.")
 
 
+(defvar ci--target-type-cache (make-hash-table :test 'equal)
+  "Cache for target types. Maps target names to their types.")
+
+
 (defvar ci-run-arguments "" "Command line arguments when running a target.")
 
 
