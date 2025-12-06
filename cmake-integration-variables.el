@@ -47,14 +47,15 @@
 
 
 (defcustom ci-build-dir "build"
-  "The build folder to use when no presets are used.
+  "The build folder to use when presets are not used.
 
-If this is nil, then using presets is required."
+If this is nil, then using presets is required. If this is a relative
+path, it is considered relative to the project root."
   :type
   '(choice
     (const
      :tag "Don't specity the build folder (requires using presets)" nil)
-    (directory :tag "Specity the build folder"))
+    (directory :tag "Specity the build folder (can be relative to project root)"))
   :group 'cmake-integration)
 
 
