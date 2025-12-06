@@ -235,6 +235,10 @@ will be replaced by the project root." :type 'directory :group 'cmake-integratio
   "Cache for target types. Maps target names to their types.")
 
 
+(defvar ci--build-folder-cache nil
+  "Cache for the build folder path (when presets are used).")
+
+
 (defvar ci-run-arguments "" "Command line arguments when running a target.")
 
 

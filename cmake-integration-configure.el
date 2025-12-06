@@ -146,6 +146,9 @@ A list of preset names if obtained from `CMakePresets.json' and
 choose one of them (with completion)."
   (interactive)
 
+  ;; Invalidate build folder cache
+  (setq ci--build-folder-cache nil)
+
   (let ((all-presets (ci-get-configure-presets)))
     (setq ci-configure-preset
           (ci-select-preset all-presets "Configure preset: "))
