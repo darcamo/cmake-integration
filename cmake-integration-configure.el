@@ -175,8 +175,7 @@ This will only create the link if
 `cmake-integration-create-compile-commands-link' is t and the
 `compile_commands.json' file exists in the build folder."
   (let* ((compile-commands-file (file-name-concat (ci-get-build-folder) "compile_commands.json"))
-         (should-create-link (and ci-create-compile-commands-link
-                                  (file-exists-p compile-commands-file)))
+         (should-create-link ci-create-compile-commands-link)
          (destination-directory (ci--get-project-root-folder))
          (target (file-relative-name compile-commands-file destination-directory)))
     (when should-create-link
