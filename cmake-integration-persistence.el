@@ -76,7 +76,6 @@ State is only saved if `ci-automatic-persistence-mode' is enabled."
     ci-run-ctest
     ci-save-and-compile-last-target
     ci-run-last-target
-    ci-run-last-target-with-arguments
     ci-debug-last-target
     ci-cmake-reconfigure
     ci-run-cpack
@@ -89,7 +88,8 @@ State is only saved if `ci-automatic-persistence-mode' is enabled."
 State is only restored if `ci-automatic-persistence-mode' is enabled.")
 
 
-(defconst ci-functions-to-restore-and-save-state '(ci-save-and-compile)
+(defconst ci-functions-to-restore-and-save-state
+  '(ci-save-and-compile ci-run-last-target-with-arguments)
   "Functions which automatically restore and save state.
 
 The state is restored before the function is called, and then saved
