@@ -45,6 +45,8 @@
 
 (defgroup cmake-integration-persistence nil "Persist state of cmake-integration for the project." :group 'cmake-integration :prefix "cmake-integration-")
 
+(defgroup cmake-integration-project nil "Minor mode for CMake project." :group 'cmake-integration :prefix "cmake-integration-")
+
 
 (defcustom ci-build-dir "build"
   "The build folder to use when presets are not used.

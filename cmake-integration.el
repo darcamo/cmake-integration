@@ -51,7 +51,7 @@
 (require 'cmake-integration-extra)
 (require 'cmake-integration-transient)
 (require 'cmake-integration-persistence)
-
+(require 'cmake-integration-project-mode)
 
 (provide 'cmake-integration)
 

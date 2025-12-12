@@ -32,6 +32,7 @@
 (require 'project nil t)
 (require 'cmake-integration-variables nil t)
 (require 'cmake-integration-core nil t)
+(require 'cmake-integration-project-mode nil t)
 
 
 (defvar ci-last-save-or-restore-state nil
