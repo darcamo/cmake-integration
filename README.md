@@ -31,14 +31,7 @@ The package is available on GitHub. You can install it using your preferred Emac
     ```emacs-lisp
     (use-package cmake-integration
       :ensure (cmake-integration :type git :host github 
-                                 :repo "darcamo/cmake-integration")
-      :commands (cmake-integration-conan-manage-remotes
-                 cmake-integration-conan-list-packages-in-local-cache
-                 cmake-integration-search-in-conan-center
-                 cmake-integration-transient)
-      :custom
-      (cmake-integration-generator "Ninja")
-      (cmake-integration-use-separated-compilation-buffer-for-each-target t))
+                                 :repo "darcamo/cmake-integration"))
     ```
 
 - **Use-package with `vc` backend:**
@@ -50,8 +43,8 @@ The package is available on GitHub. You can install it using your preferred Emac
 
 ## Usage
 
-The package provides a transient menu (`cmake-integration-transient`) for quick access to its functions. For efficient
-workflow, consider binding frequently used commands to custom keybindings.
+The package provides a transient menu (`cmake-integration-transient`) for quick access to its functions. For an
+efficient workflow, consider binding frequently used commands to custom keybindings.
 
 ![Main transient menu](images/transient-menu.png)
 
@@ -113,54 +106,15 @@ The following Emacs Lisp code demonstrates how to bind most useful commands to c
               ))
 ```
 
-To make these keybindings available globally in CMake projects, regardless of the buffer's major mode, but only in
-projects using CMake, you can use the following configuration:
-
-```emacs-lisp
-(defun is-cmake-project? ()
-  "Determine if the current directory is a CMake project."
-  (interactive)
-  (if-let* ((project (project-current))
-            (project-root (project-root project))
-            (cmakelist-path (expand-file-name "CMakeLists.txt" project-root)))
-      (file-exists-p cmakelist-path)))
+You can also add these keybindings to the global map, but that would make them available even when not working in a
+CMake project, which is not very useful. A more convenient approach is to use `cmake-integration-project-mode`. It's a
+minor mode without any functionality, besides having a dedicated keymap and hook. You can replace `c++-mode-map` in the
+above code snippet with `cmake-integration-project-mode-map`, and then enable `cmake-integration-project-mode` in any
+buffer you want the keybinds to be active.
 
 
-(defun cmake-integration-keybindings-mode-turn-on-in-cmake-projects ()
-  "Turn on `cmake-integration-keybindings-mode' in CMake projects."
-  (when (is-cmake-project?)
-    (cmake-integration-keybindings-mode 1)))
-
-      
-(define-minor-mode cmake-integration-keybindings-mode
-  "A minor-mode for adding keybindings to compile C++ code using cmake-integration package."
-  nil
-  "cmake"
-  '(
-    ([f5] . cmake-integration-transient)                         ;; Open main transient menu
-    ([M-f9] . cmake-integration-select-current-target)           ;; Ask for the target name and compile it
-    ([f9] . cmake-integration-save-and-compile-last-target)      ;; Recompile the last target
-    ([C-f9] . cmake-integration-run-ctest)                       ;; Run CTest
-    ([f10] . cmake-integration-run-last-target)                  ;; Run the target (using any previously set command line parameters)
-    ([S-f10] . kill-compilation)
-    ([C-f10] . cmake-integration-debug-last-target)              ;; Debug the target (using any previously set command line parameters)
-    ([M-f10] . cmake-integration-run-last-target-with-arguments) ;; Ask for command line parameters to run the target
-    ([M-f8] . cmake-integration-select-configure-preset)         ;; Ask for a preset name and call CMake to configure the project
-    ([f8] . cmake-integration-cmake-reconfigure)                 ;; Call CMake to configure the project using the last chosen preset
-    )
-  )
-
-(define-globalized-minor-mode global-cmake-integration-keybindings-mode
-  cmake-integration-keybindings-mode cmake-integration-keybindings-mode-turn-on-in-cmake-projects)
-
-;; Turn on the global minor mode that automatically enables the buffer local
-;; minor mode in any buffer inside a CMake project
-(global-cmake-integration-keybindings-mode)
-```
-
-This defines a local minor mode with the keybindings, a function that determine if the current directory is in a CMake
-based project, and a global mode that uses that to decide if the local minor mode should be activated when you switch to
-a buffer.
+Tip: One way to automatically enable `cmake-integration-project-mode` in any buffer which is part of a CMake project, is
+to enable `global-cmake-integration-project-mode`.
 
 ## Extra Configuration
 

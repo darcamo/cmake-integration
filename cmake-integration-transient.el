@@ -452,6 +452,7 @@ will be obtained from PRESET and this returns the string
   )
 
 
+;;;###autoload (autoload 'cmake-integration-transient "cmake-integration" nil t)
 (transient-define-prefix ci-transient ()
   "Main transient menu, from where all other transient menus can be reached."
   [
