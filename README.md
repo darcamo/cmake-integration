@@ -8,8 +8,7 @@ information. It simplifies common development tasks such as:
 - **Debugging:** Easily start debugging your executable targets with the classic gdb mi interface or with gdb through
   [dape](https://github.com/svaante/dape).
 - **Conan Integration:** Manage Conan packages and remotes directly from Emacs, call ``conan install`, etc..
-- **Language Server:** A symbolic link is automatically created from the build folder `compile_commands.json` file to the
-  root of the project. This helps the `clangd` language server index correctly the project.
+- **Language Servers:** Help language servers work correctly in the project.
 
 ## Core Concepts
 
@@ -253,6 +252,13 @@ use case and you'd rather avoid the performance cost, you can set `cmake-integra
 apply this setting only to a specific project, configure it as a directory-local variable.
 
 Note: This information is cached after the first retrieval.
+
+## Integration with language servers
+
+`cmake-integration` supports the `clangd` and `qmlls` language servers (more could be added in the future). This
+functionality allows it to update the configuration files used by these servers whenever the build directory changes,
+ensuring they operate correctly. Refer to the variables `cmake-integration-setup-clangd` and
+`cmake-integration-setup-qmlls` for more details.
 
 ## Integration with the Conan Package Manager
 
