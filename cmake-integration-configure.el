@@ -34,6 +34,23 @@
 (defvar ci-after-configure-hook nil "A hook run after calling cmake to configure the project.")
 
 
+(defun ci--get-available-generators ()
+  "Get the available CMake generators in the system."
+  (let ((json-content
+         (json-parse-string (shell-command-to-string "cmake -E capabilities")))
+        (get-name-func (lambda (elem) (gethash "name" elem))))
+    (mapcar get-name-func (gethash "generators" json-content))))
+
+
+(defun ci-select-generator ()
+  "Select a CMake generator from the available ones in the system."
+  (interactive)
+  (let* ((all-generators (ci--get-available-generators))
+         (chosen-generator
+          (completing-read "Select CMake generator: " all-generators nil t)))
+    (setq ci-generator chosen-generator)))
+
+
 (defun ci--perform-binaryDir-replacements (binaryDir project-root-folder preset-name)
   "Replace `${sourceDir}' and `${presetName}' in a BINARYDIR string.
 

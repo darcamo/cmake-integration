@@ -31,6 +31,7 @@
 (require 'cmake-integration-cpack)
 (require 'cmake-integration-ctest)
 (require 'cmake-integration-extra)
+(require 'cmake-integration-configure)
 
 (declare-function ci--set-runtime-arguments "cmake-integration-launch.el")
 
@@ -67,6 +68,15 @@ If IS-SET is t, then OPTION is returned using the transient-value face.
 Otherwise it is returned with the transient-inactive-value face."
   (let ((face (if is-set 'transient-value 'transient-inactive-value)))
     (propertize option 'face face)))
+
+
+(defun ci--describe-generator-command-line ()
+  "Describe command line argument to set the configure preset."
+  (format "Configure generator (%s)"
+          (if ci-generator
+              (ci--get-command-line-arg-with-face
+               (format "-G=\"%s\"" ci-generator) t)
+            (ci--get-command-line-arg-with-face "-G=" nil))))
 
 
 (defun ci--describe-preset-command-line (preset)
@@ -151,6 +161,16 @@ will be obtained from PRESET and this returns the string
       (format "Select labels to exclude (%s)" (ci--get-command-line-arg-with-face "-LE <label-regexp> -LE <other-label-regexp> ..." nil))
     (let ((command-line-options (ci--ctest-get-exclude-labels-command-line-string)))
       (format "Select labels to exclude (%s)" (ci--get-command-line-arg-with-face command-line-options t)))))
+
+
+(transient-define-suffix ci--set-generator-suffix ()
+  "Set configure preset."
+  :transient 'transient--do-call
+  :description #'ci--describe-generator-command-line
+  (interactive)
+  (if ci-generator
+      (setq ci-generator nil)
+    (ci-select-generator)))
 
 
 (transient-define-suffix ci--set-configure-preset-suffix ()
@@ -322,7 +342,8 @@ will be obtained from PRESET and this returns the string
    ;;             (message "Build folder %s selected"
    ;;                      (read-directory-name "Select build folder")))
    ;;  :transient t)
-   ;; ("G" "Select the generator" (lambda () (interactive)(message "Set Generator")) :transient t)
+
+   ("g" ci--set-generator-suffix)
    ""
    ("c" "Configure" (lambda () (interactive)
                       (let ((extra-args (transient-args (oref transient-current-prefix command))))
