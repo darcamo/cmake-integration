@@ -31,6 +31,7 @@
 
 
 (defvar ci-after-set-configure-preset-hook nil "A hook run after changing the configure preset.")
+(defvar ci-after-configure-hook nil "A hook run after calling cmake to configure the project.")
 
 
 (defun ci--perform-binaryDir-replacements (binaryDir project-root-folder preset-name)
@@ -168,20 +169,6 @@ the chosen preset."
   (ci-cmake-reconfigure))
 
 
-(defun ci--create-link-to-compile-commands ( )
-  "Create a symbolic link to the compile_commands file in the project root.
-
-This will only create the link if
-`cmake-integration-create-compile-commands-link' is t and the
-`compile_commands.json' file exists in the build folder."
-  (let* ((compile-commands-file (file-name-concat (ci-get-build-folder) "compile_commands.json"))
-         (should-create-link ci-create-compile-commands-link)
-         (destination-directory (ci--get-project-root-folder))
-         (target (file-relative-name compile-commands-file destination-directory)))
-    (when should-create-link
-      (make-symbolic-link target destination-directory t))))
-
-
 (defun ci--get-reconfigure-command ()
   "Get the directory and command to configure the project.
 
@@ -214,8 +201,9 @@ passed to cmake."
     (let ((default-directory run-dir))
       (compile cmake-command-with-extra-args)))
 
-  ;; Make a link of the compile_commands.json file to the project root
-  (ci--create-link-to-compile-commands))
+  ;; Run the after configure hook
+  ;; See cmake-integration-language-servers.el
+  (run-hooks 'ci-after-configure-hook))
 
 
 (provide 'cmake-integration-configure)

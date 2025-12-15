@@ -178,13 +178,6 @@ Customize this variable to control how the debugger is launched."
   :group 'cmake-integration)
 
 
-(defcustom ci-create-compile-commands-link t
-  "If t, make a link of `compile_commands.json' to the project root.
-
-This helps lsp and clangd correctly parsing the project files."
-  :type 'boolean :safe #'booleanp :group 'cmake-integration)
-
-
 (defcustom ci-conan-arguments "--build missing" "Extra arguments to pass to conan." :type '(string) :group 'cmake-integration-conan)
 
 ;; TODO: Investigate if it is possible to get completions for the conan and cmake profiles in the custom interface
