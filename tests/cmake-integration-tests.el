@@ -310,7 +310,8 @@ test code from inside a 'test project'."
    ;; Build folder is taken from the `binaryDir' field in
    ;; `cmake-integration-configure-preset', which is an alist.
    ;; Here we test with a binaryDir value with some replacements
-   (let* ((ci-configure-preset
+   (let* ((ci--build-folder-cache nil)
+          (ci-configure-preset
            '((binaryDir . "${sourceDir}/build/${presetName}")
              (name . "ninjamulticonfig")))
           (project-root (ci--get-project-root-folder))
@@ -319,7 +320,8 @@ test code from inside a 'test project'."
      (should (filepath-equal-p (ci-get-build-folder) expected-build-folder)))
 
    ;; Now we test with a binaryDir that has a relative path
-   (let* ((ci-configure-preset
+   (let* ((ci--build-folder-cache nil)
+          (ci-configure-preset
            '((binaryDir . "build/${presetName}") (name . "ninjamulticonfig")))
           (project-root (ci--get-project-root-folder))
           (expected-build-folder
@@ -327,7 +329,8 @@ test code from inside a 'test project'."
      (should (filepath-equal-p (ci-get-build-folder) expected-build-folder)))
 
    ;; Test with a different preset
-   (let* ((ci-configure-preset
+   (let* ((ci--build-folder-cache nil)
+          (ci-configure-preset
            '((binaryDir . "./build/${presetName}") (name . "Ninja")))
           (project-root (ci--get-project-root-folder))
           (expected-build-folder
@@ -669,7 +672,8 @@ test code from inside a 'test project'."
   (let ((ci-build-preset nil))
     (test-fixture-setup ;;
      "./test-project"
-     (let ((expected-run-dir (ci--get-project-root-folder)))
+     (let ((ci--build-folder-cache nil)
+           (expected-run-dir (ci--get-project-root-folder)))
        (should
         (equal
          (ci-get-build-command "the_target")
@@ -680,7 +684,8 @@ test code from inside a 'test project'."
     ;; Without setting a preset
     (test-fixture-setup ;;
      "./test-project-with-presets"
-     (let ((expected-run-dir (ci--get-project-root-folder)))
+     (let ((ci--build-folder-cache nil)
+           (expected-run-dir (ci--get-project-root-folder)))
        (should
         (equal
          (ci-get-build-command "the_target")
@@ -691,7 +696,8 @@ test code from inside a 'test project'."
     ;; Without a build preset
     (test-fixture-setup
      "./test-project-with-presets"
-     (let ((expected-run-dir (ci--get-project-root-folder))
+     (let ((ci--build-folder-cache nil)
+           (expected-run-dir (ci--get-project-root-folder))
            (ci-configure-preset
             '("default" (name . "default") (binaryDir . "theBuildFolder"))))
        (should
@@ -704,7 +710,8 @@ test code from inside a 'test project'."
     ;; With a build preset
     (test-fixture-setup
      "./test-project-with-presets"
-     (let ((expected-run-dir (ci--get-project-root-folder))
+     (let ((ci--build-folder-cache nil)
+           (expected-run-dir (ci--get-project-root-folder))
            (ci-configure-preset
             '("config-preset"
               (name . "config-preset")
@@ -723,7 +730,8 @@ test code from inside a 'test project'."
     ;; With a build preset and a target that has the configuration in the name
     (test-fixture-setup
      "./test-project-with-presets"
-     (let ((expected-run-dir (ci--get-project-root-folder))
+     (let ((ci--build-folder-cache nil)
+           (expected-run-dir (ci--get-project-root-folder))
            (ci-configure-preset
             '("config-preset"
               (name . "config-preset")
@@ -742,7 +750,8 @@ test code from inside a 'test project'."
     ;; Passing extra args
     (test-fixture-setup
      "./test-project-with-presets"
-     (let ((expected-run-dir (ci--get-project-root-folder))
+     (let ((ci--build-folder-cache nil)
+           (expected-run-dir (ci--get-project-root-folder))
            (ci-configure-preset
             '("config-preset"
               (name . "config-preset")
@@ -762,7 +771,8 @@ test code from inside a 'test project'."
 (ert-deftest test-ci-get-conan-run-command ()
   (test-fixture-setup
    "./test-project"
-   (let* ((project-root-folder (ci--get-project-root-folder))
+   (let* ((ci--build-folder-cache nil)
+          (project-root-folder (ci--get-project-root-folder))
           (build-folder (ci-get-build-folder))
           (conanfile-relative-path
            (file-relative-name project-root-folder build-folder)))

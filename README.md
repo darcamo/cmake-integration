@@ -182,6 +182,11 @@ replacements may be added in the future, if necessary.
 **TIP:** Setting `binaryDir` to something like `"${sourceDir}/build/${presetName}"` is an easy way to separate build
 folders for different presets.
 
+Note: The build folder is cached when using presets, to avoid having to read the information from the preset files
+again. This is automatically cleared when you change presets. If you need to clear the cache without changing presets
+(i.e., you edited the `binaryDir` field in the presets file), call the `cmake-integration-refresh-build-folder-cache`
+function.
+
 
 ### Hiding some targets during completion
 
@@ -251,7 +256,9 @@ for each target to annotate them with their target types in the completion list.
 use case and you'd rather avoid the performance cost, you can set `cmake-integration-annotate-targets` to `nil`. To
 apply this setting only to a specific project, configure it as a directory-local variable.
 
-Note: This information is cached after the first retrieval.
+Note: This information is cached after the first retrieval. This cache can also be saved/restored when appropriated (see
+the [Persisting state](#persisting-state) section). If you need to clear the cache for some reason, call the
+`cmake-integration-refresh-target-type-cache` function.
 
 ## Integration with language servers
 

@@ -50,6 +50,7 @@
     ci-build-preset
     ci-test-preset
     ci-package-preset
+    ci--build-folder-cache
 
     ;; CTest
     ci--ctest-label-include-regexp
@@ -65,6 +66,8 @@
     ci-select-build-preset
     ci-select-package-preset
     ci-select-conan-profile
+    ;; We also want to save state if the build folder cache is modified
+    ci--set-build-folder-cache
     )
   "Functions which automatically save cmake-intregration state.
 
@@ -202,12 +205,15 @@ exactly what `cmake-integration--build-current-state' returns."
 
 ;; TODO Add a test for this
 ;;;###autoload (autoload 'cmake-integration-save-state "cmake-integration")
-(defun ci-save-state ()
+(defun ci-save-state (&optional _)
   "Save the current state of cmake-integration to persistent storage.
 
 The location is determined by `cmake-integration-persist-location'.
 
-If not in a CMake project, no state is saved."
+If not in a CMake project, no state is saved.
+
+Note: The optional argument is not used. It is only present so this
+function can be used as an advice."
   (interactive)
   (if (ci-is-cmake-project-p)
       (when-let* ((state-file (ci--get-persist-file t))

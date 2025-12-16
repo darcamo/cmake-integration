@@ -128,6 +128,53 @@ or set `cmake-integration-build-dir' manually")))
       (error "Not in a project"))))
 
 
+;; This function may appear trivial since it only sets a variable with `setq`.
+;; However, it is designed as a separate function to allow its inclusion in
+;; `ci-functions-to-save-state`.
+(defun ci--set-build-folder-cache (build-folder)
+  "Set the build folder cache to BUILD-FOLDER."
+  (setq ci--build-folder-cache build-folder))
+
+
+(defun ci-refresh-build-folder-cache ()
+  "Refresh the cached build folder."
+  (interactive)
+  (setq ci--build-folder-cache nil))
+
+
+(defun ci--get-build-folder-from-preset (configure-preset project-root-folder)
+  "Get the build folder from CONFIGURE-PRESET.
+
+If the build folder is a relative path, it is resolved against
+PROJECT-ROOT-FOLDER.
+
+If `cmake-integration--build-folder-cache' is set, return that. If not,
+then the build folder is determined from the preset's `binaryDir' field,
+with any variable replacements done."
+  (if ci--build-folder-cache
+      ci--build-folder-cache
+    (if-let* ((binaryDir-with-replacements
+               (ci--get-binaryDir-with-replacements configure-preset)))
+
+      ;; Cache the build folder for future calls and return it
+      (ci--set-build-folder-cache
+       (expand-file-name binaryDir-with-replacements project-root-folder))
+
+      ;; Maybe the preset or any parent preset has no binaryDir set, or
+      ;; maybe a parent preset is missing. We need to warn the user and than
+      ;; we try using the manually set build dir instead
+      (warn
+       "Could not determine build folder from preset '%s'.\n   - Maybe the preset and none of its parent presets has the 'binaryDir' field, or a parent preset is missing."
+       (ci--get-preset-name configure-preset))
+      (if-let* ((build-dir (ci--get-build-dir-if-set)))
+        (progn
+          (warn "Using manually set build folder: '%s'" build-dir)
+          build-dir)
+        (error
+         "Build folder could not be determined from preset '%s' and no manual build folder is set"
+         (ci--get-preset-name configure-preset))))))
+
+
 (defun ci-get-build-folder ()
   "Get the project build folder.
 
@@ -144,22 +191,8 @@ resolved against the project root."
       (error "Not in a project"))
 
     (if preset
-        (if-let* ((binaryDir-with-replacements
-                   (ci--get-binaryDir-with-replacements preset)))
-          (expand-file-name binaryDir-with-replacements project-root-folder)
-          ;; Maybe the preset or any parent preset has no binaryDir set, or
-          ;; maybe a parent preset is missing. We need to warn the user and than
-          ;; we try using the manually set build dir instead
-          (warn
-           "Could not determine build folder from preset '%s'.\n   - Maybe the preset and none of its parent presets has the 'binaryDir' field, or a parent preset is missing."
-           (ci--get-preset-name preset))
-          (if-let* ((build-dir (ci--get-build-dir-if-set)))
-            (progn
-              (warn "Using manually set build folder: '%s'" build-dir)
-              build-dir)
-            (error
-             "Build folder could not be determined from preset '%s' and no manual build folder is set"
-             (ci--get-preset-name preset))))
+        ;; Get build directory from preset
+        (ci--get-build-folder-from-preset preset project-root-folder)
 
       ;; Use manually set build directory or throw an error
       (ci--get-build-dir-if-set t))))
