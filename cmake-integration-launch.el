@@ -197,7 +197,7 @@ string to run."
 ;;;###autoload (autoload 'cmake-integration-run-last-target-with-arguments "cmake-integration")
 (defun ci-run-last-target-with-arguments (run-arguments)
   "Run the last compiled target passing RUN-ARGUMENTS as arguments."
-  (interactive "sArguments: ")
+  (interactive (list (read-string "Arguments: " ci-run-arguments)))
   (setq ci-run-arguments run-arguments)
   (ci-run-last-target))
 
