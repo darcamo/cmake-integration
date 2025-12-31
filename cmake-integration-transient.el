@@ -102,6 +102,15 @@ will be obtained from PRESET and this returns the string
           (ci--describe-preset-command-line ci-build-preset)))
 
 
+(defun ci--describe-runtime-args ()
+  "Show the current conanfile, if any."
+  (format "%s: %s"
+          (propertize "Runtime arguments" 'face 'font-lock-warning-face)
+          (if ci-run-arguments
+              (ci--get-command-line-arg-with-face ci-run-arguments t)
+            (ci--get-command-line-arg-with-face "No arguments set" nil))))
+
+
 (defun ci--describe-test-preset-command-line ( )
   "Describe command line argument to set the test preset."
   (format "Test preset (%s)"
@@ -249,12 +258,10 @@ will be obtained from PRESET and this returns the string
 (transient-define-suffix ci--set-runtime-arguments-suffix ()
   :transient 'transient--do-call
   ;; :description 'ci--describe-install-prefix
-  :description (lambda () (format "Set runtime arguments (%s)"
+  :description (lambda () (format "%s runtime arguments"
                              (if ci-run-arguments
-                                 (ci--get-command-line-arg-with-face
-                                  ci-run-arguments
-                                  t)
-                               (ci--get-command-line-arg-with-face "No arguments set" nil))))
+                                 "Edit"
+                               "Set")))
   (interactive)
   (let ((run-arguments (read-string "Arguments to pass to the executable: ")))
     ;; If the user didn't provide any arguments, we set it to nil
@@ -444,6 +451,7 @@ will be obtained from PRESET and this returns the string
 (transient-define-prefix ci--launch-transient ()
   "Perform actions related to running or debugging an executable target."
   ["Run and Debug"
+   (:info #'ci--describe-runtime-args)
    ("a" ci--set-runtime-arguments-suffix)
    ("t" ci--set-build-target-suffix)
    ("r" "Run" ci-run-last-target)
@@ -497,6 +505,7 @@ will be obtained from PRESET and this returns the string
    ["Target"
     ("tt" ci--set-build-target-suffix)
     ("tc" ci--clear-build-target-suffix)
+    ("ta" ci--set-runtime-arguments-suffix)
     ("td" "Open target folder in dired" ci-open-dired-in-target-folder :transient nil)
     ("ts" "Open target folder in eshell" ci-open-eshell-in-target-folder :transient nil)
     ]
