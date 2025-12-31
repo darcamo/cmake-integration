@@ -207,44 +207,16 @@ executing `cmake-integration-save-and-compile`.
 
 ### Project Configuration (non-version controlled projects or monorepos)
 
-`cmake-integration` uses Emacs's `project` infrastructure to determine the project root. ForGit repositories are
-detected automatically. If you're not using version control or need a custom root within a Git repository, you can use a
+`cmake-integration` uses Emacs's `project` infrastructure to determine the project root (Git repositories are detected
+automatically). If you're not using version control or need a custom root within a Git repository, you can use a
 `.project` file. Emacs's `project` package can be extended to recognize directories containing an empty `.project` file
-as project roots.
+(actually any file with a specific name) as project roots by adding that filename to the `project-vc-extra-root-markers`
+list (see the documentation of the `project-vc-extra-root-markers` variable).
 
-The following Emacs Lisp code (adapted from
-[manueluberti.eu](https://manueluberti.eu/posts/2020-11-14-extending-project/)) demonstrates how to achieve this:
+The following Emacs Lisp code demonstrates how to achieve this:
 
 ```emacs-lisp
-;; Extend project.el to recognize local projects based on a .project file
-(cl-defmethod project-root ((project (head local)))
-  (cdr project))
-
-(defun mu--project-files-in-directory (dir)
-  "Use `fd' to list files in DIR."
-  (let* ((default-directory dir)
-         (localdir (file-local-name (expand-file-name dir)))
-         (command (format "fd -t f -0 . %s" localdir)))
-    (project--remote-file-names
-     (sort (split-string (shell-command-to-string command) "\0" t)
-           #'string<))))
-
-(cl-defmethod project-files ((project (head local)) &optional dirs)
-  "Override `project-files' to use `fd' in local projects."
-  (mapcan #'mu--project-files-in-directory
-          (or dirs (list (project-root project)))))
-
-(defun mu-project-try-local (dir)
-  "Determine if DIR is a non-Git project.
-DIR must include a .project file to be considered a project."
-  (let ((root (locate-dominating-file dir ".project")))
-    (and root (cons 'local root))))
-
-(use-package project
-  :defer t
-  :config
-  (add-to-list 'project-find-functions 'mu-project-try-local)
-  )
+(add-to-list 'project-vc-extra-root-markers ".project")
 ```
 
 
