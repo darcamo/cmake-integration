@@ -129,6 +129,86 @@ a vector of presets is returned."
   (ci--get-preset-name ci-configure-preset))
 
 
+(defun ci-add-cmake-cache-variables ()
+  "Add a CMake cache variable.
+
+The variable and its value are used when configuring the project with CMake."
+  (interactive)
+  ;; Ask the user for a cache variable name and value and add to the list in
+  ;; ci-cache-variables
+  (let* ((var-name (read-string "CMake Cache Variable Name: "))
+         (var-value (read-string (format "Value for %s: " var-name))))
+    (if-let* ((existing (assoc var-name ci-cache-variables)))
+        (setcdr existing var-value)
+      (push (cons var-name var-value) ci-cache-variables)))
+  (ci--maybe-refresh-cache-variables-buffer))
+
+
+(defun ci-remove-cmake-cache-variable ()
+  "Remove a CMake cache variable."
+  (interactive)
+  ;; Ask the user for a cache variable name and remove from the list. Use
+  ;; completing-read.
+  (let* ((var-names (mapcar 'car ci-cache-variables))
+         (var-to-remove
+          (completing-read "CMake Cache Variable to remove: " var-names nil t)))
+    (setq ci-cache-variables
+          (cl-remove-if
+           (lambda (pair) (string-equal (car pair) var-to-remove))
+           ci-cache-variables)))
+  (ci--maybe-refresh-cache-variables-buffer))
+
+
+(defun ci-remove-all-cmake-cache-variables ()
+  "Remove all CMake cache variables."
+  (interactive)
+  ;; Ask for confirmation when called interactively. If the user confirms,
+  ;; clear the list of cache variables.
+  (when (or (not (called-interactively-p 'any))
+            (yes-or-no-p
+             "Are you sure you want to remove all CMake cache variables? "))
+    (setq ci-cache-variables nil))
+  (ci--maybe-refresh-cache-variables-buffer))
+
+
+(defun ci-display-cmake-cache-variables ()
+  "Display the CMake cache variables in a separated buffer.
+
+The variables are shown as `var1=value1', one per line."
+  (interactive)
+  (let ((buffer-name "*CMake Cache Variables*"))
+    (with-output-to-temp-buffer buffer-name
+      (princ "CMake Cache Variables:\n\n")
+      (if ci-cache-variables
+          (dolist (pair ci-cache-variables)
+            (princ (format "%s=%s\n" (car pair) (cdr pair))))
+        (princ "No CMake cache variables defined.")))
+    (with-current-buffer buffer-name
+      (read-only-mode 1))))
+
+
+(defun ci--maybe-refresh-cache-variables-buffer ()
+  "Refresh the CMake cache variables buffer, if it is open."
+  (when (get-buffer-window "*CMake Cache Variables*" 0)
+    (ci-display-cmake-cache-variables)))
+
+
+(defun ci--maybe-quit-cache-variables-window ()
+  "Quit the CMake cache variables window if it is open."
+  (when-let* ((buffer-window (get-buffer-window "*CMake Cache Variables*" 0)))
+    (quit-window t buffer-window)))
+
+
+(defun ci--get-cmake-cache-variables-command-line-args ()
+  "Get the CMake cache variables as command line arguments.
+
+This is the \"-Dvar1=value1 -Dvar2=value2 ...\" part of the command
+line."
+  (mapconcat
+   (lambda (pair) (format "-D%s=%s" (car pair) (cdr pair))) ci-cache-variables
+   " "))
+
+
 (defun ci--get-configure-command-with-preset (preset)
   "Get the directory and command to configure with CMake using the preset PRESET.
 
@@ -136,7 +216,8 @@ Return a list (RUN-DIR COMMAND), where RUN-DIR is the directory from
 which the command must be executed, and COMMAND is the command line
 string to run (without any `cd`)."
   (list (ci--get-project-root-folder)
-        (format "cmake . -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --preset %s"
+        (format "cmake . -DCMAKE_EXPORT_COMPILE_COMMANDS=ON %s --preset %s"
+                (ci--get-cmake-cache-variables-command-line-args)
                 (ci--get-preset-name preset))))
 
 
@@ -147,11 +228,18 @@ Return a list (RUN-DIR COMMAND), where RUN-DIR is the directory from
 which the command must be executed, and COMMAND is the command line
 string to run (without any `cd`)."
   (let* ((build-folder (ci-get-build-folder))
-         (cmakelists-location (file-relative-name (ci--get-project-root-folder) build-folder))
-         (cmd (format "cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON %s" cmakelists-location))
-         (final-cmd (if ci-generator
-                        (format "%s -G \"%s\"" cmd ci-generator)
-                      cmd)))
+         (cmakelists-location
+          (file-relative-name (ci--get-project-root-folder) build-folder))
+         (cache-variables-string
+          (ci--get-cmake-cache-variables-command-line-args))
+         (cmd
+          (format "cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON %s %s"
+                  cache-variables-string
+                  cmakelists-location))
+         (final-cmd
+          (if ci-generator
+              (format "%s -G \"%s\"" cmd ci-generator)
+            cmd)))
     (list build-folder final-cmd)))
 
 

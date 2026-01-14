@@ -247,6 +247,9 @@ will be replaced by the project root." :type 'directory :group 'cmake-integratio
 (defvar ci-configure-preset nil "Preset used for the configure step.")
 
 
+(defvar ci-cache-variables nil "Cache variables to set in the command line during configure.")
+
+
 (defvar ci-build-preset nil "Preset used for the build step.")
 
 

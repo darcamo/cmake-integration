@@ -96,6 +96,16 @@ will be obtained from PRESET and this returns the string
   (format "Configure preset (%s)" (ci--describe-preset-command-line ci-configure-preset)))
 
 
+(defun ci--describe-cache-variables ( )
+  "Describe command line argument to set the configure preset."
+  (format "Cache variables: %s" 
+          (if ci-cache-variables
+              (propertize (format "%d variables set" (length ci-cache-variables))
+                          'face 'transient-value)
+            (propertize "No variables set"
+                        'face 'transient-inactive-value))))
+
+
 (defun ci--describe-build-preset-command-line ( )
   "Describe command line argument to set the build preset."
   (format "Build preset (%s)"
@@ -338,6 +348,28 @@ will be obtained from PRESET and this returns the string
   )
 
 
+(transient-define-prefix
+ ci--cache-variables-transient () "Show CMake cache variables."
+ ["Cache Variables"
+  (:info #'ci--describe-cache-variables)
+  ("v" "View cache variables" ci-display-cmake-cache-variables :transient t)
+  ("a" "Add a cache variable" ci-add-cmake-cache-variables :transient t)
+  ("r" "Remove a cache variable" ci-remove-cmake-cache-variable :transient t)
+  ("R"
+   "Remove all cache variables"
+   ci-remove-all-cmake-cache-variables
+   :transient t)
+  ("q" "Quit"
+   (lambda ()
+     (interactive)
+     ;; If the buffer displaying the cache variables is open, close it before
+     ;; quitting the transient
+     (ci--maybe-quit-cache-variables-window)
+     (transient-quit-one))) ;;
+  ]
+ )
+
+
 (transient-define-prefix ci--configure-transient ()
   "Perform actions related to configuring the project."
   ["Configure"
@@ -349,7 +381,7 @@ will be obtained from PRESET and this returns the string
    ;;             (message "Build folder %s selected"
    ;;                      (read-directory-name "Select build folder")))
    ;;  :transient t)
-
+   ("v" ci--cache-variables-transient :description ci--describe-cache-variables)
    ("g" ci--set-generator-suffix)
    ""
    ("c" "Configure" (lambda () (interactive)

@@ -40,7 +40,10 @@
 
 
 (defconst ci--state-variables
-  '(;; Target
+  '(;; Cache variables
+    ci-cache-variables
+
+    ;; Target
     ci--target-type-cache
     ci-current-target
     ci-run-arguments
@@ -62,6 +65,9 @@
 (defconst ci-functions-to-save-state
   '(ci-select-current-target
     ci-select-configure-preset
+    ci-add-cmake-cache-variables
+    ci-remove-cmake-cache-variable
+    ci-remove-all-cmake-cache-variables
     ci-select-test-preset
     ci-select-build-preset
     ci-select-package-preset
