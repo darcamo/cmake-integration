@@ -247,6 +247,7 @@ If two prefix arguments are provided, then all targets are included."
      (t list-of-targets))))
 
 
+;;;###autoload (autoload 'cmake-integration-select-current-target "cmake-integration")
 (defun ci-select-current-target ()
   "Ask for a target to build and return the target name."
 
