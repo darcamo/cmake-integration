@@ -63,6 +63,13 @@ Function to verify is VAL is save as a value for the
     (project-root (project-current))))
 
 
+(defun ci--get-project-name ()
+  "Get the current project name using Emacs built-in project."
+  (if-let* ((project (project-current)))
+    (project-name project)
+    nil))
+
+
 (defun ci--get-codemodel-reply-json-filename ()
   "Get the name of the json file with the targets.
 

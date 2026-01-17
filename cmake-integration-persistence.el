@@ -117,13 +117,10 @@ after the function is called.")
   "Return the directory in `user-emacs-directory' to save state.
 
 Return nil if not in a project."
-  (if-let* ((project (project-current))
-            (project-identifier
-             (file-name-nondirectory
-              (directory-file-name (project-root project)))))
-    (file-name-concat user-emacs-directory
-                      "cmake-integration"
-                      project-identifier)))
+  (if-let* ((project-identifier (ci--get-project-name)))
+      (file-name-concat user-emacs-directory
+                        "cmake-integration"
+                        project-identifier)))
 
 
 (defun ci--get-persist-location-in-project-directory ()
