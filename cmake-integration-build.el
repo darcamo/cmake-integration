@@ -31,6 +31,10 @@
 (require 'cmake-integration-configure)
 
 
+(defvar ci--list-of-targets nil
+  "Used to pass the list of targets to `ci--target-completion-group-function'.")
+
+
 (defun ci--adjust-build-preset ()
   "Adjust the build preset when changing the configure preset.
 
@@ -133,8 +137,9 @@ EXTRA-ARGS parameter."
   "Get the type of the target with name TARGET-NAME from ALL-TARGETS.
 ALL-TARGETS is an alist like the one returned by
 `cmake-integration--get-annotated-targets-from-codemodel-json-file'."
-  (let ((target (alist-get target-name all-targets nil nil 'equal)))
-    (alist-get 'type target)))
+  (if-let* ((target (alist-get target-name all-targets nil nil 'equal)))
+    (alist-get 'type target)
+    "unknown"))
 
 
 (defun ci--get-propertized-target-type-from-name (target-name all-targets)
@@ -183,7 +188,7 @@ See \"Programmed Completion\" in Emacs info for more."
         completion)
 
     ;; If transform is nil, return the group title
-    (let ((type (ci--get-target-type-from-name completion minibuffer-completion-table)))
+    (let ((type (ci--get-target-type-from-name completion ci--list-of-targets)))
       (cond
        ((ci--is-phony-target completion) (propertize "Phony" 'face 'ci-phony-target-face))
        ((string-match-p "executable" type) (propertize "Executable" 'face 'ci-executable-target-face))
@@ -195,7 +200,11 @@ See \"Programmed Completion\" in Emacs info for more."
 
 (defun ci--get-target-using-completions (list-of-targets)
   "Ask the user to choose one of the targets in LIST-OF-TARGETS using completions."
-  (let ((completion-extra-properties '(:annotation-function ci--target-annotation-function :group-function ci--target-completion-group-function)))
+  (setq ci--list-of-targets list-of-targets)
+  (let ((completion-extra-properties
+         '(:annotation-function
+           ci--target-annotation-function
+           :group-function ci--target-completion-group-function)))
     (completing-read "Target: " list-of-targets nil t)))
 
 
