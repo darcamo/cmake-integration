@@ -31,8 +31,21 @@
 (require 'cmake-integration-configure)
 
 
+(defcustom ci-target-group-function 'cmake-integration--target-completion-group-by-type-function
+  "Function used to group targets during completion.
+
+See `:group-function' in the documentation of the
+`completion-extra-properties' variable."
+  :type
+  '(choice
+    (const :tag "Don't group targets" nil)
+    (const :tag "Group by type" ci--target-completion-group-by-type-function)
+    (function :tag "Custom grouping function"))
+  :group 'cmake-integration-completions)
+
+
 (defvar ci--list-of-targets nil
-  "Used to pass the list of targets to `ci--target-completion-group-function'.")
+  "Set to the list of targets before calling function to group targets.")
 
 
 (defun ci--adjust-build-preset ()
@@ -172,7 +185,7 @@ the marginalia package, or in Emacs standard completion buffer."
       (_ (concat spaces (ci--get-propertized-target-type-from-name target-name minibuffer-completion-table))))))
 
 
-(defun ci--target-completion-group-function (completion transform)
+(defun ci--target-completion-group-by-type-function (completion transform)
   "Group function used during completion for COMPLETION and TRANSFORM.
 
 If TRANSFORM is nil, the function must return the group title of the
@@ -202,9 +215,9 @@ See \"Programmed Completion\" in Emacs info for more."
   "Ask the user to choose one of the targets in LIST-OF-TARGETS using completions."
   (setq ci--list-of-targets list-of-targets)
   (let ((completion-extra-properties
-         '(:annotation-function
+         `(:annotation-function
            ci--target-annotation-function
-           :group-function ci--target-completion-group-function)))
+           :group-function ,ci-target-group-function)))
     (completing-read "Target: " list-of-targets nil t)))
 
 
