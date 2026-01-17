@@ -92,7 +92,9 @@ State is only saved if `ci-automatic-persistence-mode' is enabled."
     ci-run-cmake-install
     ci-open-dired-in-target-folder
     ci-open-eshell-in-target-folder
-    ci-delete-build-folder)
+    ci-delete-build-folder
+    ci--check-if-build-folder-exists-and-throws-if-not
+    )
   "Functions which automatically restore cmake-intregration state.
 
 State is only restored if `ci-automatic-persistence-mode' is enabled.")
