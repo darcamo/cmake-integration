@@ -519,7 +519,7 @@ that should be added to TARGET."
       (if-let* ((target-type
                  (when ci--target-extra-data-cache
                    (gethash target-name ci--target-extra-data-cache))))
-        (setf (alist-get 'type (cdr target)) target-type)
+          (setf (alist-get 'type (cdr target)) target-type)
 
         (if ci-annotate-targets
             (let* ((json-file (alist-get 'jsonFile target))
@@ -532,8 +532,12 @@ that should be added to TARGET."
 
           (setq target-type "<UNKNOWN>"))
 
-        (when ci--target-extra-data-cache
-          (puthash target-name target-type ci--target-extra-data-cache))
+        ;; If for some reason the extra data cache is not created yet, create it
+        ;; now as an empty hash table
+        (unless ci--target-extra-data-cache
+          (setq ci--target-extra-data-cache (make-hash-table :test 'equal)))
+
+        (puthash target-name target-type ci--target-extra-data-cache)
 
         ;; Set the value from the json data to `type' field
         (setf (alist-get 'type (cdr target)) target-type)))))
