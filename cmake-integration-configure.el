@@ -26,6 +26,7 @@
 ;;; Commentary:
 
 ;;; Code:
+(require 'cmake-integration-variables)
 (require 'cmake-integration-core)
 (require 'cmake-integration-core-presets)
 
