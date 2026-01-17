@@ -102,7 +102,12 @@ project are included (targets with projectIndex equal to zero)."
 ;; TODO Allow the values 't', 'local-only' and 'nil'. With local-only, it should
 ;; not annotate in tramp connections.
 (defcustom ci-annotate-targets t
-  "Annotate the targets in the list of targets with the target type"
+  "Annotate the targets in the list of targets with extra data.
+
+This extra data is used during completion to show different faces for
+different target types (executable, library, utility, phony), as well as
+for grouping the targets (see
+`cmake-integration-target-group-function')."
   :type 'boolean
   :safe #'booleanp
   :group 'cmake-integration-completions)

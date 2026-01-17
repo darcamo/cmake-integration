@@ -35,7 +35,7 @@
   "Function used to group targets during completion.
 
 See `:group-function' in the documentation of the
-`completion-extra-properties' variable."
+`completion-extra-properties' variable if you want to create your own."
   :type
   '(choice
     (const :tag "Don't group targets" nil)
@@ -538,7 +538,9 @@ match what will be used in `ci--get-target-extra-data-from-cache'."
 (defun ci--add-extra-data-to-target (target)
   "Read the target specific json file and add extra information to TARGET.
 
-If the information is already in the cache, use it from there.
+If the information is already in the cache, use it from there. If it is
+not, then read the specific json file for the target, but only if
+`cmake-integration-annotate-targets' is non-nil.
 
 NOTE: This will modify the input TARGET.
 
@@ -562,7 +564,9 @@ that should be added to TARGET."
               ;; Update the cache with the type of the target
               (setq target-type (alist-get 'type target-json-data)))
 
-          (setq target-type "<UNKNOWN>"))
+          ;; ci-annotate-targets us nil and we should not read the target json file
+          (setq target-type "<UNKNOWN>")
+          )
 
         ;; Update the cache with the type of the target
         (ci--put-target-extra-data-in-cache target-name "type" target-type)
