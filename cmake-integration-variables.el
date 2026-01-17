@@ -226,6 +226,12 @@ will be replaced by the project root." :type 'directory :group 'cmake-integratio
 (defvar ci-current-target nil "Name of the target that will be compiled and run.")
 
 
+;; Note: Avoid modifying this variable directly. Use one of the functions below
+;; instead
+;; - ci-refresh-target-cache
+;; - ci--create-empty-target-extra-data-cache
+;; - ci--get-target-extra-data-from-cache
+;; - ci--put-target-extra-data-in-cache
 (defvar ci--target-extra-data-cache (make-hash-table :test 'equal)
   "Cache for target types. Maps target names to their types.")
 

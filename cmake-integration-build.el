@@ -498,7 +498,41 @@ Each entry maps `target-name` to `target-info`."
 (defun ci-refresh-target-cache ()
   "Clear the target type cache."
   (interactive)
-  (clrhash ci--target-extra-data-cache))
+  (if (hash-table-p ci--target-extra-data-cache)
+      (clrhash ci--target-extra-data-cache)
+    (ci--create-empty-target-extra-data-cache)))
+
+
+(defun ci--create-empty-target-extra-data-cache ()
+  "Create an empty cache for target extra data."
+  (setq ci--target-extra-data-cache (make-hash-table :test 'equal)))
+
+
+(defun ci--get-target-extra-data-from-cache (target-name data-name)
+  "Get the DATA-NAME information for TARGET-NAME from the cache.
+
+DATA-NAME is a string representing the type of data to get. It should
+match what has been used in `ci--put-target-extra-data-in-cache'."
+  (when (hash-table-p ci--target-extra-data-cache)
+    (let* ((key-name
+            (format "%s/%s/%s" (ci--get-project-name) target-name data-name)))
+      (gethash key-name ci--target-extra-data-cache))))
+
+
+(defun ci--put-target-extra-data-in-cache (target-name data-name data-value)
+  "Put DATA-VALUE for DATA-NAME of TARGET-NAME into the cache.
+
+DATA-NAME is a string representing the type of data to put. It should
+match what will be used in `ci--get-target-extra-data-from-cache'."
+  ;; If for some reason the extra data cache is not created yet, create it
+  ;; now as an empty hash table
+  (unless (hash-table-p ci--target-extra-data-cache)
+    (message "cmake-integration: Creating target extra data cache")
+    (ci--create-empty-target-extra-data-cache))
+
+  (let* ((key-name
+          (format "%s/%s/%s" (ci--get-project-name) target-name data-name)))
+    (puthash key-name data-value ci--target-extra-data-cache)))
 
 
 (defun ci--add-extra-data-to-target (target)
@@ -516,9 +550,7 @@ that should be added to TARGET."
   (let ((target-name
          (car (split-string (car target) ci--multi-config-separator))))
     (unless (ci--is-phony-target target-name)
-      (if-let* ((target-type
-                 (when ci--target-extra-data-cache
-                   (gethash target-name ci--target-extra-data-cache))))
+      (if-let* ((target-type (ci--get-target-extra-data-from-cache target-name "type")))
           (setf (alist-get 'type (cdr target)) target-type)
 
         (if ci-annotate-targets
@@ -532,12 +564,8 @@ that should be added to TARGET."
 
           (setq target-type "<UNKNOWN>"))
 
-        ;; If for some reason the extra data cache is not created yet, create it
-        ;; now as an empty hash table
-        (unless ci--target-extra-data-cache
-          (setq ci--target-extra-data-cache (make-hash-table :test 'equal)))
-
-        (puthash target-name target-type ci--target-extra-data-cache)
+        ;; Update the cache with the type of the target
+        (ci--put-target-extra-data-in-cache target-name "type" target-type)
 
         ;; Set the value from the json data to `type' field
         (setf (alist-get 'type (cdr target)) target-type)))))
