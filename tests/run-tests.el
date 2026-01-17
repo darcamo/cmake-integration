@@ -25,6 +25,7 @@
 
 ;; Load the cmake-integration package and the tests
 (load-file (file-name-concat cmake-integration-package-folder "cmake-integration.el"))
+(load-file (file-name-concat cmake-integration-package-folder "cmake-integration-variables.el"))
 (load-file (file-name-concat test-folder "cmake-integration-tests.el"))
 
 

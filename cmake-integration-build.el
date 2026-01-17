@@ -495,28 +495,30 @@ Each entry maps `target-name` to `target-info`."
                    all-config))))
 
 
-(defun ci-refresh-target-type-cache ()
+(defun ci-refresh-target-cache ()
   "Clear the target type cache."
   (interactive)
-  (clrhash ci--target-type-cache))
+  (clrhash ci--target-extra-data-cache))
 
 
-(defun ci--add-type-field-to-target (target)
-  "Add a `type' field to a TARGET, using cache if available.
+(defun ci--add-extra-data-to-target (target)
+  "Read the target specific json file and add extra information to TARGET.
+
+If the information is already in the cache, use it from there.
 
 NOTE: This will modify the input TARGET.
 
 TARGET is a list containing the target name followed by many cons, with
 each cons having some information about the TARGET. Particularly, TARGET
 has a cons cell with a `jsonFile' car and a `\"someJsonFile.json\"'
-filename. This json file will be read to extract the type that should be
-added to TARGET."
+filename. This json file will be read to extract the extra information
+that should be added to TARGET."
   (let ((target-name
          (car (split-string (car target) ci--multi-config-separator))))
     (unless (ci--is-phony-target target-name)
       (if-let* ((target-type
-                 (when ci--target-type-cache
-                   (gethash target-name ci--target-type-cache))))
+                 (when ci--target-extra-data-cache
+                   (gethash target-name ci--target-extra-data-cache))))
         (setf (alist-get 'type (cdr target)) target-type)
 
         (if ci-annotate-targets
@@ -530,8 +532,8 @@ added to TARGET."
 
           (setq target-type "<UNKNOWN>"))
 
-        (when ci--target-type-cache
-          (puthash target-name target-type ci--target-type-cache))
+        (when ci--target-extra-data-cache
+          (puthash target-name target-type ci--target-extra-data-cache))
 
         ;; Set the value from the json data to `type' field
         (setf (alist-get 'type (cdr target)) target-type)))))
@@ -554,7 +556,7 @@ shown as an annotation."
       ;; Process each target and update the progress reporter
       (cl-loop for target in list-of-targets
                for idx from 0
-               do (ci--add-type-field-to-target target)
+               do (ci--add-extra-data-to-target target)
                do (progress-reporter-update progress-reporter idx))
       (progress-reporter-done progress-reporter))
     list-of-targets))

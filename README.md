@@ -230,7 +230,7 @@ apply this setting only to a specific project, configure it as a directory-local
 
 Note: This information is cached after the first retrieval. This cache can also be saved/restored when appropriated (see
 the [Persisting state](#persisting-state) section). If you need to clear the cache for some reason, call the
-`cmake-integration-refresh-target-type-cache` function.
+`cmake-integration-refresh-target-cache` function.
 
 ## Integration with language servers
 

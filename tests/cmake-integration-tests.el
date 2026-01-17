@@ -287,11 +287,6 @@ test code from inside a 'test project'."
 (ert-deftest test-ci-get-build-folder-without-presets ()
   (test-fixture-setup
    "./test-project/subfolder" ;; project root is the parent "test-project" folder
-   ;; Without setting `cmake-integration-build-dir' -> default value is "build"
-   (let* ((project-root (ci--get-project-root-folder))
-          (expected-build-folder (expand-file-name "./build" project-root)))
-     (should (filepath-equal-p (ci-get-build-folder) expected-build-folder)))
-
    ;; Set `cmake-integration-build-dir'
    (let* ((project-root (ci--get-project-root-folder))
           (ci-build-dir "some-build-folder")
@@ -351,26 +346,32 @@ test code from inside a 'test project'."
 (ert-deftest test-ci--get-reply-folder ()
   (test-fixture-setup ;;
    "./test-project"
-   (should
-    (filepath-equal-p (ci--get-reply-folder) "./build/.cmake/api/v1/reply/"))))
+   (let ((expected-reply-folder
+          (format "./%s/.cmake/api/v1/reply/" cmake-integration-build-dir)))
+     (should (filepath-equal-p (ci--get-reply-folder) expected-reply-folder)))))
 
 
 (ert-deftest test-ci--get-path-of-codemodel-query-file ()
   (test-fixture-setup
    "./test-project"
-   (should
-    (filepath-equal-p
-     (ci--get-path-of-codemodel-query-file)
-     "./build/.cmake/api/v1/query/client-emacs/codemodel-v2"))))
+   (let ((expected-path
+          (format "./%s/.cmake/api/v1/query/client-emacs/codemodel-v2"
+                  ci-build-dir)))
+     (should
+      (filepath-equal-p
+       (ci--get-path-of-codemodel-query-file) expected-path)))))
 
 
 (ert-deftest test-ci--get-codemodel-reply-json-filename ()
   (test-fixture-setup ;;
    "./test-project-with-codemodel-reply"
-   (should
-    (filepath-equal-p
-     (ci--get-codemodel-reply-json-filename)
-     (format "%s%s" (ci--get-reply-folder) "codemodel-v2-some-hash.json")))))
+   (let* ((ci-build-dir "build")
+          (codemodel-filename (ci--get-codemodel-reply-json-filename))
+          (reply-folder (ci--get-reply-folder))
+          (expected-codemodel-filename
+           (format "%s%s" reply-folder "codemodel-v2-some-hash.json")))
+     (should
+      (filepath-equal-p codemodel-filename expected-codemodel-filename)))))
 
 
 (ert-deftest test-ci--get-working-directory ()
@@ -460,101 +461,109 @@ test code from inside a 'test project'."
          (should (filepath-equal-p dir expected-run-dir))
          (should (equal command expected-cmd)))))))
 
-;; (ert-deftest test-ci--get-run-command--custom-folder ()
-;;   (test-fixture-setup ;;
-;;    "./test-project"
-;;    (lambda ()
-;;      (let* ((ci-run-working-directory "subfolder")
-;;             (ci-run-arguments "arg1 arg2")
-;;             (executable-relative-path "../build/bin/myexec")
-;;             (expected-run-dir (file-name-concat (ci--get-project-root-folder) "subfolder"))
-;;             (expected-cmd (format "gdb -i=mi --args %s %s"
-;;                                   executable-relative-path
-;;                                   ci-run-arguments)))
-;;        (pcase-let* ((`(,dir ,command) (ci--get-debug-command "bin/myexec")))
-;;          (should (filepath-equal-p dir expected-run-dir))
-;;          (should (equal command expected-cmd)))))))
+(ert-deftest test-ci--get-run-command--custom-folder ()
+  (test-fixture-setup ;;
+   "./test-project"
+   (lambda ()
+     (let* ((ci-run-working-directory "subfolder")
+            (ci-run-arguments "arg1 arg2")
+            (executable-relative-path "../build/bin/myexec")
+            (expected-run-dir
+             (file-name-concat (ci--get-project-root-folder) "subfolder"))
+            (expected-cmd
+             (format "gdb -i=mi --args %s %s"
+                     executable-relative-path
+                     ci-run-arguments)))
+       (pcase-let* ((`(,dir ,command) (ci--get-debug-command "bin/myexec")))
+         (should (filepath-equal-p dir expected-run-dir))
+         (should (equal command expected-cmd)))))))
 
 
-;; (ert-deftest test-ci--get-debug-command--root-folder ()
-;;   (test-fixture-setup ;;
-;;    "./test-project"
-;;    (lambda ()
-;;      (let* ((ci-run-working-directory 'root)
-;;             (ci-run-arguments "arg1 arg2")
-;;             (executable-relative-path "build/bin/myexec")
-;;             (expected-run-dir (ci--get-project-root-folder))
-;;             (expected-cmd (format "gdb -i=mi --args %s %s"
-;;                                   executable-relative-path
-;;                                   ci-run-arguments)))
-;;        (pcase-let* ((`(,dir ,command) (ci--get-debug-command "bin/myexec")))
-;;          (should (filepath-equal-p dir expected-run-dir))
-;;          (should (equal command expected-cmd)))))))
+(ert-deftest test-ci--get-debug-command--root-folder ()
+  (test-fixture-setup ;;
+   "./test-project"
+   (lambda ()
+     (let* ((ci-run-working-directory 'root)
+            (ci-run-arguments "arg1 arg2")
+            (executable-relative-path "build/bin/myexec")
+            (expected-run-dir (ci--get-project-root-folder))
+            (expected-cmd
+             (format "gdb -i=mi --args %s %s"
+                     executable-relative-path
+                     ci-run-arguments)))
+       (pcase-let* ((`(,dir ,command) (ci--get-debug-command "bin/myexec")))
+         (should (filepath-equal-p dir expected-run-dir))
+         (should (equal command expected-cmd)))))))
 
 
-;; (ert-deftest test-ci--get-debug-command--build-folder ()
-;;   (test-fixture-setup ;;
-;;    "./test-project"
-;;    (lambda ()
-;;      (let* ((ci-run-working-directory 'build)
-;;             (ci-run-arguments "arg1 arg2")
-;;             (executable-relative-path "bin/myexec")
-;;             (expected-run-dir (ci-get-build-folder))
-;;             (expected-cmd (format "gdb -i=mi --args %s %s"
-;;                                   executable-relative-path
-;;                                   ci-run-arguments)))
-;;        (pcase-let* ((`(,dir ,command) (ci--get-debug-command "bin/myexec")))
-;;          (should (filepath-equal-p dir expected-run-dir))
-;;          (should (equal command expected-cmd)))))))
+(ert-deftest test-ci--get-debug-command--build-folder ()
+  (test-fixture-setup ;;
+   "./test-project"
+   (lambda ()
+     (let* ((ci-run-working-directory 'build)
+            (ci-run-arguments "arg1 arg2")
+            (executable-relative-path "bin/myexec")
+            (expected-run-dir (ci-get-build-folder))
+            (expected-cmd
+             (format "gdb -i=mi --args %s %s"
+                     executable-relative-path
+                     ci-run-arguments)))
+       (pcase-let* ((`(,dir ,command) (ci--get-debug-command "bin/myexec")))
+         (should (filepath-equal-p dir expected-run-dir))
+         (should (equal command expected-cmd)))))))
 
-;; (ert-deftest test-ci--get-debug-command--bin-folder ()
-;;   (test-fixture-setup ;;
-;;    "./test-project"
-;;    (lambda ()
-;;      (let* ((ci-run-working-directory 'bin)
-;;             (ci-run-arguments "arg1 arg2")
-;;             (executable-relative-path "myexec")
-;;             (expected-run-dir (file-name-concat (ci-get-build-folder) "bin/"))
-;;             (expected-cmd (format "gdb -i=mi --args %s %s"
-;;                                   executable-relative-path
-;;                                   ci-run-arguments)))
-;;        (pcase-let* ((`(,dir ,command) (ci--get-debug-command "bin/myexec")))
-;;          (should (filepath-equal-p dir expected-run-dir))
-;;          (should (equal command expected-cmd)))))))
-
-
-;; (ert-deftest test-ci--get-debug-command--custom-folder ()
-;;   (test-fixture-setup ;;
-;;    "./test-project"
-;;    (lambda ()
-;;      (let* ((ci-run-working-directory "subfolder")
-;;             (ci-run-arguments "arg1 arg2")
-;;             (executable-relative-path "../build/bin/myexec")
-;;             (expected-run-dir (file-name-concat (ci--get-project-root-folder) "subfolder"))
-;;             (expected-cmd (format "gdb -i=mi --args %s %s"
-;;                                   executable-relative-path
-;;                                   ci-run-arguments)))
-;;        (pcase-let* ((`(,dir ,command) (ci--get-debug-command "bin/myexec")))
-;;          (should (filepath-equal-p dir expected-run-dir))
-;;          (should (equal command expected-cmd)))))))
+(ert-deftest test-ci--get-debug-command--bin-folder ()
+  (test-fixture-setup ;;
+   "./test-project"
+   (lambda ()
+     (let* ((ci-run-working-directory 'bin)
+            (ci-run-arguments "arg1 arg2")
+            (executable-relative-path "myexec")
+            (expected-run-dir (file-name-concat (ci-get-build-folder) "bin/"))
+            (expected-cmd
+             (format "gdb -i=mi --args %s %s"
+                     executable-relative-path
+                     ci-run-arguments)))
+       (pcase-let* ((`(,dir ,command) (ci--get-debug-command "bin/myexec")))
+         (should (filepath-equal-p dir expected-run-dir))
+         (should (equal command expected-cmd)))))))
 
 
-;;; TODO: add more cases to the test (install target, ninja multi-config, etc)
+(ert-deftest test-ci--get-debug-command--custom-folder ()
+  (test-fixture-setup ;;
+   "./test-project"
+   (lambda ()
+     (let* ((ci-run-working-directory "subfolder")
+            (ci-run-arguments "arg1 arg2")
+            (executable-relative-path "../build/bin/myexec")
+            (expected-run-dir
+             (file-name-concat (ci--get-project-root-folder) "subfolder"))
+            (expected-cmd
+             (format "gdb -i=mi --args %s %s"
+                     executable-relative-path
+                     ci-run-arguments)))
+       (pcase-let* ((`(,dir ,command) (ci--get-debug-command "bin/myexec")))
+         (should (filepath-equal-p dir expected-run-dir))
+         (should (equal command expected-cmd)))))))
+
+
+;; TODO: add more cases to the test (install target, ninja multi-config, etc)
 (ert-deftest test-ci--get-targets-from-codemodel-json-file ()
   (test-fixture-setup ;;
    "./test-project-with-codemodel-reply"
-   (let ((targets (ci--get-targets-from-codemodel-json-file))
-         (expected-targets
-          '(("all")
-            ("clean")
-            ("somelib"
-             (jsonFile . "target-somelib-some-hash.json")
-             (name . "somelib")
-             (projectIndex . 0))
-            ("main"
-             (jsonFile . "target-main-some-hash.json")
-             (name . "main")
-             (projectIndex . 0)))))
+   (let* ((ci-build-dir "build")
+          (targets (ci--get-targets-from-codemodel-json-file))
+          (expected-targets
+           '(("all")
+             ("clean")
+             ("somelib"
+              (jsonFile . "target-somelib-some-hash.json")
+              (name . "somelib")
+              (projectIndex . 0))
+             ("main"
+              (jsonFile . "target-main-some-hash.json")
+              (name . "main")
+              (projectIndex . 0)))))
      (should (equal targets expected-targets)))))
 
 
@@ -771,7 +780,8 @@ test code from inside a 'test project'."
 (ert-deftest test-ci-get-conan-run-command ()
   (test-fixture-setup
    "./test-project"
-   (let* ((ci--build-folder-cache nil)
+   (let* ((cmake-integration-build-dir "some-build-folder")
+          (ci--build-folder-cache nil)
           (project-root-folder (ci--get-project-root-folder))
           (build-folder (ci-get-build-folder))
           (conanfile-relative-path
@@ -986,7 +996,8 @@ test code from inside a 'test project'."
 (ert-deftest test-ci--get-all-targets ()
   (test-fixture-setup ;;
    "./test-project-with-codemodel-reply"
-   (let* ((codemodel-file (ci--get-codemodel-reply-json-filename))
+   (let* ((ci-build-dir "build")
+          (codemodel-file (ci--get-codemodel-reply-json-filename))
           (all-targets (ci--get-all-targets codemodel-file))
           (target-1 (elt all-targets 0))
           (target-2 (elt all-targets 1))
@@ -1008,7 +1019,8 @@ test code from inside a 'test project'."
 (ert-deftest test-ci--get-target-type-from-name ()
   (test-fixture-setup ;;
    "./test-project-with-codemodel-reply"
-   (let* ((codemodel-file (ci--get-codemodel-reply-json-filename))
+   (let* ((ci-build-dir "build")
+          (codemodel-file (ci--get-codemodel-reply-json-filename))
           (all-targets (ci--get-all-targets codemodel-file))
           (target-type-main (ci--get-target-type-from-name "main" all-targets))
           (target-type-somelib
@@ -1053,7 +1065,8 @@ test code from inside a 'test project'."
 (ert-deftest test-ci--get-prepared-targets-from-configuration ()
   (test-fixture-setup ;;
    "./test-project-with-codemodel-reply"
-   (let* ((codemodel-file (ci--get-codemodel-reply-json-filename))
+   (let* ((ci-build-dir "build")
+          (codemodel-file (ci--get-codemodel-reply-json-filename))
           (all-config
            (alist-get 'configurations (json-read-file codemodel-file)))
           (first-config (elt all-config 0))
@@ -1081,11 +1094,11 @@ test code from inside a 'test project'."
       (equal (car (elt targets-with-config-name 3)) "main/the-config-name")))))
 
 
-(ert-deftest test-ci--add-type-field-to-target ()
-
+(ert-deftest test-ci--add-extra-data-to-target ()
   (test-fixture-setup ;;
    "./test-project-with-codemodel-reply"
-   (let* ((codemodel-file (ci--get-codemodel-reply-json-filename))
+   (let* ((ci-build-dir "build")
+          (codemodel-file (ci--get-codemodel-reply-json-filename))
           (all-targets
            (ci--get-targets-from-codemodel-json-file codemodel-file))
           (somelib-target (elt all-targets 2))
@@ -1095,10 +1108,10 @@ test code from inside a 'test project'."
      (should (null (alist-get 'type somelib-target)))
      (should (null (alist-get 'type main-target)))
 
-     (ci--add-type-field-to-target somelib-target)
-     (ci--add-type-field-to-target main-target)
+     (ci--add-extra-data-to-target somelib-target)
+     (ci--add-extra-data-to-target main-target)
 
-     ;; The input to ci--add-type-field-to-target is modified
+     ;; The input to ci--add-extra-data-to-target is modified
      (should-not (null (alist-get 'type somelib-target)))
      (should-not (null (alist-get 'type main-target)))
 
@@ -1109,10 +1122,11 @@ test code from inside a 'test project'."
 (ert-deftest test-ci--get-annotated-targets-from-codemodel-json-file ()
   ;; ci--get-annotated-targets-from-codemodel-json-file is the same as
   ;; ci--get-targets-from-codemodel-json-file, but it calls
-  ;; ci--add-type-field-to-target to add a type field in each target
+  ;; ci--add-extra-data-to-target to add a type field in each target
   (test-fixture-setup
    "./test-project-with-codemodel-reply"
-   (let* ((codemodel-file (ci--get-codemodel-reply-json-filename))
+   (let* ((ci-build-dir "build")
+          (codemodel-file (ci--get-codemodel-reply-json-filename))
           (all-targets-without-type
            (ci--get-targets-from-codemodel-json-file codemodel-file))
           (all-targets-with-type
@@ -1134,11 +1148,11 @@ test code from inside a 'test project'."
      (should-not
       (equal (elt all-targets-without-type 3) (elt all-targets-with-type 3)))
 
-     ;; If we call ci--add-type-field-to-target to add the type field to the
+     ;; If we call ci--add-extra-data-to-target to add the type field to the
      ;; elements in all-targets-without-type, then they will have a type field
      ;; and they should now be equal to what we have in all-targets-with-type
-     (ci--add-type-field-to-target (elt all-targets-without-type 2))
-     (ci--add-type-field-to-target (elt all-targets-without-type 3))
+     (ci--add-extra-data-to-target (elt all-targets-without-type 2))
+     (ci--add-extra-data-to-target (elt all-targets-without-type 3))
      (should
       (equal (elt all-targets-without-type 2) (elt all-targets-with-type 2)))
      (should
@@ -1173,7 +1187,6 @@ test code from inside a 'test project'."
     (should-not (ci--target-is-not-library-p object-library-target-info))
     (should (ci--target-is-not-library-p utility-target-info))
     (should (ci--target-is-not-library-p unknown-target-info))))
-
 
 
 ;; get-target-executable-filename

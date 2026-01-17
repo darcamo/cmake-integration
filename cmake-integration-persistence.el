@@ -44,7 +44,7 @@
     ci-cache-variables
 
     ;; Target
-    ci--target-type-cache
+    ci--target-extra-data-cache
     ci-current-target
     ci-run-arguments
 
