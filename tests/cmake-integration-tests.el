@@ -1094,6 +1094,66 @@ test code from inside a 'test project'."
       (equal (car (elt targets-with-config-name 3)) "main/the-config-name")))))
 
 
+
+(ert-deftest test-ci--get-target-extra-data-from-json ()
+  (test-fixture-setup ;;
+   "./test-project-with-codemodel-reply"
+   (let* ((ci-build-dir "build")
+          (codemodel-file (ci--get-codemodel-reply-json-filename))
+          (all-targets
+           (ci--get-targets-from-codemodel-json-file codemodel-file))
+          (somelib-target (elt all-targets 2))
+          (main-target (elt all-targets 3)))
+
+     ;; Test getting a non-existing extra data field
+     (let ((somelib-non-existing-data
+            (ci--get-target-extra-data-from-json somelib-target 'non-existing-data)))
+       (should (equal somelib-non-existing-data nil)))
+
+     ;; Test getting the target type
+     (let ((somelib-type (ci--get-target-extra-data-from-json somelib-target 'type))
+           (main-type (ci--get-target-extra-data-from-json main-target 'type)))
+       (should (equal somelib-type "STATIC_LIBRARY"))
+       (should (equal main-type "EXECUTABLE"))))))
+
+
+(ert-deftest test-ci--get-target-type-from-json ()
+  (test-fixture-setup ;;
+   "./test-project-with-codemodel-reply"
+   (let* ((ci-build-dir "build")
+          (codemodel-file (ci--get-codemodel-reply-json-filename))
+          (all-targets
+           (ci--get-targets-from-codemodel-json-file codemodel-file))
+          (somelib-target (elt all-targets 2))
+          (main-target (elt all-targets 3))
+
+          (somelib-type (ci--get-target-type-from-json somelib-target))
+          (main-type (ci--get-target-type-from-json main-target)))
+     (should (equal somelib-type "STATIC_LIBRARY"))
+     (should (equal main-type "EXECUTABLE")))))
+
+
+(ert-deftest test-ci--get-target-folder-from-json ()
+  (test-fixture-setup ;;
+   "./test-project-with-codemodel-reply"
+   (let* ((ci-build-dir "build")
+          (codemodel-file (ci--get-codemodel-reply-json-filename))
+          (all-targets
+           (ci--get-targets-from-codemodel-json-file codemodel-file))
+          (somelib-target (elt all-targets 2))
+          (main-target (elt all-targets 3))
+
+          (somelib-folder (ci--get-target-folder-from-json somelib-target))
+          (main-folder (ci--get-target-folder-from-json main-target)))
+     ;; The folder property was not set for the some-lib target in the test
+     ;; project -> nil is returned
+     (should (equal somelib-folder nil))
+     ;; The folder property was set for the main target in the test project to
+     ;; be "MainFolder"
+     (should (equal main-folder "MainFolder")))))
+
+
+
 (ert-deftest test-ci--add-extra-data-to-target ()
   (test-fixture-setup ;;
    "./test-project-with-codemodel-reply"

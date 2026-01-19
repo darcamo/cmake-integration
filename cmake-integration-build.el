@@ -535,6 +535,54 @@ match what will be used in `ci--get-target-extra-data-from-cache'."
     (puthash key-name data-value ci--target-extra-data-cache)))
 
 
+;; TODO: It might be better to change this to only get data from the json file
+;; and rename it to ci--get-target-extra-data-from-json-file.
+;; We can leave the logic to get from the cache, if it exists, and from the json file, if cache does not exist, in the ci--add-extra-data-to-target function
+;;
+;; TODO: Allow passing a list of data-symbols to get multiple data at once and
+;; avoid parsing the json file multiple times.
+;;
+;; TODO Remove checking the ci-annotate-targets variable. This should be done in
+;; the ci--add-extra-data-to-target function
+(defun ci--get-target-extra-data-from-json (target data-symbol)
+  "Get the DATA-SYMBOL information for TARGET from the cache or json file.
+
+DATA-SYMBOL is the symbol that we would use to get the data from the
+json file.
+
+If the information is not in the cache, then read the specific json file
+for the target, but only if `cmake-integration-annotate-targets' is
+non-nil."
+  (if-let* ((target-name
+             (car (split-string (car target) ci--multi-config-separator)))
+            (json-file (alist-get 'jsonFile target))
+            (json-full-filename
+             (file-name-concat (ci--get-reply-folder) json-file))
+            (target-json-data (json-read-file json-full-filename))
+            (data-from-json (alist-get data-symbol target-json-data)))
+
+    ;; Update the cache with the data read from json file
+    (ci--put-target-extra-data-in-cache target-name data-symbol data-from-json)
+
+    ;; Return the data we got from the json file
+    data-from-json))
+
+
+(defun ci--get-target-type-from-json (target)
+  "Get the type information for TARGET from the cache or json file."
+  (ci--get-target-extra-data-from-json target 'type))
+
+
+(defun ci--get-target-folder-from-json (target)
+  "Get the folder information for TARGET from the cache or json file.
+
+The folder is the folder property that can be added to a target for IDEs
+to group targets."
+  (alist-get 'name (ci--get-target-extra-data-from-json target 'folder)))
+
+
+;; TODO Refactor to use ci--get-target-extra-data and to also get the target
+;; folder property
 (defun ci--add-extra-data-to-target (target)
   "Read the target specific json file and add extra information to TARGET.
 
