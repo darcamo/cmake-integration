@@ -52,6 +52,16 @@
     (setq ci-generator chosen-generator)))
 
 
+(defun ci--cmake-expand-env-vars (s)
+  "Expand $env{VAR} in string S."
+  (let ((expanded
+         (replace-regexp-in-string
+          "\\$env{\\([^}]+\\)}"
+          (lambda (match)
+            (or (getenv (match-string 1 match)) ""))
+          s)))
+      expanded))
+
 (defun ci--perform-binaryDir-replacements (binaryDir project-root-folder preset-name)
   "Replace `${sourceDir}' and `${presetName}' in a BINARYDIR string.
 
@@ -61,8 +71,7 @@ NOTE: `project-root-folder' must end with a slash."
   (let* ((source-dir-replacement (cons "${sourceDir}/" project-root-folder))
          (preset-name-replacement (cons "${presetName}" preset-name))
          (replacements (list source-dir-replacement preset-name-replacement)))
-    (s-replace-all replacements binaryDir)))
-
+    (ci--cmake-expand-env-vars (s-replace-all replacements binaryDir))))
 
 (defun ci--get-binaryDir (preset)
   "Get the `binaryDir' field of a preset PRESET.
