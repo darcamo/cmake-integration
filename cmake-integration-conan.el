@@ -601,6 +601,7 @@ taken from the `cmake-integration-conan-profile' variable."
     (browse-url url)))
 
 
+;;;###autoload (autoload 'cmake-integration-search-in-conan-center "cmake-integration")
 (defun ci-search-in-conan-center ()
   "Search for a package in the Conan Center."
   (interactive)
