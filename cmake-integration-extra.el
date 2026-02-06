@@ -26,6 +26,7 @@
 ;;; Commentary:
 
 ;;; Code:
+(require 'cmake-integration-core)
 (require 'cmake-integration-launch)
 
 ;;;###autoload (autoload 'cmake-integration-open-shell-in-build-folder "cmake-integration")

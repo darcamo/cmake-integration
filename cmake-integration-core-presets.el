@@ -26,7 +26,7 @@
 ;;; Commentary:
 
 ;;; Code:
-
+(require 'dash)
 
 (defun ci--get-system-presets-file ()
   "Get the path of the system presets file."

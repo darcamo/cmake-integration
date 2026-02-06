@@ -26,7 +26,7 @@
 ;;; Commentary:
 
 ;;; Code:
-
+(require 'cmake-integration-build)
 (require 'cmake-integration-launch-functions)
 
 
