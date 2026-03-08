@@ -366,8 +366,7 @@ test code from inside a 'test project'."
 (ert-deftest test-ci--get-codemodel-reply-json-filename ()
   (test-fixture-setup ;;
    "./test-project-with-codemodel-reply"
-   (let* ((ci-build-dir "build")
-          (codemodel-filename (ci--get-codemodel-reply-json-filename))
+   (let* ((codemodel-filename (ci--get-codemodel-reply-json-filename))
           (reply-folder (ci--get-reply-folder))
           (expected-codemodel-filename
            (format "%s%s" reply-folder "codemodel-v2-some-hash.json")))
@@ -552,8 +551,7 @@ test code from inside a 'test project'."
 (ert-deftest test-ci--get-targets-from-codemodel-json-file ()
   (test-fixture-setup ;;
    "./test-project-with-codemodel-reply"
-   (let* ((ci-build-dir "build")
-          (targets (ci--get-targets-from-codemodel-json-file))
+   (let* ((targets (ci--get-targets-from-codemodel-json-file))
           (expected-targets
            '(("all")
              ("clean")
@@ -997,8 +995,7 @@ test code from inside a 'test project'."
 (ert-deftest test-ci--get-all-targets ()
   (test-fixture-setup ;;
    "./test-project-with-codemodel-reply"
-   (let* ((ci-build-dir "build")
-          (codemodel-file (ci--get-codemodel-reply-json-filename))
+   (let* ((codemodel-file (ci--get-codemodel-reply-json-filename))
           (all-targets (ci--get-all-targets codemodel-file))
           (target-1 (elt all-targets 0))
           (target-2 (elt all-targets 1))
@@ -1020,8 +1017,7 @@ test code from inside a 'test project'."
 (ert-deftest test-ci--get-target-type-from-name ()
   (test-fixture-setup ;;
    "./test-project-with-codemodel-reply"
-   (let* ((ci-build-dir "build")
-          (codemodel-file (ci--get-codemodel-reply-json-filename))
+   (let* ((codemodel-file (ci--get-codemodel-reply-json-filename))
           (all-targets (ci--get-all-targets codemodel-file))
           (target-type-main (ci--get-target-type-from-name "main" all-targets))
           (target-type-somelib
@@ -1066,8 +1062,7 @@ test code from inside a 'test project'."
 (ert-deftest test-ci--get-prepared-targets-from-configuration ()
   (test-fixture-setup ;;
    "./test-project-with-codemodel-reply"
-   (let* ((ci-build-dir "build")
-          (codemodel-file (ci--get-codemodel-reply-json-filename))
+   (let* ((codemodel-file (ci--get-codemodel-reply-json-filename))
           (all-config
            (alist-get 'configurations (json-read-file codemodel-file)))
           (first-config (elt all-config 0))
@@ -1098,8 +1093,7 @@ test code from inside a 'test project'."
 (ert-deftest test-ci--add-extra-data-to-target ()
   (test-fixture-setup ;;
    "./test-project-with-codemodel-reply"
-   (let* ((ci-build-dir "build")
-          (codemodel-file (ci--get-codemodel-reply-json-filename))
+   (let* ((codemodel-file (ci--get-codemodel-reply-json-filename))
           (all-targets
            (ci--get-targets-from-codemodel-json-file codemodel-file))
           (somelib-target (elt all-targets 2))
@@ -1126,8 +1120,7 @@ test code from inside a 'test project'."
   ;; ci--add-extra-data-to-target to add a type field in each target
   (test-fixture-setup
    "./test-project-with-codemodel-reply"
-   (let* ((ci-build-dir "build")
-          (codemodel-file (ci--get-codemodel-reply-json-filename))
+   (let* ((codemodel-file (ci--get-codemodel-reply-json-filename))
           (all-targets-without-type
            (ci--get-targets-from-codemodel-json-file codemodel-file))
           (all-targets-with-type

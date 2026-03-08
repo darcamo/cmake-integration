@@ -496,7 +496,7 @@ Each entry maps `target-name` to `target-info`."
 
 
 (defun ci-refresh-target-cache ()
-  "Clear the target type cache."
+  "Clear the target cache."
   (interactive)
   (clrhash ci--target-extra-data-cache))
 
