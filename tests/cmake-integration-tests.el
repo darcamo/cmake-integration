@@ -51,7 +51,8 @@ test code from inside a 'test project'."
   ;; and compute the default-directory from the folder containing it and from
   ;; subfolder. If Emacs is not running in batch mode, then load-file-name is
   ;; nil and we compute default-directory as just subfolder.
-  `(let* ((run-tests-script-folder
+  `(let* ((ci-build-dir "build") ;; Make sure it's set to the default value
+          (run-tests-script-folder
            (when load-file-name
              (file-name-directory load-file-name)))
           (default-directory
