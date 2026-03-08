@@ -197,9 +197,10 @@ will be obtained from PRESET and this returns the string
   :transient 'transient--do-call
   :description #'ci--describe-configure-preset-command-line
   (interactive)
-  (if ci-configure-preset
-      (setq ci-configure-preset nil)
-    (ci-select-configure-preset)))
+;;  (if ci-configure-preset
+;;      (setq ci-configure-preset nil)
+  (ci-select-configure-preset))
+;;)
 
 
 (transient-define-suffix ci--set-build-preset-suffix ()
@@ -295,9 +296,10 @@ will be obtained from PRESET and this returns the string
   :transient 'transient--do-call
   :description #'ci--describe-ctest-label-exclude-regexp
   (interactive)
-  (if ci--ctest-label-exclude-regexp
-      (setq ci--ctest-label-exclude-regexp nil)
-    (ci-select-ctest-labels-to-exclude)))
+;  (if ci--ctest-label-exclude-regexp
+;      (setq ci--ctest-label-exclude-regexp nil)
+  (ci-select-ctest-labels-to-exclude))
+;)
 
 
 (transient-define-prefix ci--conan-list-prefix ()
