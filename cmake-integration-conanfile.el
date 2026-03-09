@@ -28,6 +28,7 @@
 ;;; Code:
 
 (require 'cmake-integration-core)
+(require 'cmake-integration-logging)
 
 
 (defun ci--find-conanfile ()
@@ -56,7 +57,7 @@
         (if (> n 0)
             (insert "\n" package "\n")
           (insert package "\n"))
-      (message (format "There is no '[requires]' section in '%s'" filepath)))))
+      (ci-log-info (format "There is no '[requires]' section in '%s'" filepath)))))
 
 
 (defun ci-add-requirement-to-project-conanfile-txt (package)
@@ -64,7 +65,7 @@
   (let ((conanfile (ci--find-conanfile)))
     (if conanfile
         (ci--add-requirement-to-conanfile-txt conanfile package)
-      (message "No conanfile.txt found in the project root.")))
+      (ci-log-info "No conanfile.txt found in the project root.")))
   )
 
 

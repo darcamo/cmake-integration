@@ -32,6 +32,7 @@
 (require 'cmake-integration-ctest)
 (require 'cmake-integration-extra)
 (require 'cmake-integration-configure)
+(require 'cmake-integration-logging)
 
 (declare-function ci--set-runtime-arguments "cmake-integration-launch.el")
 
@@ -378,7 +379,7 @@ will be obtained from PRESET and this returns the string
    ("p" ci--set-configure-preset-suffix)
    ;; ("b" "Select the build folder" (lambda ()
    ;;             (interactive)
-   ;;             (message "Build folder %s selected"
+   ;;             (ci-log-info "Build folder %s selected"
    ;;                      (read-directory-name "Select build folder")))
    ;;  :transient t)
    ("v" ci--cache-variables-transient :description ci--describe-cache-variables)
@@ -399,7 +400,7 @@ will be obtained from PRESET and this returns the string
    ("p" ci--set-build-preset-suffix)
    ("t" ci--set-build-target-suffix)
    ("j" "Number of concurrent processes to use" "--parallel=" :transient t)
-   ;; ("c" "Select the configuration (only for ninja multi-config)" (lambda () (interactive) (message "Implement-me")) :transient nil)
+   ;; ("c" "Select the configuration (only for ninja multi-config)" (lambda () (interactive) (ci-log-info "Implement-me")) :transient nil)
    ("C" "Clean first" "--clean-first" :transient t)
    ("b" "Build" (lambda () (interactive)
                   (let ((extra-args (transient-args (oref transient-current-prefix command))))
@@ -415,12 +416,12 @@ will be obtained from PRESET and this returns the string
    ("c" "Clear all labels" (lambda () (interactive)
                              (setq ci--ctest-label-include-regexp nil
                                    ci--ctest-label-exclude-regexp nil)
-                             (message "Cleared all ctest labels."))
+                             (ci-log-info "Cleared all ctest labels."))
     :transient t)
    ("i" ci--set-ctest-label-include-regexp-suffix)
    ("e" ci--set-ctest-label-exclude-regexp-suffix)
    ("p" "Print test labels" (lambda () (interactive)
-                              (message "Available test labels:\n%s"
+                              (ci-log-info "Available test labels:\n%s"
                                        (s-join ", " (ci--get-all-ctest-labels))))
     :transient t)
    ("q" "Back" transient-quit-one)
@@ -452,7 +453,7 @@ will be obtained from PRESET and this returns the string
 (transient-define-prefix ci--install-transient ()
   "Perform actions related to installing wih cmake."
   ["Install"
-   ;; ("c" "Select the configuration (only for ninja multi-config)" (lambda () (interactive) (message "Implement-me")) :transient nil)
+   ;; ("c" "Select the configuration (only for ninja multi-config)" (lambda () (interactive) (ci-log-info "Implement-me")) :transient nil)
    ("p" ci--set-install-prefix-suffix)
    ("s" "Strip before installing" "--strip")
    ("C" "Component" "--component=")
@@ -497,7 +498,7 @@ will be obtained from PRESET and this returns the string
   "Perform actions related to running a workflow."
   ["Workflow"
    ;; choose preset -> Implement-me
-   ("w" "Run workflow" (lambda () (interactive) (message "Implement-me")) :transient nil)
+   ("w" "Run workflow" (lambda () (interactive) (ci-log-info "Implement-me")) :transient nil)
    ("q" "Quit" transient-quit-one)]
   )
 

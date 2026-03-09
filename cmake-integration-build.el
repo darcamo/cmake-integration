@@ -29,6 +29,7 @@
 (require 'cmake-integration-variables)
 (require 'cmake-integration-core)
 (require 'cmake-integration-configure)
+(require 'cmake-integration-logging)
 
 
 (defcustom ci-target-group-function 'cmake-integration--target-completion-group-by-type-function
@@ -124,7 +125,7 @@ complain in that case."
   (let ((folder (ci--get-build-folder-relative-to-project)))
     (if (yes-or-no-p (format "Delete folder '%s'?" folder))
         (ci--delete-build-folder-no-confirm)
-      (message "Build folder was not deleted"))))
+      (ci-log-info "Build folder was not deleted"))))
 
 
 (defun ci--check-if-build-folder-exists-and-throws-if-not ()
@@ -558,7 +559,7 @@ match what will be used in `ci--get-target-extra-data-from-cache'."
   ;; If for some reason the extra data cache is not created yet, create it
   ;; now as an empty hash table
   (unless (hash-table-p ci--target-extra-data-cache)
-    (message "cmake-integration: Creating target extra data cache")
+    (ci-log-info "Creating target extra data cache")
     (ci--create-empty-target-extra-data-cache))
 
   (let* ((key-name
@@ -590,7 +591,7 @@ is added to TARGET."
 
         ;; If we don't have cache yet, fill it with the data from the json file
         (unless has-extra-data?
-          (message "cmake-integration: No cache for target %s, reading json file to get extra data" target-name)
+          (ci-log-info "No cache for target %s, reading json file to get extra data" target-name)
           (when ci-annotate-targets
             ;; Add data to the cache
             (let* ((json-file (alist-get 'jsonFile target))

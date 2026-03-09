@@ -26,6 +26,7 @@
 ;;; Commentary:
 
 ;;; Code:
+(require 'cmake-integration-logging)
 
 
 (defun ci-get-last-test-preset-name ()
@@ -150,7 +151,7 @@ This function is added to `cmake-integration-after-set-configure-preset-hook'."
   (if current-prefix-arg
       (progn
         (setq ci--ctest-label-include-regexp nil)
-        (message "Cleared ctest label include regexp."))
+        (ci-log-info "Cleared ctest label include regexp."))
     (setq ci--ctest-label-include-regexp (ci--select-ctest-labels))))
 
 
@@ -160,7 +161,7 @@ This function is added to `cmake-integration-after-set-configure-preset-hook'."
   (if current-prefix-arg
       (progn
         (setq ci--ctest-label-exclude-regexp nil)
-        (message "Cleared ctest label exclude regexp."))
+        (ci-log-info "Cleared ctest label exclude regexp."))
     (setq ci--ctest-label-exclude-regexp (ci--select-ctest-labels))))
 
 
