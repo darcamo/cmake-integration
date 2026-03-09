@@ -259,13 +259,12 @@ test code from inside a 'test project'."
    "./test-project-with-presets"
    (let ((preset (ci--get-configure-preset-by-name "Dummy")))
      (should-not (ci--get-binaryDir-with-replacements preset)))
-
    (let*
        ((preset
          (ci--get-configure-preset-by-name "default"))
         (binaryDir (ci--get-binaryDir-with-replacements preset))
-        (expected-binaryDir
-         "~/.emacs.d/elpaca/repos/cmake-integration/tests/test-project-with-presets/build/default/"))
+        (expected-binaryDir (file-name-concat default-directory "build/default/")
+                            ))
      (should (filepath-equal-p binaryDir expected-binaryDir)))
 
    (let*
@@ -273,7 +272,7 @@ test code from inside a 'test project'."
          (ci--get-configure-preset-by-name "ninjamulticonfig"))
         (binaryDir (ci--get-binaryDir-with-replacements preset))
         (expected-binaryDir
-         "~/.emacs.d/elpaca/repos/cmake-integration/tests/test-project-with-presets/build/ninjamulticonfig/"))
+         (file-name-concat default-directory  "build/ninjamulticonfig/")))
      (should (filepath-equal-p binaryDir expected-binaryDir)))
 
    (let*
@@ -281,7 +280,7 @@ test code from inside a 'test project'."
          (ci--get-configure-preset-by-name "ninjamulticonfig2"))
         (binaryDir (ci--get-binaryDir-with-replacements preset))
         (expected-binaryDir
-         "~/.emacs.d/elpaca/repos/cmake-integration/tests/test-project-with-presets/build/ninjamulticonfig2/"))
+         (file-name-concat default-directory "build/ninjamulticonfig2/")))
      (should (filepath-equal-p binaryDir expected-binaryDir)))))
 
 
