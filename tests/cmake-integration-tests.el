@@ -52,6 +52,7 @@ test code from inside a 'test project'."
   ;; subfolder. If Emacs is not running in batch mode, then load-file-name is
   ;; nil and we compute default-directory as just subfolder.
   `(let* ((ci-build-dir "build") ;; Make sure it's set to the default value
+          (ci--target-extra-data-cache (make-hash-table :test 'equal)) ;; Clear the cache to avoid interference between tests
           (run-tests-script-folder
            (when load-file-name
              (file-name-directory load-file-name)))
@@ -1101,6 +1102,8 @@ test code from inside a 'test project'."
      ;; ci--get-targets-from-codemodel-json-file
      (should (null (alist-get 'type somelib-target)))
      (should (null (alist-get 'type main-target)))
+     (should (null (alist-get 'folder somelib-target)))
+     (should (null (alist-get 'folder main-target)))
 
      (ci--add-extra-data-to-target somelib-target)
      (ci--add-extra-data-to-target main-target)
@@ -1108,9 +1111,13 @@ test code from inside a 'test project'."
      ;; The input to ci--add-extra-data-to-target is modified
      (should-not (null (alist-get 'type somelib-target)))
      (should-not (null (alist-get 'type main-target)))
+     (should-not (null (alist-get 'folder somelib-target)))
+     (should-not (null (alist-get 'folder main-target)))
 
      (should (equal (alist-get 'type somelib-target) "STATIC_LIBRARY"))
-     (should (equal (alist-get 'type main-target) "EXECUTABLE")))))
+     (should (equal (alist-get 'type main-target) "EXECUTABLE"))
+     (should (equal (alist-get 'folder somelib-target) "<NO FOLDER>"))
+     (should (equal (alist-get 'folder main-target) "Apps")))))
 
 
 (ert-deftest test-ci--get-annotated-targets-from-codemodel-json-file ()
