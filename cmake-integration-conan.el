@@ -29,6 +29,7 @@
 (require 'tablist)
 (require 'cmake-integration-build)
 (require 'cmake-integration-conanfile)
+(require 'cmake-integration-logging)
 
 (defvar ci--library-location "" "Library location that will be locally set.")
 (defvar ci-addition-marker-char ?i "Character used to mark items for addition.")
@@ -114,15 +115,15 @@ This is a function for handling operations on the entries. The operation
 is indicated by OPERATION.
 
 See the variable `tablist-operations-function' for more."
-  (message (format "Operation is %s" operation))
+  (ci-log-info (format "Operation is %s" operation))
   (pcase operation
     ('supported-operations '(refresh delete find-entry))
-    ('refresh (message "Refreshing the tablist... Not implemented yet"))
+    ('refresh (ci-log-info "Refreshing the tablist... Not implemented yet"))
     ('delete (ci--conan-delete-remotes args))
     ('find-entry (ci--conan-toggle-enable args))
-    ;; ('addition (message (format "Implement-me: Addition operation: %s" args)))
-    ;; ('remove (message (format "Implement-me: Remove operation: %s" args)))
-    (_ (message "Operation %s not implemented." operation)))
+    ;; ('addition (ci-log-info (format "Implement-me: Addition operation: %s" args)))
+    ;; ('remove (ci-log-info (format "Implement-me: Remove operation: %s" args)))
+    (_ (ci-log-info "Operation %s not implemented." operation)))
   )
 
 
@@ -434,8 +435,8 @@ library specifications."
     (if marked-items
         (progn
           (kill-new (mapconcat 'identity marked-items "\n"))
-          (message "Marked items exported to kill ring."))
-      (message "No marked items to export."))))
+          (ci-log-info "Marked items exported to kill ring."))
+      (ci-log-info "No marked items to export."))))
 
 
 (defun ci--conan-flag-forward-addition ()
@@ -490,9 +491,9 @@ project root."
           (progn
             (dolist (item marked-items)
               (ci-add-requirement-to-project-conanfile-txt item))
-            (message "Marked items added to conanfile.txt."))
-        (message "No marked items to add."))
-    (message "No conanfile.txt found in the project root at %s." (cmake-integration--get-project-root-folder))))
+            (ci-log-info "Marked items added to conanfile.txt."))
+        (ci-log-info "No marked items to add."))
+    (ci-log-info "No conanfile.txt found in the project root at %s." (cmake-integration--get-project-root-folder))))
 
 
 (defun ci--conan-tablist-operations-function (operation &optional args)
@@ -502,14 +503,14 @@ This is a function for handling operations on the entries. The operation
 is indicated by OPERATION.
 
 See the variable `tablist-operations-function' for more."
-  (message (format "Operation is %s" operation))
+  (ci-log-info (format "Operation is %s" operation))
   (pcase operation
     ('supported-operations '(refresh delete find-entry addition))
-    ('refresh (message "Refreshing the tablist... Not implemented yet"))
+    ('refresh (ci-log-info "Refreshing the tablist... Not implemented yet"))
     ('delete (ci--conan-delete-itens args))
     ('find-entry (ci--conan-find-item args))
     ('addition (ci--conan-add-marked-items-to-conanfile-txt args))
-    (_ (message "Operation %s not implemented." operation)))
+    (_ (ci-log-info "Operation %s not implemented." operation)))
   )
 
 

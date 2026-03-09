@@ -28,6 +28,7 @@
 ;;; Code:
 
 (require 'cmake-integration-launch-functions)
+(require 'cmake-integration-logging)
 
 
 (defun ci-get-target-executable-filename (&optional target)
@@ -103,7 +104,7 @@ If called interactively, the result is copied to the `kill-ring`."
          (full-path (file-name-concat (ci-get-build-folder) executable-filename)))
     (when (called-interactively-p 'any)
       (kill-new full-path)
-      (message "Copied to kill-ring: %s" full-path))
+      (ci-log-info "Copied to kill-ring: %s" full-path))
     full-path))
 
 

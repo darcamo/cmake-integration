@@ -27,6 +27,7 @@
 
 ;;; Code:
 (require 'cmake-integration-launch)
+(require 'cmake-integration-logging)
 
 ;;;###autoload (autoload 'cmake-integration-open-shell-in-build-folder "cmake-integration")
 (defun ci-open-shell-in-build-folder ()
@@ -57,7 +58,7 @@ to the target directory."
             (target-full-path (ci-get-target-executable-full-path executable-relative-path))
             (target-folder (file-name-directory target-full-path)))
        (if (not (file-exists-p target-folder))
-           (message "The target folder does not exist.")
+           (ci-log-info "The target folder does not exist.")
 
          ;; @body has access to `target-folder'
          ,@body))))
@@ -76,7 +77,7 @@ If TARGET-NAME is not provided, then the value in
    (dired target-folder)
 
    (if (not (file-exists-p target-full-path))
-       (message "Note: Opened the target folder, but the target executable does not exist yet.")
+       (ci-log-info "Note: Opened the target folder, but the target executable does not exist yet.")
      ;; Move cursor to the line containing the target executable in the dired buffer
      (goto-char (point-min))
      (search-forward (file-name-nondirectory target-full-path) nil t))))

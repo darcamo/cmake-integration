@@ -33,6 +33,7 @@
 (require 'cmake-integration-variables nil t)
 (require 'cmake-integration-core nil t)
 (require 'cmake-integration-project-mode nil t)
+(require 'cmake-integration-logging)
 
 
 (defvar ci-last-save-or-restore-state nil
@@ -225,10 +226,10 @@ function can be used as an advice."
                   (state (ci--build-current-state)))
         (ci--serialize-state state state-file)
         (when (called-interactively-p 'interactive)
-          (message "cmake-integration state saved to %s" state-file))
+          (ci-log-info "State saved to %s" state-file))
         (setq ci-last-save-or-restore-state state-file))
 
-    (message
+    (ci-log-info
      "Current project in '%s' is not a CMake project: cmake-integration state was not saved"
      (ci--get-project-root-folder))))
 
@@ -261,27 +262,27 @@ This is the inverse of the `ci--build-current-state' function."
   (if-let* ((state-file (ci--get-persist-file)))
     (cond
      ((not (ci-is-cmake-project-p))
-      (message "Current project in '%s' is not a CMake project"
+      (ci-log-info "Current project in '%s' is not a CMake project"
                (ci--get-project-root-folder)))
      ((not (file-readable-p state-file))
       (when (called-interactively-p 'interactive)
-        (message "No cmake-integration state file found at %s" state-file)))
+        (ci-log-info "No cmake-integration state file found at %s" state-file)))
      (t
       (condition-case err
           (let ((state (ci--deserialize-state state-file)))
             (ci--restore-variables-from-state state))
 
         (error
-         (message
+         (ci-log-info
           "An error occurred while restoring cmake-integration state from %s: %s"
           state-file (error-message-string err))))
       (when (called-interactively-p 'interactive)
-        (message "cmake-integration state restored from %s" state-file))
+        (ci-log-info "State restored from %s" state-file))
 
       (setq ci-last-save-or-restore-state state-file)))
 
     (when (called-interactively-p 'interactive)
-      (message "No state file location resolved."))))
+      (ci-log-info "No state file location resolved."))))
 
 
 ;; Note: This function can be called interactively, but it is also used as an
@@ -308,7 +309,7 @@ in `ci--state-variables' are cleared to avoid using stale data."
       (dolist (var ci--state-variables)
         (when (boundp var)
           (set var nil)))
-      (message "cmake-integration state was cleared")
+      (ci-log-info "State was cleared")
       (setq ci-last-save-or-restore-state nil))))
 
 
