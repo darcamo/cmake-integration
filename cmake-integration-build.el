@@ -40,6 +40,7 @@ See `:group-function' in the documentation of the
   '(choice
     (const :tag "Don't group targets" nil)
     (const :tag "Group by type" ci--target-completion-group-by-type-function)
+    (const :tag "Group by folder" ci--target-completion-group-by-folder-function)
     (function :tag "Custom grouping function"))
   :group 'cmake-integration-completions)
 
@@ -151,8 +152,17 @@ EXTRA-ARGS parameter."
 ALL-TARGETS is an alist like the one returned by
 `cmake-integration--get-annotated-targets-from-codemodel-json-file'."
   (if-let* ((target (alist-get target-name all-targets nil nil 'equal)))
-    (alist-get 'type target)
+      (alist-get 'type target)
     "unknown"))
+
+
+(defun ci--get-target-folder-from-name (target-name all-targets)
+  "Get the folder of the target with name TARGET-NAME from ALL-TARGETS.
+ALL-TARGETS is an alist like the one returned by
+`cmake-integration--get-annotated-targets-from-codemodel-json-file'."
+  (if-let* ((target (alist-get target-name all-targets nil nil 'equal)))
+      (alist-get 'folder target)
+    "<NO FOLDER>"))
 
 
 (defun ci--get-propertized-target-type-from-name (target-name all-targets)
@@ -185,8 +195,18 @@ the marginalia package, or in Emacs standard completion buffer."
       (_ (concat spaces (ci--get-propertized-target-type-from-name target-name minibuffer-completion-table))))))
 
 
+(defun ci--target-completion-transformed (completion)
+  "Transform function used during completion for COMPLETION."
+  (if (equal completion ci-current-target)
+      (propertize completion 'face 'bold)
+    completion)
+  )
+
+
 (defun ci--target-completion-group-by-type-function (completion transform)
   "Group function used during completion for COMPLETION and TRANSFORM.
+
+The grouping is done by the type of the target.
 
 If TRANSFORM is nil, the function must return the group title of the
 group to which the COMPLETION candidate belongs. Otherwise the function
@@ -196,9 +216,7 @@ changing the face to `bold' if COMPLETION is the current target.
 See \"Programmed Completion\" in Emacs info for more."
   (if transform
       ;; If transform is non-nil, return the transformed completion candidate
-      (if (equal completion ci-current-target)
-          (propertize completion 'face 'bold)
-        completion)
+      (ci--target-completion-transformed completion)
 
     ;; If transform is nil, return the group title
     (let ((type (ci--get-target-type-from-name completion ci--list-of-targets)))
@@ -209,6 +227,19 @@ See \"Programmed Completion\" in Emacs info for more."
        ((string-match-p "utility" type) (propertize "Utility" 'face 'ci-utility-target-face))
        ((string-match-p "unknown" type) (propertize type 'face 'ci-unknown-target-face))
        (t type)))))
+
+
+(defun ci--target-completion-group-by-folder-function (completion transform)
+  "Group function used during completion for COMPLETION and TRANSFORM.
+
+The grouping is done by the folder of the target."
+  (if transform
+      ;; If transform is non-nil, return the transformed completion candidate
+      (ci--target-completion-transformed completion)
+
+    ;; If transform is nil, return the group title
+    (ci--get-target-folder-from-name completion ci--list-of-targets))
+  )
 
 
 (defun ci--get-target-using-completions (list-of-targets)
@@ -252,8 +283,8 @@ If two prefix arguments are provided, then all targets are included."
      ((and ci-hide-utility-targets-during-completion
            ci-hide-library-targets-during-completion)
       (seq-filter #'(lambda (target) (and
-                                 (ci--target-is-not-utility-p target)
-                                 (ci--target-is-not-library-p target)))
+                                      (ci--target-is-not-utility-p target)
+                                      (ci--target-is-not-library-p target)))
                   list-of-targets))
 
      ;; Do not include only utility targets
@@ -498,7 +529,41 @@ Each entry maps `target-name` to `target-info`."
 (defun ci-refresh-target-cache ()
   "Clear the target cache."
   (interactive)
-  (clrhash ci--target-extra-data-cache))
+  (if (hash-table-p ci--target-extra-data-cache)
+      (clrhash ci--target-extra-data-cache)
+    (ci--create-empty-target-extra-data-cache)))
+
+
+(defun ci--create-empty-target-extra-data-cache ()
+  "Create an empty cache for target extra data."
+  (setq ci--target-extra-data-cache (make-hash-table :test 'equal)))
+
+
+(defun ci--get-target-extra-data-from-cache (target-name data-name)
+  "Get the DATA-NAME information for TARGET-NAME from the cache.
+
+DATA-NAME is a string representing the type of data to get. It should
+match what has been used in `ci--put-target-extra-data-in-cache'."
+  (when (hash-table-p ci--target-extra-data-cache)
+    (let* ((key-name
+            (format "%s/%s/%s" (ci--get-project-name) target-name data-name)))
+      (gethash key-name ci--target-extra-data-cache))))
+
+
+(defun ci--put-target-extra-data-in-cache (target-name data-name data-value)
+  "Put DATA-VALUE for DATA-NAME of TARGET-NAME into the cache.
+
+DATA-NAME is a string representing the type of data to put. It should
+match what will be used in `ci--get-target-extra-data-from-cache'."
+  ;; If for some reason the extra data cache is not created yet, create it
+  ;; now as an empty hash table
+  (unless (hash-table-p ci--target-extra-data-cache)
+    (message "cmake-integration: Creating target extra data cache")
+    (ci--create-empty-target-extra-data-cache))
+
+  (let* ((key-name
+          (format "%s/%s/%s" (ci--get-project-name) target-name data-name)))
+    (puthash key-name data-value ci--target-extra-data-cache)))
 
 
 (defun ci--add-extra-data-to-target (target)
@@ -512,46 +577,47 @@ TARGET is a list containing the target name followed by many cons, with
 each cons having some information about the TARGET. Particularly, TARGET
 has a cons cell with a `jsonFile' car and a `\"someJsonFile.json\"'
 filename. This json file will be read to extract the extra information
-that should be added to TARGET."
+that should be added to TARGET.
+
+The extra information is added to TARGET as new cons cells. For example,
+if the json file contains a `type' field, then a new cons cell with
+`type' as car and the value of the `type' field in the json file as cdr
+is added to TARGET."
   (let ((target-name
          (car (split-string (car target) ci--multi-config-separator))))
     (unless (ci--is-phony-target target-name)
-      (if-let* ((target-type
-                 (when ci--target-extra-data-cache
-                   (gethash target-name ci--target-extra-data-cache))))
-          (setf (alist-get 'type (cdr target)) target-type)
+      (let* ((has-extra-data? (ci--get-target-extra-data-from-cache target-name "has-extra-data?")))
 
-        (if ci-annotate-targets
+        ;; If we don't have cache yet, fill it with the data from the json file
+        (unless has-extra-data?
+          (message "cmake-integration: No cache for target %s, reading json file to get extra data" target-name)
+          (when ci-annotate-targets
+            ;; Add data to the cache
             (let* ((json-file (alist-get 'jsonFile target))
                    (json-full-filename
                     (file-name-concat (ci--get-reply-folder) json-file))
                    (target-json-data (json-read-file json-full-filename)))
+              (ci--put-target-extra-data-in-cache target-name "has-extra-data?" t)
+              (ci--put-target-extra-data-in-cache target-name "type" (alist-get 'type target-json-data))
+              (ci--put-target-extra-data-in-cache target-name "folder" (alist-get 'name (alist-get 'folder target-json-data))))))
 
-              ;; Update the cache with the type of the target
-              (setq target-type (alist-get 'type target-json-data)))
+        (let* ((type-property (or (ci--get-target-extra-data-from-cache target-name "type") "<UNKNOWN>"))
+               (folder-property (or (ci--get-target-extra-data-from-cache target-name "folder") "<NO FOLDER>")))
 
-          (setq target-type "<UNKNOWN>"))
-
-        ;; If for some reason the extra data cache is not created yet, create it
-        ;; now as an empty hash table
-        (unless ci--target-extra-data-cache
-          (setq ci--target-extra-data-cache (make-hash-table :test 'equal)))
-
-        (puthash target-name target-type ci--target-extra-data-cache)
-
-        ;; Set the value from the json data to `type' field
-        (setf (alist-get 'type (cdr target)) target-type)))))
+          ;; Add the data to the target alist
+          (setf (alist-get 'type (cdr target)) type-property)
+          (setf (alist-get 'folder (cdr target)) folder-property))))))
 
 
 (defun ci--get-annotated-targets-from-codemodel-json-file (&optional json-filename predicate)
   "Return the targets found in JSON-FILENAME that respect PREDICATE.
 
 This function is the same as
-`cmake-integration--get-targets-from-codemodel-json-file',
-with the exception that it adds the type of each target to a
-`type' field in the target. The main use for this information is
-during completion of target names, where this type information is
-shown as an annotation."
+`cmake-integration--get-targets-from-codemodel-json-file', with the
+exception that it adds extra information to each target (like a `type'
+field). The main use for this information is during completion of target
+names, where this type information is shown as an annotation and can
+also be used to group targets."
   (let ((list-of-targets (ci--get-targets-from-codemodel-json-file json-filename predicate)))
     ;; Create the progress reporter
     (let* ((total (length list-of-targets))

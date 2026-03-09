@@ -52,6 +52,7 @@ test code from inside a 'test project'."
   ;; subfolder. If Emacs is not running in batch mode, then load-file-name is
   ;; nil and we compute default-directory as just subfolder.
   `(let* ((ci-build-dir "build") ;; Make sure it's set to the default value
+          (ci--target-extra-data-cache (make-hash-table :test 'equal)) ;; Clear the cache to avoid interference between tests
           (run-tests-script-folder
            (when load-file-name
              (file-name-directory load-file-name)))
@@ -259,13 +260,12 @@ test code from inside a 'test project'."
    "./test-project-with-presets"
    (let ((preset (ci--get-configure-preset-by-name "Dummy")))
      (should-not (ci--get-binaryDir-with-replacements preset)))
-
    (let*
        ((preset
          (ci--get-configure-preset-by-name "default"))
         (binaryDir (ci--get-binaryDir-with-replacements preset))
-        (expected-binaryDir
-         "~/.emacs.d/elpaca/repos/cmake-integration/tests/test-project-with-presets/build/default/"))
+        (expected-binaryDir (file-name-concat default-directory "build/default/")
+                            ))
      (should (filepath-equal-p binaryDir expected-binaryDir)))
 
    (let*
@@ -273,7 +273,7 @@ test code from inside a 'test project'."
          (ci--get-configure-preset-by-name "ninjamulticonfig"))
         (binaryDir (ci--get-binaryDir-with-replacements preset))
         (expected-binaryDir
-         "~/.emacs.d/elpaca/repos/cmake-integration/tests/test-project-with-presets/build/ninjamulticonfig/"))
+         (file-name-concat default-directory  "build/ninjamulticonfig/")))
      (should (filepath-equal-p binaryDir expected-binaryDir)))
 
    (let*
@@ -281,7 +281,7 @@ test code from inside a 'test project'."
          (ci--get-configure-preset-by-name "ninjamulticonfig2"))
         (binaryDir (ci--get-binaryDir-with-replacements preset))
         (expected-binaryDir
-         "~/.emacs.d/elpaca/repos/cmake-integration/tests/test-project-with-presets/build/ninjamulticonfig2/"))
+         (file-name-concat default-directory "build/ninjamulticonfig2/")))
      (should (filepath-equal-p binaryDir expected-binaryDir)))))
 
 
@@ -1102,6 +1102,8 @@ test code from inside a 'test project'."
      ;; ci--get-targets-from-codemodel-json-file
      (should (null (alist-get 'type somelib-target)))
      (should (null (alist-get 'type main-target)))
+     (should (null (alist-get 'folder somelib-target)))
+     (should (null (alist-get 'folder main-target)))
 
      (ci--add-extra-data-to-target somelib-target)
      (ci--add-extra-data-to-target main-target)
@@ -1109,9 +1111,13 @@ test code from inside a 'test project'."
      ;; The input to ci--add-extra-data-to-target is modified
      (should-not (null (alist-get 'type somelib-target)))
      (should-not (null (alist-get 'type main-target)))
+     (should-not (null (alist-get 'folder somelib-target)))
+     (should-not (null (alist-get 'folder main-target)))
 
      (should (equal (alist-get 'type somelib-target) "STATIC_LIBRARY"))
-     (should (equal (alist-get 'type main-target) "EXECUTABLE")))))
+     (should (equal (alist-get 'type main-target) "EXECUTABLE"))
+     (should (equal (alist-get 'folder somelib-target) "<NO FOLDER>"))
+     (should (equal (alist-get 'folder main-target) "Apps")))))
 
 
 (ert-deftest test-ci--get-annotated-targets-from-codemodel-json-file ()
