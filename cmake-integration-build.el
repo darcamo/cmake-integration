@@ -498,7 +498,15 @@ Each entry maps `target-name` to `target-info`."
 (defun ci-refresh-target-cache ()
   "Clear the target cache."
   (interactive)
-  (clrhash ci--target-extra-data-cache))
+  (if (hash-table-p ci--target-extra-data-cache)
+      (clrhash ci--target-extra-data-cache)
+    (ci--create-empty-target-extra-data-cache)))
+
+
+(defun ci--create-empty-target-extra-data-cache ()
+  "Create an empty cache for target extra data."
+  (setq ci--target-extra-data-cache (make-hash-table :test 'equal)))
+
 
 
 (defun ci--add-extra-data-to-target (target)
