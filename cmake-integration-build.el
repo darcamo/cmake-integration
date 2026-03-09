@@ -40,6 +40,7 @@ See `:group-function' in the documentation of the
   '(choice
     (const :tag "Don't group targets" nil)
     (const :tag "Group by type" ci--target-completion-group-by-type-function)
+    (const :tag "Group by folder" ci--target-completion-group-by-folder-function)
     (function :tag "Custom grouping function"))
   :group 'cmake-integration-completions)
 
@@ -151,8 +152,17 @@ EXTRA-ARGS parameter."
 ALL-TARGETS is an alist like the one returned by
 `cmake-integration--get-annotated-targets-from-codemodel-json-file'."
   (if-let* ((target (alist-get target-name all-targets nil nil 'equal)))
-    (alist-get 'type target)
+      (alist-get 'type target)
     "unknown"))
+
+
+(defun ci--get-target-folder-from-name (target-name all-targets)
+  "Get the folder of the target with name TARGET-NAME from ALL-TARGETS.
+ALL-TARGETS is an alist like the one returned by
+`cmake-integration--get-annotated-targets-from-codemodel-json-file'."
+  (if-let* ((target (alist-get target-name all-targets nil nil 'equal)))
+      (alist-get 'folder target)
+    "<NO FOLDER>"))
 
 
 (defun ci--get-propertized-target-type-from-name (target-name all-targets)
@@ -185,8 +195,18 @@ the marginalia package, or in Emacs standard completion buffer."
       (_ (concat spaces (ci--get-propertized-target-type-from-name target-name minibuffer-completion-table))))))
 
 
+(defun ci--target-completion-transformed (completion)
+  "Transform function used during completion for COMPLETION."
+  (if (equal completion ci-current-target)
+      (propertize completion 'face 'bold)
+    completion)
+  )
+
+
 (defun ci--target-completion-group-by-type-function (completion transform)
   "Group function used during completion for COMPLETION and TRANSFORM.
+
+The grouping is done by the type of the target.
 
 If TRANSFORM is nil, the function must return the group title of the
 group to which the COMPLETION candidate belongs. Otherwise the function
@@ -196,9 +216,7 @@ changing the face to `bold' if COMPLETION is the current target.
 See \"Programmed Completion\" in Emacs info for more."
   (if transform
       ;; If transform is non-nil, return the transformed completion candidate
-      (if (equal completion ci-current-target)
-          (propertize completion 'face 'bold)
-        completion)
+      (ci--target-completion-transformed completion)
 
     ;; If transform is nil, return the group title
     (let ((type (ci--get-target-type-from-name completion ci--list-of-targets)))
@@ -209,6 +227,19 @@ See \"Programmed Completion\" in Emacs info for more."
        ((string-match-p "utility" type) (propertize "Utility" 'face 'ci-utility-target-face))
        ((string-match-p "unknown" type) (propertize type 'face 'ci-unknown-target-face))
        (t type)))))
+
+
+(defun ci--target-completion-group-by-folder-function (completion transform)
+  "Group function used during completion for COMPLETION and TRANSFORM.
+
+The grouping is done by the folder of the target."
+  (if transform
+      ;; If transform is non-nil, return the transformed completion candidate
+      (ci--target-completion-transformed completion)
+
+    ;; If transform is nil, return the group title
+    (ci--get-target-folder-from-name completion ci--list-of-targets))
+  )
 
 
 (defun ci--get-target-using-completions (list-of-targets)
@@ -252,8 +283,8 @@ If two prefix arguments are provided, then all targets are included."
      ((and ci-hide-utility-targets-during-completion
            ci-hide-library-targets-during-completion)
       (seq-filter #'(lambda (target) (and
-                                 (ci--target-is-not-utility-p target)
-                                 (ci--target-is-not-library-p target)))
+                                      (ci--target-is-not-utility-p target)
+                                      (ci--target-is-not-library-p target)))
                   list-of-targets))
 
      ;; Do not include only utility targets
