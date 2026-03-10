@@ -81,13 +81,14 @@ If TARGET-NAME is not provided use the last target (saved in a
         (alist-get 'path (elt target-artifacts 0))))))
 
 
-(defun ci--get-working-directory (executable-filename)
+(defun ci--get-working-directory (&optional executable-filename)
   "Get the working directory to run EXECUTABLE-FILENAME."
-  (pcase ci-run-working-directory
-    ('root (ci--get-project-root-folder))
-    ('build (ci-get-build-folder))
-    ('bin (file-name-concat (ci-get-build-folder) (file-name-directory executable-filename)))
-    (_ (file-name-concat (ci--get-project-root-folder) ci-run-working-directory))))
+  (let* ((executable-filename (or executable-filename ci-current-target)))
+    (pcase ci-run-working-directory
+      ('root (ci--get-project-root-folder))
+      ('build (ci-get-build-folder))
+      ('bin (file-name-concat (ci-get-build-folder) (file-name-directory executable-filename)))
+      (_ (file-name-concat (ci--get-project-root-folder) ci-run-working-directory)))))
 
 
 (defun ci-get-target-executable-full-path (&optional executable-filename)

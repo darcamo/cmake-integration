@@ -78,7 +78,9 @@ Note: Try experimenting with with the transient menu to get a better idea about 
     - Use `cmake-integration-debug-last-target` to debug the last compiled executable.
       - **TIP:** See the documentation of the `cmake-integration-debug-launcher-function` variable if you want to
         customize how the program is executed (such as using [dape](https://github.com/svaante/dape) instead of the
-        native gdb in Emacs).
+        native gdb in Emacs). In the particular case of dape, you might also be interested in calling
+        `cmake-integration-setup-dape` in your Emacs configuration. This will add a configuration to the `dape-configs`
+        variable that uses information from `cmake-integration`.
 
 5.  **Run Tests:**
     - You can always choose a target that has the executable for your tests and run it as usual.
@@ -146,6 +148,8 @@ available builtin launcher functions:
 
 - `classic-gdb` (default value): Uses the native gdb integration in Emacs to debug the current target.
 - `dape`: Uses [dape](https://github.com/svaante/dape) to debug the current target.
+  - **Note**: This does not modify your `dape-configs` variable. If you want to add a configuration to `dape-configs`
+    that integrates with `cmake-integration`, add a call to `cmake-integration-setup-dape` in your Emacs configuration.
 
 
 Other options can be easily added by creating a custom debug launcher function. The code below implements a simple
