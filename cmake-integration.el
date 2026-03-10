@@ -53,6 +53,7 @@
 (require 'cmake-integration-persistence)
 (require 'cmake-integration-project-mode)
 (require 'cmake-integration-language-servers)
+(require 'cmake-integration-dape)
 
 (provide 'cmake-integration)
 
