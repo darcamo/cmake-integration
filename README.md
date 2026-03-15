@@ -135,6 +135,40 @@ to the available builtin launcher functions that should cover most use cases:
   Also switch to that buffer. This allows input interaction
 - `'eshell`: Uses `eshell` to run the command in a eshell buffer.
 
+If one of these three options is not enough, then setting `cmake-integration-program-launcher-function` to a function is
+the way to go. For instance, if you want to use any of the many terminal emulators in Emacs, then you can easily
+implement a launcher function for it, where the source of the `ci-eshell-program-launch-function` function can be used
+as a starting point. Even if you don't know Emacs lisp, asking an LLM to implement such function while passing the
+source of `ci-eshell-program-launch-function` in the context should give you working code. For instance, asking an LLM
+the prompt below
+
+> "Implement a `vterm-program-launch-function` function that does the same as the `ci-eshell-program-launch-function`, but uses vterm instead of eshell"
+
+gave the following code
+
+```emacs-lisp
+(defun vterm-program-launch-function (command &optional buffer-name)
+  "Launch COMMAND in a vterm buffer named BUFFER-NAME (defaults to *vterm*)."
+  (unless (featurep 'vterm)
+    (user-error "vterm is not available"))
+  (let ((buffer-name (or buffer-name "*vterm*")))
+    (unless (get-buffer buffer-name)
+      (vterm buffer-name))
+    (let ((vterm-buffer (get-buffer buffer-name)))
+      (with-current-buffer vterm-buffer
+        (goto-char (point-max))
+        (vterm-send-string command)
+        (vterm-send-return))
+      (pop-to-buffer vterm-buffer))))
+```
+
+You can add this code to your Emacs configuration, and set `cmake-integration-program-launcher-function` to
+`'vterm-program-launch-function'` with
+
+```emacs-lisp
+(setq cmake-integration-program-launcher-function 'vterm-program-launch-function)
+```
+
 
 ### Customize how the debugger is run
 
