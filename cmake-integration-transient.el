@@ -436,7 +436,7 @@ will be obtained from PRESET and this returns the string
    ;; ("d" "Select test directory" ci-select-configure-preset :transient nil)
    ("f" "Run only previously failed tests" "--rerun-failed" :transient t)
    ("o" "Output anything if the test should fail." "--output-on-failure" :transient t)
-   ("j" "Number of test in parallel" "-j=")
+   ("j" "Number of test in parallel" "-j" :class transient-option)
    ("l" "Select test labels" ci--test-labels-prefix
     :transient t)
    ("P" "Show progress" "--progress")
