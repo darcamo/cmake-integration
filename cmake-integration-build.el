@@ -57,13 +57,13 @@ This function is added to `cmake-integration-after-set-configure-preset-hook'."
   (if ci-configure-preset
       (let ((presets (ci-get-build-presets)))
         ;; Only change the build preset if there is excactly one
-        ;; build preset for the conffigure preset
+        ;; build preset for the configure preset
         (if (= (length presets) 1)
             (setq ci-build-preset (car presets))
           (setq ci-build-preset nil)))
     (setq ci-build-preset nil)))
 
-
+`
 (add-hook 'ci-after-set-configure-preset-hook 'ci--adjust-build-preset)
 
 
