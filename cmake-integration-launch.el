@@ -124,7 +124,7 @@ which the command must be executed, and COMMAND is the command line
 string to run."
   (let* ((run-dir (ci--get-working-directory executable-filename))
          (executable-relative-path (file-relative-name (ci-get-target-executable-full-path executable-filename) run-dir))
-         (run-command (format "./%s %s" executable-relative-path ci-run-arguments)))
+         (run-command (format "./%s %s" executable-relative-path (or ci-run-arguments ""))))
     (list run-dir run-command)))
 
 
