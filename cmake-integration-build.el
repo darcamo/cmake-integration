@@ -135,6 +135,10 @@ complain in that case."
     (error "The build folder is missing. Please run either `cmake-integration-cmake-reconfigure' or
 `cmake-integration-cmake-configure-with-preset' to configure the project")))
 
+(defun ci--ensure-target-list (targets)
+  "Return TARGETS as a list of strings (accepts a single string)."
+
+  (if (stringp targets) (list targets) targets))
 
 (defun ci--save-and-compile-no-completion (target &optional extra-args)
   "Save the buffer and compile TARGET also passing EXTRA-ARGS.
@@ -188,7 +192,7 @@ depends on the target type."
     ("clean"  (propertize "Clean all compiled targets" 'face 'ci-phony-target-face))
     ("all"  (propertize "Compile all targets" 'face 'ci-phony-target-face))
     ("install"  (propertize "Install targets" 'face 'ci-phony-target-face))
-    (_  (ci--get-propertized-target-type-from-name target-name minibuffer-completion-table))))
+    (_  (ci--get-propertized-target-type-from-name target-name ci--list-of-targets))))
 
 
 (defun ci--target-affixation-function (targets)
@@ -206,7 +210,7 @@ completing target names to generate annotations for each target."
 
 (defun ci--target-completion-transformed (completion)
   "Transform function used during completion for COMPLETION."
-  (if (equal completion ci-current-target)
+  (if (member completion ci-current-build-targets)
       (propertize completion 'face 'success)
     completion)
   )
@@ -251,15 +255,24 @@ The grouping is done by the folder of the target."
   )
 
 
-(defun ci--get-target-using-completions (list-of-targets)
-  "Ask the user to choose one of the targets in LIST-OF-TARGETS using completions."
+(defun ci--get-targets-using-completions (list-of-targets &optional single)
+  "Ask the user to choose targets in LIST-OF-TARGETS using completions.
+
+Return the chosen target names as a list. With SINGLE non-nil,
+ask for exactly one target."
+
   (setq ci--list-of-targets list-of-targets)
   (let ((completion-extra-properties
-         `(:category cmake-target
-           :affixation-function ci--target-affixation-function
-           :group-function ,ci-target-group-function)))
-    (completing-read "Target: " list-of-targets nil t)))
+         (ci--target-completion-extra-properties)))
+    (if single
+        (list (completing-read "Add target: " list-of-targets nil t))
+      (completing-read-multiple "Targets: " list-of-targets nil t))))
 
+(defun ci--target-completion-extra-properties ()
+  "Extra completion properties used when completing target names."
+  (list :category 'cmake-target
+        :affixation-function 'ci--target-affixation-function
+        :group-function ci-target-group-function))
 
 (defun ci--get-all-targets (json-filename)
   "Get all targets for completion specified in JSON-FILENAME.
@@ -309,18 +322,20 @@ If two prefix arguments are provided, then all targets are included."
      (t list-of-targets))))
 
 
-;;;###autoload (autoload 'cmake-integration-select-current-target "cmake-integration")
-(defun ci-select-current-target ()
-  "Ask for a target to build and return the target name."
+;;;###autoload (autoload 'cmake-integration-select-build-targets "cmake-integration")
+(defun ci-select-build-targets ()
+  "Ask for the targets to build, save and return them as a list."
 
-  ;; If the build folder is missing we should stop with an error
   (interactive)
+  ;; If the build folder is missing we should stop with an error
   (ci--check-if-build-folder-exists-and-throws-if-not)
 
   (if-let* ((json-filename (ci--get-codemodel-reply-json-filename))
             (list-of-targets (ci--get-all-targets json-filename))
-            (target (ci--get-target-using-completions list-of-targets)))
-      (setq ci-current-target target)
+            (targets (ci--get-targets-using-completions list-of-targets)))
+      (progn
+        (setq ci-current-build-targets (delete-dups targets))
+        (ci--forget-stale-runnable-targets))
 
     ;; If `json-filename' is nil that means we could not find the
     ;; CMake reply with the file API, which means the query file is
@@ -328,7 +343,58 @@ If two prefix arguments are provided, then all targets are included."
     (display-warning 'cmake-integration "Could not find list of targets due to CMake file API file
 missing. Please run either `cmake-integration-cmake-reconfigure' or
 `cmake-integration-cmake-configure-with-preset'.")
-    (setq ci-current-target nil)))
+    (setq ci-current-build-targets nil)
+    (setq ci-current-run-target nil)
+    (setq ci-current-debug-target nil))
+  ci-current-build-targets)
+
+(make-obsolete 'ci-select-current-target 'ci-select-build-targets "2026-08")
+(defalias 'ci-select-current-target #'ci-select-build-targets)
+
+(defun ci--forget-stale-runnable-targets ()
+  "Reset remembered run/debug targets that are no longer build targets."
+  (unless (member ci-current-run-target ci-current-build-targets)
+    (setq ci-current-run-target nil))
+  (unless (member ci-current-debug-target ci-current-build-targets)
+    (setq ci-current-debug-target nil)))
+
+;;;###autoload (autoload 'cmake-integration-add-build-target "cmake-integration")
+(defun ci-add-build-target ()
+  "Select a single target and append it to the build targets."
+  (interactive)
+  (ci--check-if-build-folder-exists-and-throws-if-not)
+
+  (if-let* ((json-filename (ci--get-codemodel-reply-json-filename))
+            (list-of-targets (ci--get-all-targets json-filename))
+            (target (car (ci--get-targets-using-completions list-of-targets 'single))))
+      (progn
+        (unless (member target ci-current-build-targets)
+          (push target ci-current-build-targets))
+        (ci--forget-stale-runnable-targets)
+        target)
+    (display-warning 'cmake-integration "Could not find list of targets due to CMake file API file
+missing. Please run either `cmake-integration-cmake-reconfigure' or
+`cmake-integration-cmake-configure-with-preset'.")))
+
+;;;###autoload (autoload 'cmake-integration-remove-build-target "cmake-integration")
+(defun ci-remove-build-target ()
+  "Select one of the already selected build targets and remove it from the list."
+  (interactive)
+  (if (not ci-current-build-targets)
+      (ci-log-info "There are  no build targets selected.")
+    ;; Complete  only those among the currently selected targets
+    (let ((completion-extra-properties (ci--target-completion-extra-properties))
+          (target (completing-read "Remove target: " ci-current-build-targets nil t)))
+      (setq ci-current-build-targets (delete target ci-current-build-targets))
+      (ci--forget-stale-runnable-targets) target)))
+
+;;;###autoload (autoload 'cmake-integration-clear-build-targets "cmake-integration")
+(defun ci-clear-build-targets ()
+  "Clear the selected build targets and the remembered run/debug targets."
+  (interactive)
+  (setq ci-current-build-targets nil
+        ci-current-run-target nil
+        ci-current-debug-target nil))
 
 
 ;;;###autoload (autoload 'cmake-integration-save-and-compile "cmake-integration")
@@ -341,12 +407,10 @@ that is not possible, ask for the target name without
 completions."
 
   (interactive)
-  ;; Ask the user for a target and set the
-  ;; cmake-integration-current-target variable with the chosen target
-  ;; name
-  (ci-select-current-target)
-
-  (ci--save-and-compile-no-completion ci-current-target))
+  (ci-select-build-targets)
+  (if ci-current-build-targets
+      (ci--save-and-compile-no-completion ci-current-build-targets)
+    (message "No build targets selected; nothing to build.")))
 
 
 ;;;###autoload (autoload 'cmake-integration-save-and-compile-last-target "cmake-integration")
@@ -357,12 +421,12 @@ See the documentation of `cmake-integration-get-build-command' for the
 EXTRA-ARGS parameter."
   (interactive)
   (ci--save-and-compile-no-completion
-   (or ci-current-target "all")
+   (or ci-current-build-targets '("all"))
    extra-args))
 
 
-(defun ci-get-build-command (target &optional extra-args)
-  "Get the command to compile target TARGET passing EXTRA-ARGS to cmake.
+(defun ci-get-build-command (targets &optional extra-args)
+  "Get the command to compile target TARGETS passing EXTRA-ARGS to cmake.
 
 Return a list (RUN-DIR COMMAND), where RUN-DIR is the directory from
 which the command must be executed, and COMMAND is the command line
@@ -370,26 +434,26 @@ string to run.
 
 EXTRA-ARGS is a list of strings, which will be joined with a space as
 separation and then passed to cmake command to build the target."
-  (pcase-let* ((`(,target-name ,config-name)
-                (split-string target ci--multi-config-separator))
-               (project-root (ci--get-project-root-folder))
-               (preset-arg-or-build-folder (if ci-build-preset
-                                               (format "--preset %s" (ci-get-last-build-preset-name))
-                                             (ci--get-build-folder-relative-to-project)))
-               (build-args extra-args))
-
-    ;; Add configuration argument if available
-    (when config-name (push (format "--config %s" config-name) build-args))
-
-    ;; Add the target
-    (push (format "--target %s" target-name) build-args)
-
-    ;; Add build folder or preset part
-    (push preset-arg-or-build-folder build-args)
-
-    ;; Return (run-dir command)
+  (pcase-let* ((target-list (ci--ensure-target-list targets))
+               (split (mapcar (lambda (name)
+                                (split-string name ci--multi-config-separator))
+                              target-list))
+               (names (mapcar #'car split))
+               (configs (delete-dups (delq nil (mapcar #'cadr split))))
+               (`(,project-root ,preset-or-folder ,build-args)
+                (list (ci--get-project-root-folder)
+                      (if ci-build-preset
+                          (format "--preset %s" (ci-get-last-build-preset-name))
+                        (ci--get-build-folder-relative-to-project))
+                      extra-args)))
+    (when (> (length configs) 1)
+      (user-error "Selected build targets use mixed configurations (%s)"
+                  (string-join configs ", ")))
+    (when configs
+      (push (format "--config %s" (car configs)) build-args))
+    (push (format "--target %s" (string-join names " ")) build-args)
+    (push preset-or-folder build-args)
     (list project-root (format "cmake --build %s" (string-join build-args " ")))))
-
 
 ;; See CMake file API documentation for what projectIndex is
 ;; https://cmake.org/cmake/help/latest/manual/cmake-file-api.7.html

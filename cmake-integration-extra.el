@@ -54,7 +54,7 @@ TARGET-NAME. Executes BODY in the context where `target-folder' is bound
 to the target directory."
   `(progn
      (ci--check-if-build-folder-exists-and-throws-if-not)
-     (let* ((target-name (or ,target-name ci-current-target))
+     (let* ((target-name (or ,target-name (ci--resolve-runnable-target 'ci-current-run-target)))
             (executable-relative-path (ci-get-target-executable-filename target-name))
             (target-full-path (ci-get-target-executable-full-path executable-relative-path))
             (target-folder (file-name-directory target-full-path)))

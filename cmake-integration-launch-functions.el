@@ -94,7 +94,7 @@ the \"--cd\" option."
 
 
 (defun ci-dape-debug-launch-function (executable-path &optional args run-dir)
-  "Debug EXECUTABLE-PATH with dape, passign ARGS and using RUN-DIR as cwd.
+  "Debug EXECUTABLE-PATH with dape, passing ARGS and using RUN-DIR as cwd.
 
 Note: This is EXPERIMENTAL and has not been tested much. It may also
 break in the future in case dap changes, since there is no official
@@ -104,10 +104,16 @@ documentation on how to call it from Lisp."
         (args-vector (if args
                          (vconcat (split-string args " " t))
                        [])))
-    ;; Dape documentaton does not tell us how to call it from lisp. Hence, this
+    ;; Dape documentation does not tell us how to call it from lisp. Hence, this
     ;; could break in the future. The current approach was taken from the dape's
     ;; author information in this github issue:
     ;; https://github.com/svaante/dape/issues/193
+    ;;
+    ;; Paths are intentionally baked as concrete values here: every
+    ;; `ci-debug-last-target' invocation recomputes EXECUTABLE-PATH and
+    ;; RUN-DIR from the current debug target, so each session gets fresh
+    ;; values.  Programmatic `dape' calls do not push onto
+    ;; `dape-history', so there is no stale re-launch concern.
     (dape `( command "gdb"
              command-args ("--interpreter=dap")
              command-cwd ,default-directory

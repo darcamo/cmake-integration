@@ -223,8 +223,9 @@ will be replaced by the project root." :type 'directory :group 'cmake-integratio
   :group 'cmake-integration-persistence)
 
 
-(defvar ci-current-target nil "Name of the target that will be compiled and run.")
-
+(defvar ci-current-build-targets nil "List of the targets names that will be built.")
+(defvar ci-current-run-target nil "Name of the target that will be run.")
+(defvar ci-current-debug-target nil "Name of the target that will be debug-run.")
 
 ;; Note: Avoid modifying this variable directly. Use one of the functions below
 ;; instead
