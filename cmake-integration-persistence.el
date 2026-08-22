@@ -46,7 +46,9 @@
 
     ;; Target
     ci--target-extra-data-cache
-    ci-current-target
+    ci-current-build-targets
+    ci-current-run-target
+    ci-current-debug-target
     ci-run-arguments
 
     ;; Presets
@@ -64,7 +66,13 @@
 
 
 (defconst ci-functions-to-save-state
-  '(ci-select-current-target
+  '(ci-select-build-targets
+    ci-add-build-target
+    ci-remove-build-target
+    ci-clear-build-targets
+    ci-select-run-target
+    ci-select-debug-target
+    ci-select-run-and-debug-target
     ci-select-configure-preset
     ci-add-cmake-cache-variables
     ci-remove-cmake-cache-variable
@@ -79,7 +87,7 @@
   "Functions which automatically save cmake-intregration state.
 
 State is only saved if `ci-automatic-persistence-mode' is enabled."
-)
+  )
 
 
 (defconst ci-functions-to-restore-state
@@ -129,7 +137,7 @@ Return nil if not in a project."
 
 Return nil if not in a project."
   (if-let* ((root-folder (ci--get-project-root-folder)))
-    (file-name-concat root-folder "cmake-integration/")))
+      (file-name-concat root-folder "cmake-integration/")))
 
 
 (defun ci--persist-directory (&optional ensure)
@@ -150,10 +158,10 @@ Return nil if not in a project."
                (user-error
                 "Invalid value for 'cmake-integration-persist-location': %S"
                 ci-persist-location)))))
-    (let ((expanded-dir (expand-file-name dir)))
-      (when ensure
-        (make-directory expanded-dir t))
-      expanded-dir)))
+      (let ((expanded-dir (expand-file-name dir)))
+        (when ensure
+          (make-directory expanded-dir t))
+        expanded-dir)))
 
 
 (defun ci--get-persist-file (&optional ensure-directory)
@@ -173,7 +181,7 @@ If ENSURE-DIRECTORY is non-nil, create the directory when necessary."
 (defun ci--state-file-exists-p ()
   "Returns non-nil if the cmake-integration state file exists."
   (if-let* ((state-file (ci--get-persist-file)))
-    (file-exists-p state-file)))
+      (file-exists-p state-file)))
 
 
 ;;;###autoload (autoload 'cmake-integration-should-restore-state-p "cmake-integration")
@@ -236,9 +244,9 @@ function can be used as an advice."
 
 (defun ci--deserialize-state (state-file-name)
   "Deserialize the state from STATE-FILE-NAME."
-    (with-temp-buffer
-        (insert-file-contents state-file-name)
-        (read (current-buffer))))
+  (with-temp-buffer
+    (insert-file-contents state-file-name)
+    (read (current-buffer))))
 
 
 (defun ci--restore-variables-from-state (state)
@@ -252,7 +260,14 @@ This is the inverse of the `ci--build-current-state' function."
     (let ((var (car entry))
           (value (cdr entry)))
       (when (memq var ci--state-variables)
-        (set var value)))))
+        (set var value))))
+
+  ;; Migration: states saved before multi-target support stored the
+  ;; single selection in `ci-current-target'
+  (unless (assq 'ci-current-build-targets state)
+    (let ((old-value (alist-get 'ci-current-target state)))
+      (when old-value
+        (setq ci-current-build-targets (list old-value))))))
 
 
 ;;;###autoload (autoload 'cmake-integration-restore-state "cmake-integration")
@@ -260,26 +275,26 @@ This is the inverse of the `ci--build-current-state' function."
   "Restore the state of cmake-integration from persistent storage."
   (interactive)
   (if-let* ((state-file (ci--get-persist-file)))
-    (cond
-     ((not (ci-is-cmake-project-p))
-      (ci-log-info "Current project in '%s' is not a CMake project"
-               (ci--get-project-root-folder)))
-     ((not (file-readable-p state-file))
-      (when (called-interactively-p 'interactive)
-        (ci-log-info "No cmake-integration state file found at %s" state-file)))
-     (t
-      (condition-case err
-          (let ((state (ci--deserialize-state state-file)))
-            (ci--restore-variables-from-state state))
+      (cond
+       ((not (ci-is-cmake-project-p))
+        (ci-log-info "Current project in '%s' is not a CMake project"
+                     (ci--get-project-root-folder)))
+       ((not (file-readable-p state-file))
+        (when (called-interactively-p 'interactive)
+          (ci-log-info "No cmake-integration state file found at %s" state-file)))
+       (t
+        (condition-case err
+            (let ((state (ci--deserialize-state state-file)))
+              (ci--restore-variables-from-state state))
 
-        (error
-         (ci-log-info
-          "An error occurred while restoring cmake-integration state from %s: %s"
-          state-file (error-message-string err))))
-      (when (called-interactively-p 'interactive)
-        (ci-log-info "State restored from %s" state-file))
+          (error
+           (ci-log-info
+            "An error occurred while restoring cmake-integration state from %s: %s"
+            state-file (error-message-string err))))
+        (when (called-interactively-p 'interactive)
+          (ci-log-info "State restored from %s" state-file))
 
-      (setq ci-last-save-or-restore-state state-file)))
+        (setq ci-last-save-or-restore-state state-file)))
 
     (when (called-interactively-p 'interactive)
       (ci-log-info "No state file location resolved."))))

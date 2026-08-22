@@ -133,13 +133,24 @@ will be obtained from PRESET and this returns the string
   (format "Package preset (%s)"
           (ci--describe-preset-command-line ci-package-preset)))
 
+(defun ci--describe-build-targets ()
+  "Describe the command line argument to set the build targets."
+  (let* ((target-names (string-join (or ci-current-build-targets '()) " "))
+         (command-line (format "--target=%s" target-names)))
+    (format "Set Targets (%s)"
+            (ci--get-command-line-arg-with-face command-line target-names))))
 
-(defun ci--describe-build-target ()
-  "Describe the command line argument to set the build target."
-  (let* ((target-name (if ci-current-target ci-current-target ""))
-         (command-line (format "--target=%s" target-name)))
-    (format "Set Target (%s)" (ci--get-command-line-arg-with-face command-line ci-current-target))))
+(defun ci--describe-run-target ()
+  "Describe the current run target."
+  (let ((target-name (or ci-current-run-target "")))
+    (format "Run (%s)"
+            (ci--get-command-line-arg-with-face target-name target-name))))
 
+(defun ci--describe-debug-target ()
+  "Describe the current debug target."
+  (let ((target-name (or ci-current-debug-target "")))
+    (format "Debug (%s)"
+            (ci--get-command-line-arg-with-face target-name target-name))))
 
 (defun ci--describe-conan-profile ()
   "Describe the current conan profile."
@@ -235,16 +246,35 @@ will be obtained from PRESET and this returns the string
 
 (transient-define-suffix ci--set-build-target-suffix ()
   :transient 'transient--do-call
-  :description 'ci--describe-build-target
+  :description 'ci--describe-build-targets
   (interactive)
-  (ci-select-current-target))
+  (ci-select-build-targets))
 
 
 (transient-define-suffix ci--clear-build-target-suffix ()
   :transient 'transient--do-call
-  :description "Clear build target"
+  :description "Clear build targets"
   (interactive)
-  (setq ci-current-target nil))
+  (ci-clear-build-targets))
+
+
+(transient-define-suffix ci--set-run-target-suffix ()
+  :transient 'transient--do-call
+  :description "Set run and debug target"
+  (interactive)
+  (ci-select-run-and-debug-target))
+
+(transient-define-suffix ci--run-target-suffix ()
+  :transient 'transient--do-call
+  :description 'ci--describe-run-target
+  (interactive)
+  (ci-run-last-target))
+
+(transient-define-suffix ci--debug-target-suffix ()
+  :transient 'transient--do-call
+  :description 'ci--describe-debug-target
+  (interactive)
+  (ci-debug-last-target))
 
 
 (transient-define-suffix ci--set-conan-profile-suffix ()
@@ -270,9 +300,9 @@ will be obtained from PRESET and this returns the string
   :transient 'transient--do-call
   ;; :description 'ci--describe-install-prefix
   :description (lambda () (format "%s runtime arguments"
-                             (if ci-run-arguments
-                                 "Edit"
-                               "Set")))
+                                  (if ci-run-arguments
+                                      "Edit"
+                                    "Set")))
   (interactive)
   (let ((run-arguments (read-string "Arguments to pass to the executable: ")))
     ;; If the user didn't provide any arguments, we set it to nil
@@ -350,25 +380,25 @@ will be obtained from PRESET and this returns the string
 
 
 (transient-define-prefix
- ci--cache-variables-transient () "Show CMake cache variables."
- ["Cache Variables"
-  (:info #'ci--describe-cache-variables)
-  ("v" "View cache variables" ci-display-cmake-cache-variables :transient t)
-  ("a" "Add a cache variable" ci-add-cmake-cache-variables :transient t)
-  ("r" "Remove a cache variable" ci-remove-cmake-cache-variable :transient t)
-  ("R"
-   "Remove all cache variables"
-   ci-remove-all-cmake-cache-variables
-   :transient t)
-  ("q" "Quit"
-   (lambda ()
-     (interactive)
-     ;; If the buffer displaying the cache variables is open, close it before
-     ;; quitting the transient
-     (ci--maybe-quit-cache-variables-window)
-     (transient-quit-one))) ;;
-  ]
- )
+  ci--cache-variables-transient () "Show CMake cache variables."
+  ["Cache Variables"
+   (:info #'ci--describe-cache-variables)
+   ("v" "View cache variables" ci-display-cmake-cache-variables :transient t)
+   ("a" "Add a cache variable" ci-add-cmake-cache-variables :transient t)
+   ("r" "Remove a cache variable" ci-remove-cmake-cache-variable :transient t)
+   ("R"
+    "Remove all cache variables"
+    ci-remove-all-cmake-cache-variables
+    :transient t)
+   ("q" "Quit"
+    (lambda ()
+      (interactive)
+      ;; If the buffer displaying the cache variables is open, close it before
+      ;; quitting the transient
+      (ci--maybe-quit-cache-variables-window)
+      (transient-quit-one))) ;;
+   ]
+  )
 
 
 (transient-define-prefix ci--configure-transient ()
@@ -422,7 +452,7 @@ will be obtained from PRESET and this returns the string
    ("e" ci--set-ctest-label-exclude-regexp-suffix)
    ("p" "Print test labels" (lambda () (interactive)
                               (ci-log-info "Available test labels:\n%s"
-                                       (s-join ", " (ci--get-all-ctest-labels))))
+                                           (s-join ", " (ci--get-all-ctest-labels))))
     :transient t)
    ("q" "Back" transient-quit-one)
    ]
@@ -480,19 +510,14 @@ will be obtained from PRESET and this returns the string
    ]
   )
 
-
 (transient-define-prefix ci--launch-transient ()
   "Perform actions related to running or debugging an executable target."
   ["Run and Debug"
-   (:info #'ci--describe-runtime-args)
    ("a" ci--set-runtime-arguments-suffix)
-   ("t" ci--set-build-target-suffix)
-   ("r" "Run" ci-run-last-target)
-   ("d" "Debug" ci-debug-last-target)
-   ("q" "Quit" transient-quit-one)
-   ]
-  )
-
+   ("t" ci--set-run-target-suffix)
+   ("r" ci--run-target-suffix)
+   ("d" ci--debug-target-suffix)
+   ("q" "Quit" transient-quit-one)])
 
 (transient-define-prefix ci--workflow-transient ()
   "Perform actions related to running a workflow."

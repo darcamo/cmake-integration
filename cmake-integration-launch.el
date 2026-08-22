@@ -32,6 +32,102 @@
 (require 'cmake-integration-launch-functions)
 (require 'cmake-integration-logging)
 
+(defun ci--executable-targets ()
+  "Return the names of all executable targets in the project.
+
+Reads them from the CMake file-api codemodel, ignoring which
+build targets are currently selected."
+
+  (when-let* ((json-filename (ci--get-codemodel-reply-json-filename)))
+    (mapcar #'car
+            (seq-filter (lambda(entry)
+                          (equal (alist-get 'type (cdr entry)) "EXECUTABLE"))
+                        (ci--get-annotated-targets-from-codemodel-json-file json-filename)))))
+
+(defun ci--current-executable-build-targets ()
+  "Return the selected build targets that are executables.
+
+Filters `ci-current-build-targets' down to executable targets,
+keeping their selection order."
+
+  (let ((executables (ci--executable-targets)))
+    (seq-filter (lambda (name) (member name executables)) ci-current-build-targets)))
+
+(defun ci--resolve-runnable-target (remembered-var &optional action)
+  "Return the target stored in REMEMBERED-VAR for running/debugging.
+
+If REMEMBERED-VAR (`ci-current-run-target' or
+`ci-current-debug-target') is non-nil it is honored blindly;
+launch-time checks remain the only validation.  Otherwise the
+first best candidate is auto-picked, stored in REMEMBERED-VAR and
+returned: executables among the selected build targets first,
+falling back to any project executable.  ACTION labels log
+messages and defaults to \"Run\"."
+
+  (or (symbol-value remembered-var)
+      (let* ((action (or action "Run"))
+             (choice (car (or (ci--current-executable-build-targets)
+                              (ci--executable-targets)))))
+        (unless choice
+          (error "%s: no executable targets found in the project" action))
+        (set remembered-var choice)
+        (ci-log-info "%s target auto-selected: %s" action choice)
+        choice)))
+
+
+(defun ci--select-runnable-target (remembered-var action)
+  "Prompt for an executable target and store it in REMEMBERED-VAR.
+
+Candidates come from all project executables, with the current
+value of REMEMBERED-VAR offered as default.  ACTION labels the
+prompt and log messages (\"Run\" or \"Debug\").  This is an
+explicit user request, so it always overwrites."
+
+  (let* ((candidates (or (ci--executable-targets)
+                         (user-error "%s: no executable targets found in the project"
+                                     action)))
+         (target (completing-read
+                  (format "%s target: " action)
+                  candidates
+                  nil
+                  t
+                  nil
+                  nil
+                  (symbol-value remembered-var))))
+    (set remembered-var target)
+    (ci-log-info "%s target selected: %s" action target)))
+
+;;;###autoload (autoload 'cmake-integration-select-run-target "cmake-integration")
+(defun ci-select-run-target ()
+  "Select the target to use when running, from the project executables.
+
+Overwrites `ci-current-run-target'; `ci-current-debug-target' is
+left untouched. Unless you have an explicit reason to use different
+run and debug targets, use `ci-select-run-and-debug-target' instead."
+  (interactive)
+  (ci--select-runnable-target 'ci-current-run-target "Run"))
+
+;;;###autoload (autoload 'cmake-integration-select-debug-target "cmake-integration")
+(defun ci-select-debug-target ()
+  "Select the target to use when debugging, from the project executables.
+
+Overwrites `ci-current-debug-target'; `ci-current-run-target' is
+left untouched. Unless you have an explicit reason to use different
+run and debug targets, use `ci-select-run-and-debug-target' instead."
+  (interactive)
+  (ci--select-runnable-target 'ci-current-debug-target "Debug"))
+
+;;;###autoload (autoload 'cmake-integration-select-run-and-debug-target "cmake-integration")
+(defun ci-select-run-and-debug-target ()
+  "Select one executable target to use for both running and debugging.
+
+Prompts once and stores the choice in both
+`ci-current-run-target' and `ci-current-debug-target'.  This is an
+explicit user request, so both are always overwritten."
+  (interactive)
+  (ci--select-runnable-target 'ci-current-run-target "Run")
+  (set 'ci-current-debug-target ci-current-run-target))
+
 
 (defun ci-get-target-executable-filename (&optional target)
   "Get the executable filename for the target TARGET.
@@ -41,14 +137,8 @@ something like just <target-name>, or bin/<target-name>.
 
 Throws an error if the target is not an executable.
 
-If TARGET-NAME is not provided use the last target (saved in a
-`cmake-integration-current-target')."
-
-  ;; If both `target' and `cmake-integration-current-target' are nil,
-  ;; throw an error asking the UE to select a target first by calling
-  ;; `cmake-integration-save-and-compile'
-  (unless (or target ci-current-target)
-    (error "Please select a target first by calling `cmake-integration-select-current-target`"))
+If TARGET is not provided, `ci-current-run-target' is used. If
+that is nil as well, an error is signaled."
 
   ;; The `target-info' variable inside the `let' has the data from the
   ;; codemodel json file for TARGET-NAME. This data is an alist and
@@ -56,7 +146,9 @@ If TARGET-NAME is not provided use the last target (saved in a
   ;; file with more data about the target. We read this json file and
   ;; save the data in the `target-data' variable. From there we can
   ;; get the executable name from its `artifacts' field.
-  (let* ((target (or target ci-current-target))
+  (let* ((target (or target ci-current-run-target))
+         (_ (unless target
+              (user-error "No run target selected. Select build targets and run targets accordingly!")))
          (target-name (car (split-string target ci--multi-config-separator)))
          (target-info (alist-get
                        target
@@ -82,10 +174,13 @@ If TARGET-NAME is not provided use the last target (saved in a
         ;; We assume the vector has just one element
         (alist-get 'path (elt target-artifacts 0))))))
 
-
 (defun ci--get-working-directory (&optional executable-filename)
-  "Get the working directory to run EXECUTABLE-FILENAME."
-  (let* ((executable-filename (or executable-filename ci-current-target)))
+  "Get the working directory to run EXECUTABLE-FILENAME.
+
+If EXECUTABLE-FILENAME is not provided, it is derived from
+`ci-current-run-target' via `ci-get-target-executable-filename',
+which signals an error when no target is selected."
+  (let* ((executable-filename (or executable-filename (ci-get-target-executable-filename))))
     (pcase ci-run-working-directory
       ('root (ci--get-project-root-folder))
       ('build (ci-get-build-folder))
@@ -111,9 +206,10 @@ If called interactively, the result is copied to the `kill-ring`."
     full-path))
 
 
-(defun ci--get-program-launch-buffer-name ()
-  "Get the compilation buffer name for NAME-OF-MODE current target name."
-  (format "*Running - %s*" cmake-integration-current-target))
+(defun ci--get-program-launch-buffer-name (target-name)
+  "Get the compilation buffer name for TARGET-NAME."
+
+  (format "*Running - %s*" target-name))
 
 
 (defun ci--get-run-command (executable-filename)
@@ -133,14 +229,16 @@ string to run."
 ;;;###autoload (autoload 'cmake-integration-run-last-target "cmake-integration")
 (defun ci-run-last-target ()
   "Run the last compiled target."
+
   (interactive)
   (ci--check-if-build-folder-exists-and-throws-if-not)
 
-  (let ((bufer-name
-         (when ci-use-separated-compilation-buffer-for-each-target
-           (ci--get-program-launch-buffer-name))))
+  (let* ((target (ci--resolve-runnable-target 'ci-current-run-target))
+         (bufer-name
+          (when ci-use-separated-compilation-buffer-for-each-target
+            (ci--get-program-launch-buffer-name target))))
     (pcase-let* ((`(,run-dir ,cmd)
-                  (ci--get-run-command (ci-get-target-executable-filename))))
+                  (ci--get-run-command (ci-get-target-executable-filename target))))
       (let ((default-directory run-dir))
         (cond
          ((eq ci-program-launcher-function 'compilation)
@@ -159,11 +257,12 @@ string to run."
 
 ;;;###autoload (autoload 'cmake-integration-debug-last-target "cmake-integration")
 (defun ci-debug-last-target ()
-  "Run the last compiled target."
+  "Run debugger with the current debug target."
+
   (interactive)
   (ci--check-if-build-folder-exists-and-throws-if-not)
-
-  (let* ((executable-filename (ci-get-target-executable-filename))
+  (let* ((target (ci--resolve-runnable-target 'ci-current-debug-target "Debug"))
+         (executable-filename (ci-get-target-executable-filename target))
          (run-dir (ci--get-working-directory executable-filename))
          (executable-path
           (file-relative-name

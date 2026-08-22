@@ -29,6 +29,7 @@
 
 ;;; Code:
 (require 'ert)
+(require 'cl-lib)
 (require 'cmake-integration)
 
 
@@ -377,30 +378,30 @@ test code from inside a 'test project'."
 (ert-deftest test-ci--get-working-directory ()
   (test-fixture-setup ;;
    "./test-project-with-presets"
-   (let ((ci-current-target "bin/main")
+   (let ((executable-filename "bin/main")
          (ci-configure-preset
           '((name . "default") (binaryDir . "${sourceDir}/build-with-ninja/"))))
      (let ((ci-run-working-directory 'root))
        (should
         (equal
-         (ci--get-working-directory ci-current-target)
+         (ci--get-working-directory executable-filename)
          (ci--get-project-root-folder))))
 
      (let ((ci-run-working-directory 'build))
        (should
         (equal
-         (ci--get-working-directory ci-current-target) (ci-get-build-folder))))
+         (ci--get-working-directory executable-filename) (ci-get-build-folder))))
 
      (let ((ci-run-working-directory 'bin))
        (should
         (equal
-         (ci--get-working-directory ci-current-target)
+         (ci--get-working-directory executable-filename)
          (file-name-concat (ci-get-build-folder) "bin/"))))
 
      (let ((ci-run-working-directory "some/subfolder/"))
        (should
         (equal
-         (ci--get-working-directory ci-current-target)
+         (ci--get-working-directory executable-filename)
          (file-name-concat (ci--get-project-root-folder)
                            "some/subfolder/")))))))
 
@@ -408,17 +409,17 @@ test code from inside a 'test project'."
 (ert-deftest test-ci-get-target-executable-full-path ()
   (test-fixture-setup ;;
    "./test-project-with-presets"
-   (let ((ci-current-target "bin/main"))
+   (let ((executable-filename "bin/main"))
      (should
       (equal
-       (ci-get-target-executable-full-path ci-current-target)
-       (file-name-concat (ci-get-build-folder) ci-current-target))))
+       (ci-get-target-executable-full-path executable-filename)
+       (file-name-concat (ci-get-build-folder) executable-filename))))
 
-   (let ((ci-current-target "main"))
+   (let ((executable-filename "main"))
      (should
       (equal
-       (ci-get-target-executable-full-path ci-current-target)
-       (file-name-concat (ci-get-build-folder) ci-current-target))))))
+       (ci-get-target-executable-full-path executable-filename)
+       (file-name-concat (ci-get-build-folder) executable-filename))))))
 
 
 (ert-deftest test-ci--get-run-command--root-folder ()
@@ -1187,6 +1188,83 @@ test code from inside a 'test project'."
     (should-not (ci--target-is-not-library-p object-library-target-info))
     (should (ci--target-is-not-library-p utility-target-info))
     (should (ci--target-is-not-library-p unknown-target-info))))
+
+
+;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+;; xxxxxxx Multi-target and run/debug target selection xxxxxxxxxxxxxxx
+;; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+(ert-deftest test-ci--executable-targets ()
+  ;; Only targets of type EXECUTABLE are returned; phony targets
+  ;; ("all", "clean") and libraries are filtered out.
+  (test-fixture-setup
+   "./test-project-with-codemodel-reply"
+   (let ((executables (ci--executable-targets)))
+     (should (member "main" executables))
+     (should-not (member "somelib" executables))
+     (should-not (member "all" executables))
+     (should-not (member "clean" executables)))))
+
+
+(ert-deftest test-ci--current-executable-build-targets ()
+  ;; Intersects the selected build targets with the project
+  ;; executables.  Non-executable selections yield an empty list.
+  (test-fixture-setup
+   "./test-project-with-codemodel-reply"
+   (let ((ci-current-build-targets '("somelib" "main" "clean")))
+     (should (equal (ci--current-executable-build-targets) '("main"))))
+   (let ((ci-current-build-targets '("somelib")))
+     (should (null (ci--current-executable-build-targets))))
+   (let ((ci-current-build-targets nil))
+     (should (null (ci--current-executable-build-targets))))))
+
+
+(ert-deftest test-ci--resolve-runnable-target ()
+  (test-fixture-setup
+   "./test-project-with-codemodel-reply"
+   ;; Non-nil memories are honored blindly, even if not a real target
+   (let ((ci-current-run-target "whatever"))
+     (should (equal (ci--resolve-runnable-target 'ci-current-run-target)
+                    "whatever")))
+   ;; Empty memories are auto-seeded from the project executables...
+   (let ((ci-current-run-target nil))
+     (should (equal (ci--resolve-runnable-target 'ci-current-run-target)
+                    "main"))
+     ;; ...and the seed is stored back into the memory variable
+     (should (equal ci-current-run-target "main")))))
+
+
+(ert-deftest test-ci-select-run-and-debug-target-writes-both ()
+  ;; The default selector prompts once and writes both memories.
+  (test-fixture-setup
+   "./test-project-with-codemodel-reply"
+   (let ((ci-current-run-target nil)
+         (ci-current-debug-target nil))
+     (cl-letf (((symbol-function 'completing-read)
+                (lambda (&rest _) "main")))
+       (ci-select-run-and-debug-target))
+     (should (equal ci-current-run-target "main"))
+     (should (equal ci-current-debug-target "main"))
+     ;; The individual selectors overwrite only their own memory
+     (cl-letf (((symbol-function 'completing-read)
+                (lambda (&rest _) "other")))
+       (ci-select-debug-target))
+     (should (equal ci-current-run-target "main"))
+     (should (equal ci-current-debug-target "other")))))
+
+
+(ert-deftest test-ci--restore-variables-from-state-migration ()
+  ;; States saved before multi-target support stored the single
+  ;; selection in `ci-current-target'; they migrate into the build
+  ;; target list.
+  (let ((ci-current-build-targets nil))
+    (ci--restore-variables-from-state '((ci-current-target . "old-main")))
+    (should (equal ci-current-build-targets '("old-main"))))
+  ;; New-style states are restored as-is, without migration
+  (let ((ci-current-build-targets nil))
+    (ci--restore-variables-from-state
+     '((ci-current-build-targets . ("kept" "added"))))
+    (should (equal ci-current-build-targets '("kept" "added")))))
 
 
 ;; get-target-executable-filename

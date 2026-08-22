@@ -4,9 +4,11 @@ This package provides seamless integration between Emacs and CMake-based C++ pro
 information. It simplifies common development tasks such as:
 
 - **Preset Management:** Easily select and apply CMake configure, build, test, and package presets.
-- **Target Compilation:** Compile specific targets within your project with a single keybinding.
+- **Target Compilation:** Select and compile one or more targets within your project with a single keybinding.
 - **Debugging:** Easily start debugging your executable targets with the classic gdb mi interface or with gdb through
   [dape](https://github.com/svaante/dape).
+- **Run and Debug Targets:** Independently choose which executable target is run and which one is debugged, from a
+  dedicated "Run and Debug" transient menu.
 - **Conan Integration:** Manage Conan packages and remotes directly from Emacs, call ``conan install`, etc..
 - **Language Servers:** Help language servers work correctly in the project.
 
@@ -61,28 +63,41 @@ Note: Try experimenting with with the transient menu to get a better idea about 
       File API.
     - **Important:** You must configure your project at least once before target-related features can work.
 
-2.  **Compile Target:**
-    - Use `cmake-integration-select-current-target` to select a target.
-    - Use `cmake-integration-save-and-compile-last-target` to compile the last selected target.
+2.  **Select Build Targets:**
+    - Use `cmake-integration-select-build-targets` to select one or more targets to compile. Use `TAB` to complete a
+      target name, then `,` (comma) to keep selecting more targets.
+      - **TIP:** The targets "all" and "clean" are always available.
+    - You can also add or remove single targets with `cmake-integration-add-build-target` and
+      `cmake-integration-remove-build-target`, or start over with `cmake-integration-clear-build-targets`.
+    - Use `cmake-integration-save-and-compile-last-target` to compile all selected targets. If no target was selected,
+      the default `all` target is built.
     - You can also use `cmake-integration-save-and-compile` to select a target and compile it in a single command.
 
-3.  **Run Target:**
-    - Use `cmake-integration-run-last-target` to execute the compiled executable.
+3.  **Select Run and Debug Targets:**
+    - In the transient menu, open the "Run and Debug" submenu (`o l`) and press `t` to select the executable used by
+      both the run (`r`) and debug (`d`) commands at once. This is also available as
+      `cmake-integration-select-run-and-debug-target`.
+    - To use different executables for running and debugging, call
+      `cmake-integration-select-run-target` or `cmake-integration-select-debug-target` directly. Each remembers its own
+      target until you change it.
+
+4.  **Run Target:**
+    - Use `cmake-integration-run-last-target` to execute the selected run target.
       - **TIP:** See the documentation of the `cmake-integration-program-launcher-function` variable if you want to
         customize how the program is executed.
     - If you need to pass any command line arguments to the executable, use
       `cmake-integration-run-last-target-with-arguments` to specify custom command-line arguments and then run the
       executable. Any subsequence call to `cmake-integration-run-last-target` will use these arguments as well.
 
-4.  **Debug Target:**
-    - Use `cmake-integration-debug-last-target` to debug the last compiled executable.
+5.  **Debug Target:**
+    - Use `cmake-integration-debug-last-target` to debug the selected debug target.
       - **TIP:** See the documentation of the `cmake-integration-debug-launcher-function` variable if you want to
         customize how the program is executed (such as using [dape](https://github.com/svaante/dape) instead of the
         native gdb in Emacs). In the particular case of dape, you might also be interested in calling
         `cmake-integration-setup-dape` in your Emacs configuration. This will add a configuration to the `dape-configs`
         variable that uses information from `cmake-integration`.
 
-5.  **Run Tests:**
+6.  **Run Tests:**
     - You can always choose a target that has the executable for your tests and run it as usual.
     - If you want to run the tests using CTest, use `cmake-integration-run-ctest`.
 
@@ -95,8 +110,8 @@ The following Emacs Lisp code demonstrates how to bind most useful commands to c
 (use-package cmake-integration
   :bind (:map c++-mode-map
               ([f5] . cmake-integration-transient)                         ;; Open main transient menu
-              ([M-f9] . cmake-integration-select-current-target)           ;; Ask for target
-              ([f9] . cmake-integration-save-and-compile-last-target)      ;; Recompile last target
+              ([M-f9] . cmake-integration-select-build-targets)            ;; Select targets
+              ([f9] . cmake-integration-save-and-compile-last-target)      ;; Recompile selected targets
               ([C-f9] . cmake-integration-run-ctest)                       ;; Run CTest
               ([f10] . cmake-integration-run-last-target)                  ;; Run last target (with saved args)
               ([S-f10] . kill-compilation)                                 ;; Stop compilation
@@ -363,14 +378,15 @@ directory within your Docker container, add the following line to your Emacs con
 
 `cmake-integration` offers support for saving/restoring the current state of its relevant variables. This is done by the
 `cmake-integration-save-state` and `cmake-integration-restore-state` functions, respectively. The saved state includes
-the last used presets, the current target, any run-time arguments for that target, and the cached list of available
-targets. The storage location is controlled by the `cmake-integration-persist-location` variable; it defaults to a
-project-specific directory under `user-emacs-directory`, but it can be pointed at a custom path or kept inside the
-project itself.
+the last used presets, the selected build targets, the selected run and debug targets, any run-time arguments for that
+target, and the cached list of available targets. The storage location is controlled by the
+`cmake-integration-persist-location` variable; it defaults to a project-specific directory under `user-emacs-directory`,
+but it can be pointed at a custom path or kept inside the project itself.
 
 If you prefer to save and restore state automatically, enable the global minor mode
-`cmake-integration-automatic-persistence-mode`. The mode installs advices so that selecting presets, targets, running
-executables, invoking CTest, and similar actions all keep the persisted data in sync automatically.
+`cmake-integration-automatic-persistence-mode`. The mode installs advices so that selecting presets, selecting build,
+run or debug targets, running executables, invoking CTest, and similar actions all keep the persisted data in sync
+automatically.
 
 Manual commands remain available for custom workflows:
 
